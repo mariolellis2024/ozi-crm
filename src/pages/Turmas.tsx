@@ -760,41 +760,6 @@ export function Turmas() {
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="mt-4 pt-3 border-t border-gray-600/30">
-                      <button
-                        onClick={() => {
-                          const topPeriod = suggestion.recommendedPeriods.length > 0 
-                            ? suggestion.recommendedPeriods[0].period 
-                            : 'manha';
-                          
-                          setFormData({
-                            curso_id: suggestion.curso.id,
-                            professor_hours: [],
-                            cadeiras: '',
-                            period: topPeriod,
-                            sala_id: '',
-                            start_date: '',
-                            end_date: '',
-                            imposto: ''
-                          });
-                          setEditingId(null);
-                          setIsModalOpen(true);
-                        }}
-                        className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          index === 0 
-                            ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' 
-                            : index === 1 
-                            ? 'bg-orange-500/20 text-orange-300 hover:bg-orange-500/30'
-                            : index === 2
-                            ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
-                            : 'bg-teal-500/20 text-teal-300 hover:bg-teal-500/30'
-                        }`}
-                      >
-                        <CalendarPlus className="h-4 w-4" />
-                        <span>Criar Turma</span>
-                      </button>
-                    </div>
                   ))}
                 </div>
                 
