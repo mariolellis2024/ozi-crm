@@ -78,9 +78,7 @@ export function Turmas() {
   const [professores, setProfessores] = useState<Professor[]>([]);
   const [salas, setSalas] = useState<Sala[]>([]);
   const [alunos, setAlunos] = useState<Aluno[]>([]);
-  const [emptySlots, setEmptySlots] = useState<EmptySlot[]>([]);
   const [courseSuggestions, setCourseSuggestions] = useState<CourseSuggestion[]>([]);
-  const [showEmptySlotsMessage, setShowEmptySlotsMessage] = useState(true);
   const [showCourseSuggestions, setShowCourseSuggestions] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -102,68 +100,6 @@ export function Turmas() {
     turmaId: '',
     turmaNome: ''
   });
-
-  function getDatesInMonth(year: number, month: number): Date[] {
-    const dates: Date[] = [];
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
-    for (let day = 1; day <= daysInMonth; day++) {
-      dates.push(new Date(year, month, day));
-    }
-    
-    return dates;
-  }
-
-  function isPeriodAvailable(date: Date, period: Period, turmasData: Turma[]): boolean {
-    const dateStr = date.toISOString().split('T')[0];
-    
-    // Check if any turma conflicts with this date and period
-    const conflictingTurmas = turmasData.filter(turma => {
-      if (turma.period !== period) return false;
-      
-      const turmaStart = new Date(turma.start_date);
-      const turmaEnd = new Date(turma.end_date);
-      
-      return date >= turmaStart && date <= turmaEnd;
-    });
-    
-    return conflictingTurmas.length === 0;
-  }
-
-  function calculateEmptySlots(turmasData: Turma[]) {
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-    const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
-    const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-    
-    const currentMonthDates = getDatesInMonth(currentYear, currentMonth);
-    const nextMonthDates = getDatesInMonth(nextYear, nextMonth);
-    
-    // Filter current month dates to only include today and future dates
-    const relevantCurrentMonthDates = currentMonthDates.filter(date => date >= today);
-    
-    const allRelevantDates = [...relevantCurrentMonthDates, ...nextMonthDates];
-    const emptySlots: EmptySlot[] = [];
-    
-    allRelevantDates.forEach(date => {
-      PERIODS.forEach(periodConfig => {
-        if (isPeriodAvailable(date, periodConfig.value, turmasData)) {
-          emptySlots.push({
-            date,
-            period: periodConfig.value,
-            formattedDate: date.toLocaleDateString('pt-BR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric'
-            })
-          });
-        }
-      });
-    });
-    
-    setEmptySlots(emptySlots);
-  }
 
   function calculateCourseSuggestions(alunosData: Aluno[], cursosData: Curso[]) {
     const courseInterestCount: { [cursoId: string]: number } = {};
@@ -251,8 +187,7 @@ export function Turmas() {
       setSalas(salasResult.data);
       setAlunos(alunosResult.data);
       
-      // Calculate empty slots and course suggestions after data is loaded
-      calculateEmptySlots(turmasResult.data);
+      // Calculate course suggestions after data is loaded
       calculateCourseSuggestions(alunosResult.data, cursosResult.data);
     } catch (error) {
       toast.error('Erro ao carregar dados');
@@ -643,97 +578,6 @@ export function Turmas() {
             </div>
           </div>
         </div>
-
-        {emptySlots.length > 0 && showEmptySlotsMessage && (
-          <div className="mb-6 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-6 fade-in-delay-2 relative">
-            <button
-              onClick={() => setShowEmptySlotsMessage(false)}
-              className="absolute top-4 right-4 text-teal-accent hover:text-teal-accent/80 transition-colors"
-              title="Fechar mensagem"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <div className="flex items-start gap-3">
-              <CalendarPlus className="h-6 w-6 text-teal-accent flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-yellow-500 mb-3">
-                  🚀 Oportunidades de Agendamento
-                </h3>
-                <p className="text-white mb-3">
-                  Identificamos <strong>{emptySlots.length} dias disponíveis</strong> para novas turmas no mês atual e próximo. 
-                  Aproveite para expandir sua oferta e aumentar o faturamento!
-                </p>
-                
-                <div className="bg-teal-accent/5 rounded-lg p-4 mb-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-300">Total de oportunidades:</span>
-                    <span className="text-teal-accent font-bold text-lg">{emptySlots.length} dias</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-2">
-                    <span className="text-gray-300">Períodos com maior disponibilidade:</span>
-                    <div className="flex gap-2">
-                      {PERIODS.map(periodConfig => {
-                        const periodSlots = emptySlots.filter(slot => slot.period === periodConfig.value);
-                        if (periodSlots.length === 0) return null;
-                        return (
-                          <div key={periodConfig.value} className="flex items-center gap-1 text-teal-accent">
-                            <periodConfig.icon className="h-3 w-3" />
-                            <span className="text-xs font-medium">{periodSlots.length}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {PERIODS.map(periodConfig => {
-                    const periodSlots = emptySlots.filter(slot => slot.period === periodConfig.value);
-                    
-                    if (periodSlots.length === 0) return null;
-                    
-                    return (
-                      <div key={periodConfig.value} className="bg-teal-accent/5 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <periodConfig.icon className="h-5 w-5 text-teal-accent" />
-                          <h4 className="font-medium text-white">{periodConfig.label}</h4>
-                          <span className="text-xs bg-teal-accent/20 text-teal-accent px-2 py-1 rounded-full font-medium">
-                            {periodSlots.length} dias
-                          </span>
-                        </div>
-                        <div className="space-y-1 max-h-32 overflow-y-auto">
-                          {periodSlots.slice(0, 10).map((slot, index) => (
-                            <div key={index} className="text-sm text-gray-300">
-                              {slot.formattedDate}
-                            </div>
-                          ))}
-                          {periodSlots.length > 10 && (
-                            <div className="text-xs text-gray-400 italic">
-                              +{periodSlots.length - 10} mais dias...
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                <div className="mt-6 flex items-center justify-between">
-                  <div className="text-sm text-gray-400">
-                    💡 <strong>Dica:</strong> Períodos com mais dias disponíveis oferecem maior flexibilidade para agendamento
-                  </div>
-                  <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 px-6 py-3 bg-teal-accent text-dark rounded-lg hover:bg-teal-accent/90 transition-colors font-medium hover-scale"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Criar Nova Turma
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {courseSuggestions.length > 0 && showCourseSuggestions && (
           <div className="mb-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 fade-in-delay-3 relative">
