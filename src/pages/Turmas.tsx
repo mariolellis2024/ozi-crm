@@ -808,6 +808,32 @@ export function Turmas() {
                   <div className="pt-4 border-t border-gray-700">
                     <div className="space-y-2">
                       <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-400">Faturamento Atual</span>
+                        <span className="text-emerald-400 font-medium">
+                          {formatCurrency((() => {
+                            const alunosMatriculados = alunos.filter(aluno => 
+                              aluno.curso_interests?.some(interest => 
+                                interest.curso_id === turma.curso_id && interest.status === 'enrolled'
+                              )
+                            ).length;
+                            return alunosMatriculados * (curso?.preco || 0);
+                          })())}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-400">Faturamento em Aberto</span>
+                        <span className="text-yellow-400 font-medium">
+                          {formatCurrency((() => {
+                            const alunosInteressados = alunos.filter(aluno => 
+                              aluno.curso_interests?.some(interest => 
+                                interest.curso_id === turma.curso_id && interest.status === 'interested'
+                              )
+                            ).length;
+                            return alunosInteressados * (curso?.preco || 0);
+                          })())}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-400">Potencial de Faturamento</span>
                         <span className="text-white font-medium">
                           {formatCurrency(turma.potencial_faturamento)}
