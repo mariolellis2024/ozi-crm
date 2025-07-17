@@ -1,0 +1,373 @@
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { Plus, Pencil, Trash2, X, Clock, TrendingUp, Users } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { formatCurrency } from '../utils/format';
+import { ConfirmationModal } from '../components/ConfirmationModal';
+
+interface Curso {
+  id: string;
+  nome: string;
+  carga_horaria: number;
+  preco: number;
+  interested_students_count?: number;
+}
+
+interface Turma {
+  id: string;
+  name: string;
+  curso_id: string;
+}
+
+export function Cursos() {
+  const [cursos, setCursos] = useState<Curso[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    nome: '',
+    carga_horaria: '',
+    preco: ''
+  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    cursoId: '',
+    cursoNome: ''
+  });
+
+  useEffect(() => {
+    loadCursos();
+  }, []);
+
+  async function loadCursos() {
+    try {
+      const [cursosResult, interestsResult] = await Promise.all([
+        supabase
+          .from('cursos')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('aluno_curso_interests')
+          .select('curso_id, status')
+      ]);
+      
+      if (cursosResult.error) throw cursosResult.error;
+      if (interestsResult.error) throw interestsResult.error;
+
+      // Count interested students for each course
+      const interestCounts: { [cursoId: string]: number } = {};
+      interestsResult.data.forEach(interest => {
+        if (interest.status === 'interested') {
+          interestCounts[interest.curso_id] = (interestCounts[interest.curso_id] || 0) + 1;
+        }
+      });
+
+      // Add interest count to each course
+      const cursosWithInterests = cursosResult.data.map(curso => ({
+        ...curso,
+        interested_students_count: interestCounts[curso.id] || 0
+      }));
+
+      // Sort courses by interested students count (descending), then by name (ascending)
+      const sortedCursos = cursosWithInterests.sort((a, b) => {
+        if (b.interested_students_count !== a.interested_students_count) {
+          return b.interested_students_count - a.interested_students_count;
+        }
+        return a.nome.localeCompare(b.nome);
+      });
+
+      setCursos(sortedCursos);
+    } catch (error) {
+      toast.error('Erro ao carregar cursos');
+    }
+  }
+
+  async function loadCursosForUpdate() {
+    try {
+      const { data, error } = await supabase
+        .from('cursos')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setCursos(data);
+    } catch (error) {
+      toast.error('Erro ao carregar cursos');
+    }
+  }
+
+  async function updateTurmaNames(cursoId: string, newNome: string) {
+    try {
+      const { data: turmas, error: fetchError } = await supabase
+        .from('turmas')
+        .select('id, name')
+        .eq('curso_id', cursoId);
+
+      if (fetchError) throw fetchError;
+
+      const updatePromises = turmas.map(async (turma) => {
+        const currentNumber = turma.name.split(' ').pop(); // Get the last part (number)
+        const newName = `${newNome} ${currentNumber}`;
+        
+        const { error } = await supabase
+          .from('turmas')
+          .update({ name: newName })
+          .eq('id', turma.id);
+        
+        if (error) throw error;
+      });
+
+      await Promise.all(updatePromises);
+    } catch (error) {
+      console.error('Error updating turma names:', error);
+      throw error;
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      const cursoData = {
+        ...formData,
+        carga_horaria: Number(formData.carga_horaria),
+        preco: Number(formData.preco)
+      };
+
+      if (editingId) {
+        const { error } = await supabase
+          .from('cursos')
+          .update(cursoData)
+          .eq('id', editingId);
+        
+        if (error) throw error;
+        await updateTurmaNames(editingId, cursoData.nome);
+        toast.success('Curso atualizado com sucesso!');
+      } else {
+        const { error } = await supabase
+          .from('cursos')
+          .insert([cursoData]);
+        
+        if (error) throw error;
+        toast.success('Curso adicionado com sucesso!');
+      }
+
+      setIsModalOpen(false);
+      setFormData({ nome: '', carga_horaria: '', preco: '' });
+      setEditingId(null);
+      loadCursos();
+    } catch (error) {
+      toast.error('Erro ao salvar curso');
+    }
+  }
+
+  async function handleDelete(id: string) {
+    const curso = cursos.find(c => c.id === id);
+    if (!curso) return;
+
+    setConfirmModal({
+      isOpen: true,
+      cursoId: id,
+      cursoNome: curso.nome
+    });
+  }
+
+  async function handleConfirmDelete() {
+    try {
+      const { error } = await supabase
+        .from('cursos')
+        .delete()
+        .eq('id', confirmModal.cursoId);
+      
+      if (error) throw error;
+      toast.success('Curso excluído com sucesso!');
+      loadCursos();
+    } catch (error) {
+      toast.error('Erro ao excluir curso');
+    } finally {
+      setConfirmModal({ isOpen: false, cursoId: '', cursoNome: '' });
+    }
+  }
+
+  function handleCancelDelete() {
+    setConfirmModal({ isOpen: false, cursoId: '', cursoNome: '' });
+  }
+
+  function handleEdit(curso: Curso) {
+    setFormData({
+      nome: curso.nome,
+      carga_horaria: curso.carga_horaria.toString(),
+      preco: curso.preco.toString()
+    });
+    setEditingId(curso.id);
+    setIsModalOpen(true);
+  }
+
+  return (
+    <div className="p-8 fade-in">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-8 fade-in-delay-1">
+          <h1 className="text-3xl font-bold text-white">Cursos</h1>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center px-4 py-2 bg-teal-accent text-dark rounded-lg hover:bg-teal-accent/90 transition-colors hover-scale"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Novo Curso
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 fade-in-delay-2">
+          {cursos.map((curso) => {
+            const lucroHora = curso.preco / curso.carga_horaria;
+            
+            return (
+              <div key={curso.id} className="bg-dark-card rounded-2xl p-6 hover-lift">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-white mb-2">{curso.nome}</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center text-gray-400">
+                        <Clock className="h-4 w-4 mr-2" />
+                        <span>{curso.carga_horaria} horas</span>
+                      </div>
+                      <p className="text-teal-accent font-semibold">
+                        {formatCurrency(curso.preco)}
+                      </p>
+                      <div className="flex items-center text-emerald-500">
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        <span className="font-semibold">
+                          {formatCurrency(lucroHora)}/hora
+                        </span>
+                      </div>
+                      {curso.interested_students_count !== undefined && curso.interested_students_count > 0 && (
+                        <>
+                          <div className="flex items-center text-blue-400">
+                            <Users className="h-4 w-4 mr-2" />
+                            <span className="font-semibold">
+                              {curso.interested_students_count} {curso.interested_students_count === 1 ? 'interessado' : 'interessados'}
+                            </span>
+                          </div>
+                          <div className="flex items-center text-purple-400">
+                            <TrendingUp className="h-4 w-4 mr-2" />
+                            <span className="font-semibold">
+                              {formatCurrency(curso.preco * curso.interested_students_count)} potencial
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(curso)}
+                      className="p-2 text-gray-400 hover:text-white transition-colors"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(curso.id)}
+                      className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {cursos.length === 0 && (
+            <div className="col-span-full text-center text-gray-400 py-8">
+              Nenhum curso cadastrado
+            </div>
+          )}
+        </div>
+
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-white">
+                  {editingId ? 'Editar Curso' : 'Novo Curso'}
+                </h2>
+                <button
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setFormData({ nome: '', carga_horaria: '', preco: '' });
+                    setEditingId(null);
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="nome" className="block text-sm font-medium text-gray-400 mb-1">
+                    Nome
+                  </label>
+                  <input
+                    type="text"
+                    id="nome"
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="carga_horaria" className="block text-sm font-medium text-gray-400 mb-1">
+                    Carga Horária (horas)
+                  </label>
+                  <input
+                    type="number"
+                    id="carga_horaria"
+                    value={formData.carga_horaria}
+                    onChange={(e) => setFormData({ ...formData, carga_horaria: e.target.value })}
+                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    min="1"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="preco" className="block text-sm font-medium text-gray-400 mb-1">
+                    Preço
+                  </label>
+                  <input
+                    type="number"
+                    id="preco"
+                    value={formData.preco}
+                    onChange={(e) => setFormData({ ...formData, preco: e.target.value })}
+                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-teal-accent text-dark font-medium rounded-lg px-4 py-2 hover:bg-teal-accent/90 transition-colors"
+                >
+                  {editingId ? 'Atualizar' : 'Cadastrar'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        <ConfirmationModal
+          isOpen={confirmModal.isOpen}
+          title="Excluir Curso"
+          message={`Tem certeza que deseja excluir o curso "${confirmModal.cursoNome}"? Esta ação não pode ser desfeita e afetará todas as turmas relacionadas.`}
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+          variant="danger"
+        />
+      </div>
+    </div>
+  );
+}
