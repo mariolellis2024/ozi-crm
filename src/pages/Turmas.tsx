@@ -580,51 +580,105 @@ export function Turmas() {
         </div>
 
         {courseSuggestions.length > 0 && showCourseSuggestions && (
-          <div className="mb-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 fade-in-delay-3 relative">
+          <div className="mb-6 bg-gradient-to-br from-orange-500/10 to-amber-500/10 border border-orange-500/20 rounded-2xl p-6 fade-in-delay-3 relative">
             <button
               onClick={() => setShowCourseSuggestions(false)}
-              className="absolute top-4 right-4 text-blue-400 hover:text-blue-300 transition-colors"
+              className="absolute top-4 right-4 text-orange-400 hover:text-orange-300 transition-colors"
               title="Fechar mensagem"
             >
               <X className="h-5 w-5" />
             </button>
             <div className="flex items-start gap-3">
-              <Lightbulb className="h-6 w-6 text-blue-500 flex-shrink-0 mt-1" />
+              <Lightbulb className="h-6 w-6 text-orange-500 flex-shrink-0 mt-1" />
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-blue-500 mb-3">
+                <h3 className="text-lg font-semibold text-orange-500 mb-3">
                   Sugestões de Novas Turmas
                 </h3>
-                <p className="text-blue-200 mb-4">
+                <p className="text-orange-200 mb-4">
                   Baseado no interesse dos alunos cadastrados, considere criar turmas para:
                 </p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {courseSuggestions.slice(0, 6).map((suggestion, index) => (
-                    <div key={suggestion.curso.id} className="bg-blue-500/5 rounded-lg p-4">
+                    <div key={suggestion.curso.id} className={`rounded-lg p-4 ${
+                      index === 0 
+                        ? 'bg-gradient-to-br from-red-500/15 to-orange-500/15 border border-red-500/20' 
+                        : index === 1 
+                        ? 'bg-gradient-to-br from-orange-500/15 to-amber-500/15 border border-orange-500/20'
+                        : index === 2
+                        ? 'bg-gradient-to-br from-amber-500/15 to-yellow-500/15 border border-amber-500/20'
+                        : 'bg-teal-500/10 border border-teal-500/20'
+                    }`}>
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-blue-400 truncate">
+                        <h4 className={`font-medium truncate ${
+                          index === 0 
+                            ? 'text-red-400' 
+                            : index === 1 
+                            ? 'text-orange-400'
+                            : index === 2
+                            ? 'text-amber-400'
+                            : 'text-teal-400'
+                        }`}>
                           {suggestion.curso.nome}
                         </h4>
-                        <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-xs font-medium">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          index === 0 
+                            ? 'bg-red-500/20 text-red-300' 
+                            : index === 1 
+                            ? 'bg-orange-500/20 text-orange-300'
+                            : index === 2
+                            ? 'bg-amber-500/20 text-amber-300'
+                            : 'bg-teal-500/20 text-teal-300'
+                        }`}>
                           #{index + 1}
                         </span>
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-blue-200">Alunos interessados:</span>
-                          <span className="text-blue-400 font-semibold">
+                          <span className={`${
+                            index <= 2 ? 'text-orange-200' : 'text-teal-200'
+                          }`}>Alunos interessados:</span>
+                          <span className={`font-semibold ${
+                            index === 0 
+                              ? 'text-red-400' 
+                              : index === 1 
+                              ? 'text-orange-400'
+                              : index === 2
+                              ? 'text-amber-400'
+                              : 'text-teal-400'
+                          }`}>
                             {suggestion.interestedCount}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-blue-200">Faturamento potencial:</span>
-                          <span className="text-blue-400 font-semibold">
+                          <span className={`${
+                            index <= 2 ? 'text-orange-200' : 'text-teal-200'
+                          }`}>Faturamento potencial:</span>
+                          <span className={`font-semibold ${
+                            index === 0 
+                              ? 'text-red-400' 
+                              : index === 1 
+                              ? 'text-orange-400'
+                              : index === 2
+                              ? 'text-amber-400'
+                              : 'text-teal-400'
+                          }`}>
                             {formatCurrency(suggestion.curso.preco * suggestion.interestedCount)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-blue-200">Carga horária:</span>
-                          <span className="text-blue-400">
+                          <span className={`${
+                            index <= 2 ? 'text-orange-200' : 'text-teal-200'
+                          }`}>Carga horária:</span>
+                          <span className={`${
+                            index === 0 
+                              ? 'text-red-400' 
+                              : index === 1 
+                              ? 'text-orange-400'
+                              : index === 2
+                              ? 'text-amber-400'
+                              : 'text-teal-400'
+                          }`}>
                             {suggestion.curso.carga_horaria}h
                           </span>
                         </div>
@@ -635,7 +689,7 @@ export function Turmas() {
                 
                 {courseSuggestions.length > 6 && (
                   <div className="mt-4 text-center">
-                    <span className="text-blue-300 text-sm">
+                    <span className="text-orange-300 text-sm">
                       +{courseSuggestions.length - 6} outros cursos com interesse
                     </span>
                   </div>
