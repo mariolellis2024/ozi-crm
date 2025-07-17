@@ -728,10 +728,26 @@ export function Turmas() {
             const impostoValue = (turma.potencial_faturamento * turma.imposto) / 100;
             const lucro = calculateLucro(turma.potencial_faturamento, gastoProfessores, turma.imposto);
             const interessados = alunos.filter(aluno => 
-              aluno.curso_interests?.some(interest => 
-                interest.curso_id === turma.curso_id
-              )
+              aluno.curso_interests?.some(interest => interest.curso_id === turma.curso_id)
             );
+
+            const alunosMatriculados = alunos.filter(aluno => 
+              aluno.curso_interests?.some(interest => 
+                interest.curso_id === turma.curso_id && interest.status === 'enrolled'
+              )
+            ).length;
+
+            let ocupacao = 0;
+            if (turma.cadeiras > 0) {
+              ocupacao = (alunosMatriculados / turma.cadeiras) * 100;
+            }
+
+            let occupancyColorClass = 'text-gray-400'; // Default color
+            if (turma.cadeiras > 0) {
+              if (ocupacao === 100) occupancyColorClass = 'text-emerald-400'; // Full
+              else if (ocupacao >= 70) occupancyColorClass = 'text-yellow-400'; // High occupancy
+              else occupancyColorClass = 'text-red-400'; // Low occupancy
+            }
             const status = getTurmaStatus(turma);
             const statusConfig = {
               not_started: { label: 'Não Iniciada', color: 'text-blue-400', bgColor: 'bg-blue-400/10' },
@@ -757,9 +773,11 @@ export function Turmas() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center text-gray-400">
+                      <div className={`flex items-center ${occupancyColorClass}`}>
                         <Users className="h-4 w-4 mr-2" />
-                        <span>Vagas: {turma.cadeiras} em {sala?.nome}</span>
+                        <span className="font-bold">Vagas: </span>
+                        <span>{turma.cadeiras}</span>
+                        <span> em {sala?.nome}</span>
                       </div>
                       <div className="text-gray-400">
                         <p>Início: {new Date(turma.start_date).toLocaleDateString()}</p>
