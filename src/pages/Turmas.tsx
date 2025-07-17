@@ -775,13 +775,13 @@ export function Turmas() {
                     <div className="space-y-2">
                       <div className={`flex items-center ${occupancyColorClass}`}>
                         <Users className="h-4 w-4 mr-2" />
-                        <span className="font-bold">Vagas: </span>
+                        <span className="font-bold">Vagas:</span>
                         <span>{turma.cadeiras}</span>
-                        <span> em {sala?.nome}</span>
+                        <span className="font-medium"> em {sala?.nome}</span>
                       </div>
                       <div className="text-gray-400">
-                        <p>Início: {new Date(turma.start_date).toLocaleDateString()}</p>
-                        <p>Término: {new Date(turma.end_date).toLocaleDateString()}</p>
+                        <p><span className="font-medium">Início:</span> {new Date(turma.start_date).toLocaleDateString()}</p>
+                        <p><span className="font-medium">Término:</span> {new Date(turma.end_date).toLocaleDateString()}</p>
                       </div>
                     </div>
                   </div>
@@ -808,8 +808,8 @@ export function Turmas() {
                       {(turma.professor_hours || []).map(ph => {
                         const professor = professores.find(p => p.id === ph.professor_id);
                         return (
-                          <div key={ph.professor_id} className="flex justify-between items-center text-gray-300">
-                            <span>{professor?.nome}</span>
+                          <div key={ph.professor_id} className="flex justify-between items-center">
+                            <span className="text-gray-300 font-medium">{professor?.nome}</span>
                             <span>{ph.hours}h</span>
                           </div>
                         );
@@ -821,8 +821,8 @@ export function Turmas() {
                     <h4 className="text-sm font-medium text-gray-400 mb-2">Alunos Interessados</h4>
                     <div className="space-y-2">
                       {interessados.map(aluno => (
-                        <div key={aluno.id} className="flex justify-between items-center text-gray-300">
-                          <span>{aluno.nome}</span>
+                        <div key={aluno.id} className="flex justify-between items-center">
+                          <span className="text-gray-300 font-medium">{aluno.nome}</span>
                           <button
                             onClick={() => {
                               const currentStatus = aluno.curso_interests?.find(ci => ci.curso_id === turma.curso_id)?.status;
@@ -857,7 +857,7 @@ export function Turmas() {
                   <div className="pt-4 border-t border-gray-700">
                     <div className="space-y-2">
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-400">Faturamento Atual</span>
+                        <span className="text-gray-400 font-medium">Faturamento Atual</span>
                         <span className="text-emerald-400 font-medium">
                           {formatCurrency((() => {
                             const alunosMatriculados = alunos.filter(aluno => 
@@ -870,7 +870,7 @@ export function Turmas() {
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-400">Faturamento em Aberto</span>
+                        <span className="text-gray-400 font-medium">Faturamento em Aberto</span>
                         <span className="text-yellow-400 font-medium">
                           {formatCurrency((() => {
                             const alunosMatriculados = alunos.filter(aluno => 
@@ -884,25 +884,25 @@ export function Turmas() {
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-400">Potencial de Faturamento</span>
-                        <span className="text-white font-medium">
+                        <span className="text-gray-400 font-medium">Potencial de Faturamento</span>
+                        <span className="text-teal-accent font-medium">
                           {formatCurrency(turma.potencial_faturamento)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-400">Gasto com Professores</span>
-                        <span className="text-white font-medium">
+                        <span className="text-gray-400 font-medium">Gasto com Professores</span>
+                        <span className="text-orange-400 font-medium">
                           {formatCurrency(gastoProfessores)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-400">Imposto ({turma.imposto}%)</span>
-                        <span className="text-white font-medium">
+                        <span className="text-gray-400 font-medium">Imposto ({turma.imposto}%)</span>
+                        <span className="text-orange-400 font-medium">
                           {formatCurrency(impostoValue)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-700">
-                        <span className="text-gray-400">Lucro</span>
+                        <span className="text-gray-400 font-medium">Lucro</span>
                         <span className="text-emerald-500 font-medium">
                           {formatCurrency(lucro)}
                         </span>
