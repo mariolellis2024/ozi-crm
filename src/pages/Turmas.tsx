@@ -759,63 +759,68 @@ export function Turmas() {
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="mt-4 pt-3 border-t border-gray-600/30">
-                        <button
-                          onClick={() => {
-                            const topPeriod = suggestion.recommendedPeriods.length > 0 
-                              ? suggestion.recommendedPeriods[0].period 
-                              : 'manha';
-                            
-                            setFormData({
-                              curso_id: suggestion.curso.id,
-                              professor_hours: [],
-                              cadeiras: '',
-                              period: topPeriod,
-                              sala_id: '',
-                              start_date: '',
-                              end_date: '',
-                              imposto: ''
-                            });
-                            setEditingId(null);
-                            setIsModalOpen(true);
-                          }}
-                          className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            index === 0 
-                              ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' 
-                              : index === 1 
-                              ? 'bg-orange-500/20 text-orange-300 hover:bg-orange-500/30'
-                              : index === 2
-                              ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
-                              : 'bg-teal-500/20 text-teal-300 hover:bg-teal-500/30'
-                          }`}
-                        >
-                          <CalendarPlus className="h-4 w-4" />
-                          <span>Criar Turma</span>
-                        </button>
-                      </div>
+                    </div>
+                    
+                    <div className="mt-4 pt-3 border-t border-gray-600/30">
+                      <button
+                        onClick={() => {
+                          const topPeriod = suggestion.recommendedPeriods.length > 0 
+                            ? suggestion.recommendedPeriods[0].period 
+                            : 'manha';
+                          
+                          setFormData({
+                            curso_id: suggestion.curso.id,
+                            professor_hours: [],
+                            cadeiras: '',
+                            period: topPeriod,
+                            sala_id: '',
+                            start_date: '',
+                            end_date: '',
+                            imposto: ''
+                          });
+                          setEditingId(null);
+                          setIsModalOpen(true);
+                        }}
+                        className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          index === 0 
+                            ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' 
+                            : index === 1 
+                            ? 'bg-orange-500/20 text-orange-300 hover:bg-orange-500/30'
+                            : index === 2
+                            ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
+                            : 'bg-teal-500/20 text-teal-300 hover:bg-teal-500/30'
+                        }`}
+                      >
+                        <CalendarPlus className="h-4 w-4" />
+                        <span>Criar Turma</span>
+                      </button>
                     </div>
                   ))}
                 </div>
+                
+                {courseSuggestions.length > 6 && (
+                  <div className="mt-4 text-center">
+                    <span className="text-orange-300 text-sm">
+                      +{courseSuggestions.length - 6} outros cursos com interesse
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 fade-in-delay-4">
-          {filteredTurmas.map(turma => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 fade-in-delay-3">
+          {filteredTurmas.map((turma) => {
             const curso = cursos.find(c => c.id === turma.curso_id);
             const sala = salas.find(s => s.id === turma.sala_id);
             const gastoProfessores = calculateGastoProfessores(turma.professor_hours || []);
             const impostoValue = (turma.potencial_faturamento * turma.imposto) / 100;
             const lucro = calculateLucro(turma.potencial_faturamento, gastoProfessores, turma.imposto);
-            
             const interessados = alunos.filter(aluno => 
-              aluno.curso_interests?.some(interest => 
-                interest.curso_id === turma.curso_id && interest.status === 'interested'
-              )
+              aluno.curso_interests?.some(interest => interest.curso_id === turma.curso_id)
             );
-            
+
             const alunosMatriculados = alunos.filter(aluno => 
               aluno.curso_interests?.some(interest => 
                 interest.curso_id === turma.curso_id && interest.status === 'enrolled'
