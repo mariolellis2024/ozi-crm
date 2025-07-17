@@ -855,12 +855,13 @@ export function Turmas() {
                         <span className="text-gray-400">Faturamento em Aberto</span>
                         <span className="text-yellow-400 font-medium">
                           {formatCurrency((() => {
-                            const alunosInteressados = alunos.filter(aluno => 
+                            const alunosMatriculados = alunos.filter(aluno => 
                               aluno.curso_interests?.some(interest => 
-                                interest.curso_id === turma.curso_id && interest.status === 'interested'
+                                interest.curso_id === turma.curso_id && interest.status === 'enrolled'
                               )
                             ).length;
-                            return alunosInteressados * (curso?.preco || 0);
+                            const vagasDisponiveis = turma.cadeiras - alunosMatriculados;
+                            return Math.max(0, vagasDisponiveis) * (curso?.preco || 0);
                           })())}
                         </span>
                       </div>
