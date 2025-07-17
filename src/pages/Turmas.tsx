@@ -784,17 +784,27 @@ export function Turmas() {
                       {interessados.map(aluno => (
                         <div key={aluno.id} className="flex justify-between items-center text-gray-300">
                           <span>{aluno.nome}</span>
-                          <div className="flex space-x-1">
-                            {aluno.curso_interests?.find(ci => ci.curso_id === turma.curso_id)?.status === 'interested' && (
-                              <BookOpen className="h-4 w-4 text-teal-accent" />
-                            )}
-                            {aluno.curso_interests?.find(ci => ci.curso_id === turma.curso_id)?.status === 'enrolled' && (
-                              <Clock className="h-4 w-4 text-yellow-500" />
-                            )}
-                            {aluno.curso_interests?.find(ci => ci.curso_id === turma.curso_id)?.status === 'completed' && (
-                              <Check className="h-4 w-4 text-emerald-500" />
-                            )}
-                          </div>
+                          <button
+                            onClick={() => {
+                              const currentStatus = aluno.curso_interests?.find(ci => ci.curso_id === turma.curso_id)?.status;
+                              const newStatus = currentStatus === 'interested' ? 'enrolled' : 'interested';
+                              handleStatusChange(aluno.id, turma.curso_id, newStatus);
+                            }}
+                            className="p-1 rounded-lg transition-colors hover:bg-dark-lighter"
+                            title={`Clique para alternar status`}
+                          >
+                            {(() => {
+                              const status = aluno.curso_interests?.find(ci => ci.curso_id === turma.curso_id)?.status;
+                              if (status === 'interested') {
+                                return <BookOpen className="h-4 w-4 text-teal-accent" />;
+                              } else if (status === 'enrolled') {
+                                return <Clock className="h-4 w-4 text-yellow-500" />;
+                              } else if (status === 'completed') {
+                                return <Check className="h-4 w-4 text-emerald-500" />;
+                              }
+                              return <BookOpen className="h-4 w-4 text-gray-400" />;
+                            })()}
+                          </button>
                         </div>
                       ))}
                       {interessados.length === 0 && (
