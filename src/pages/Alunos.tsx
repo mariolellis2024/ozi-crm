@@ -494,53 +494,53 @@ export function Alunos() {
                           );
                           
                           return (
-                            <div key={curso.id} className="space-y-2">
-                              <span className="block text-white font-medium">{curso.nome}</span>
-                              <div className="flex flex-wrap gap-2">
+                            <div key={curso.id} className="flex items-center gap-3 py-1">
+                              <span className="text-white font-medium min-w-0 flex-1">{curso.nome}</span>
+                              <div className="flex gap-1 flex-shrink-0">
                                 <button
                                   type="button"
                                   onClick={() => handleStatusChange(aluno.id, curso.id, 'interested')}
-                                  className={`p-2 rounded-lg transition-colors ${
+                                  className={`p-1.5 rounded-md transition-colors ${
                                     interest?.status === 'interested'
                                       ? 'bg-teal-accent/20 text-teal-accent'
                                       : 'bg-dark text-gray-400 hover:text-white'
                                   }`}
                                   title="Interessado"
                                 >
-                                  <BookOpen className="h-4 w-4" />
+                                  <BookOpen className="h-3.5 w-3.5" />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleStatusChange(aluno.id, curso.id, 'enrolled')}
-                                  className={`p-2 rounded-lg transition-colors ${
+                                  className={`p-1.5 rounded-md transition-colors ${
                                     interest?.status === 'enrolled'
                                       ? 'bg-yellow-500/20 text-yellow-500'
                                       : 'bg-dark text-gray-400 hover:text-white'
                                   }`}
                                   title="Cursando"
                                 >
-                                  <Clock className="h-4 w-4" />
+                                  <Clock className="h-3.5 w-3.5" />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleStatusChange(aluno.id, curso.id, 'completed')}
-                                  className={`p-2 rounded-lg transition-colors ${
+                                  className={`p-1.5 rounded-md transition-colors ${
                                     interest?.status === 'completed'
                                       ? 'bg-emerald-500/20 text-emerald-500'
                                       : 'bg-dark text-gray-400 hover:text-white'
                                   }`}
                                   title="Concluído"
                                 >
-                                  <Check className="h-4 w-4" />
+                                  <Check className="h-3.5 w-3.5" />
                                 </button>
                                 {interest && (
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveInterest(aluno.id, curso.id)}
-                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                    className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
                                     title="Remover"
                                   >
-                                    <X className="h-4 w-4" />
+                                    <X className="h-3.5 w-3.5" />
                                   </button>
                                 )}
                               </div>
