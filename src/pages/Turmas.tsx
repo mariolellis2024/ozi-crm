@@ -447,6 +447,27 @@ export function Turmas() {
     setConfirmModal({ isOpen: false, turmaId: '', turmaNome: '' });
   }
 
+  async function handleStatusChange(alunoId: string, cursoId: string, status: 'interested' | 'enrolled' | 'completed') {
+    try {
+      const { error } = await supabase
+        .from('aluno_curso_interests')
+        .upsert({
+          aluno_id: alunoId,
+          curso_id: cursoId,
+          status: status
+        }, {
+          onConflict: 'aluno_id,curso_id'
+        });
+      
+      if (error) throw error;
+      
+      toast.success('Status do aluno atualizado com sucesso!');
+      loadData();
+    } catch (error) {
+      toast.error('Erro ao atualizar status do aluno');
+    }
+  }
+
   function handleEdit(turma: Turma) {
     setFormData({
       curso_id: turma.curso_id,
