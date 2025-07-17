@@ -49,8 +49,6 @@ interface Sala {
 interface Aluno {
   id: string;
   nome: string;
-  email: string;
-  whatsapp: string;
   curso_interests?: Array<{
     curso_id: string;
     status: 'interested' | 'enrolled' | 'completed';
@@ -83,7 +81,6 @@ export function Turmas() {
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [courseSuggestions, setCourseSuggestions] = useState<CourseSuggestion[]>([]);
   const [showCourseSuggestions, setShowCourseSuggestions] = useState(true);
-  const [alunosData, setAlunosData] = useState<{ [turmaId: string]: { interested: Aluno[], enrolled: Aluno[] } }>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'not_started' | 'in_progress' | 'completed'>('all');
@@ -191,18 +188,12 @@ export function Turmas() {
         supabase.from('professores').select('*').order('nome'),
         supabase.from('salas').select('*').order('nome'),
         supabase
-          .from('aluno_curso_interests')
+          .from('alunos')
           .select(`
             *,
-            alunos:aluno_id (
-              id,
-              nome,
-              email,
-              whatsapp
-            ),
-            cursos:curso_id (
-              id,
-              nome
+            curso_interests:aluno_curso_interests(
+              curso_id,
+              status
             )
           `)
       ]);
@@ -213,39 +204,7 @@ export function Turmas() {
       if (salasResult.error) throw salasResult.error;
       if (alunosResult.error) throw alunosResult.error;
 
-      const data = turmasResult.data;
-      
-      // Process student interests by turma
-      const alunosMap: { [turmaId: string]: { interested: Aluno[], enrolled: Aluno[] } } = {};
-      
-      setTurmas(data);
-      
-      // Group students by turma and status
-      data.forEach(turma => {
-        const interested: Aluno[] = [];
-        const enrolled: Aluno[] = [];
-        
-        alunosResult.data.forEach(interest => {
-          if (interest.cursos?.id === turma.curso_id && interest.alunos) {
-            const aluno = {
-              id: interest.alunos.id,
-              nome: interest.alunos.nome,
-              email: interest.alunos.email,
-              whatsapp: interest.alunos.whatsapp
-            };
-            
-            if (interest.status === 'interested') {
-              interested.push(aluno);
-            } else if (interest.status === 'enrolled') {
-              enrolled.push(aluno);
-            }
-          }
-        });
-        
-        alunosMap[turma.id] = { interested, enrolled };
-      });
-      
-      setAlunosData(alunosMap);
+      setTurmas(turmasResult.data);
       setCursos(cursosResult.data);
       setProfessores(professoresResult.data);
       setSalas(salasResult.data);
@@ -910,62 +869,20 @@ export function Turmas() {
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Students Lists */}
-                  <div className="mt-4 space-y-4">
-                    {/* Enrolled Students */}
-                    {alunosData[turma.id]?.enrolled && alunosData[turma.id].enrolled.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium text-emerald-400 mb-2 flex items-center">
-                          <Check className="h-4 w-4 mr-1" />
-                          Cursando ({alunosData[turma.id].enrolled.length})
-                        </h4>
-                        <div className="space-y-1">
-                          {alunosData[turma.id].enrolled.map(aluno => (
-                            <div key={aluno.id} className="text-sm text-gray-300 bg-emerald-500/10 px-2 py-1 rounded">
-                              {aluno.nome}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Interested Students */}
-                    {alunosData[turma.id]?.interested && alunosData[turma.id].interested.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium text-blue-400 mb-2 flex items-center">
-                          <BookOpen className="h-4 w-4 mr-1" />
-                          Interessados ({alunosData[turma.id].interested.length})
-                        </h4>
-                        <div className="space-y-1">
-                          {alunosData[turma.id].interested.slice(0, 10).map(aluno => (
-                            <div key={aluno.id} className="text-sm text-gray-300 bg-blue-500/10 px-2 py-1 rounded">
-                              {aluno.nome}
-                            </div>
-                          ))}
-                          {alunosData[turma.id].interested.length > 10 && (
-                            <div className="text-xs text-gray-400 italic">
-                              +{alunosData[turma.id].interested.length - 10} outros interessados
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(turma)}
+                      className="p-2 text-gray-400 hover:text-white transition-colors"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(turma.id)}
+                      className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleEdit(turma)}
-                    className="p-2 text-gray-400 hover:text-white transition-colors"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(turma.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
                 </div>
 
                 <div className="space-y-4">
