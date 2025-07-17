@@ -212,6 +212,13 @@ export function Turmas() {
       
       // Calculate course suggestions after data is loaded
       calculateCourseSuggestions(alunosResult.data, cursosResult.data);
+      
+      // Check and complete students in finished turmas after initial load
+      setTimeout(() => {
+        if (turmasResult.data.length > 0) {
+          checkAndCompleteStudentsInTurmas();
+        }
+      }, 1000);
     } catch (error) {
       toast.error('Erro ao carregar dados');
     }
@@ -472,24 +479,135 @@ export function Turmas() {
 
   async function handleStatusChange(alunoId: string, cursoId: string, status: 'interested' | 'enrolled' | 'completed') {
     try {
-      const { error } = await supabase
+      // Check if interest already exists
+      const { data: existingInterest } = await supabase
         .from('aluno_curso_interests')
-        .upsert({
-          aluno_id: alunoId,
-          curso_id: cursoId,
-          status: status
-        }, {
-          onConflict: 'aluno_id,curso_id'
-        });
-      
-      if (error) throw error;
-      
-      toast.success('Status do aluno atualizado com sucesso!');
+        .select('id')
+        .eq('aluno_id', alunoId)
+        .eq('curso_id', cursoId)
+        .maybeSingle();
+
+      if (existingInterest) {
+        // Update existing interest
+        const { error } = await supabase
+          .from('aluno_curso_interests')
+          .update({ status })
+          .eq('aluno_id', alunoId)
+          .eq('curso_id', cursoId);
+        
+        if (error) throw error;
+      } else {
+        // Create new interest
+        const { error } = await supabase
+          .from('aluno_curso_interests')
+          .insert([{
+            aluno_id: alunoId,
+            curso_id: cursoId,
+            status
+          }]);
+        
+        if (error) throw error;
+      }
+
       loadData();
     } catch (error) {
-      toast.error('Erro ao atualizar status do aluno');
+      toast.error('Erro ao atualizar status');
     }
   }
+
+  async function handleStatusChangeInTurma(alunoId: string, cursoId: string, status: 'interested' | 'enrolled' | 'completed', turmaId: string) {
+    try {
+      // Check if interest already exists
+      const { data: existingInterest } = await supabase
+        .from('aluno_curso_interests')
+        .select('id')
+        .eq('aluno_id', alunoId)
+        .eq('curso_id', cursoId)
+        .maybeSingle();
+
+      if (existingInterest) {
+        // Update existing interest with turma_id
+        const updateData: any = { status };
+        if (status === 'enrolled') {
+          updateData.turma_id = turmaId;
+        } else if (status === 'interested') {
+          updateData.turma_id = null;
+        }
+        
+        const { error } = await supabase
+          .from('aluno_curso_interests')
+          .update(updateData)
+          .eq('aluno_id', alunoId)
+          .eq('curso_id', cursoId);
+        
+        if (error) throw error;
+      } else {
+        // Create new interest with turma_id if enrolled
+        const insertData: any = {
+          aluno_id: alunoId,
+          curso_id: cursoId,
+          status
+        };
+        
+        if (status === 'enrolled') {
+          insertData.turma_id = turmaId;
+        }
+        
+        const { error } = await supabase
+          .from('aluno_curso_interests')
+          .insert([insertData]);
+        
+        if (error) throw error;
+      }
+
+      loadData();
+    } catch (error) {
+      toast.error('Erro ao atualizar status');
+    }
+  }
+
+  async function checkAndCompleteStudentsInTurmas() {
+    try {
+      const completedTurmas = turmas.filter(t => getTurmaStatus(t) === 'completed');
+      let totalCompleted = 0;
+
+      for (const turma of completedTurmas) {
+        const { data: enrolledInterests, error: fetchError } = await supabase
+          .from('aluno_curso_interests')
+          .select('id, aluno_id, curso_id')
+          .eq('turma_id', turma.id)
+          .eq('status', 'enrolled');
+
+        if (fetchError) throw fetchError;
+
+        if (enrolledInterests && enrolledInterests.length > 0) {
+          const updatePromises = enrolledInterests.map(interest =>
+            supabase
+              .from('aluno_curso_interests')
+              .update({ status: 'completed' })
+              .eq('id', interest.id)
+          );
+          
+          await Promise.all(updatePromises);
+          totalCompleted += enrolledInterests.length;
+        }
+      }
+
+      if (totalCompleted > 0) {
+        toast.success(`${totalCompleted} aluno${totalCompleted > 1 ? 's' : ''} de turmas concluídas marcado${totalCompleted > 1 ? 's' : ''} como concluído${totalCompleted > 1 ? 's' : ''}.`);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar e completar alunos em turmas:', error);
+      toast.error('Erro ao automatizar conclusão de alunos.');
+    }
+  }
+      
+  // Call checkAndCompleteStudentsInTurmas after loading data
+  useEffect(() => {
+    if (turmas.length > 0) {
+      checkAndCompleteStudentsInTurmas();
+    }
+  }, [turmas.length]);
 
   function handleEdit(turma: Turma) {
     setFormData({
@@ -881,7 +999,7 @@ export function Turmas() {
                             onClick={() => {
                               const currentStatus = aluno.curso_interests?.find(ci => ci.curso_id === turma.curso_id)?.status;
                               const newStatus = currentStatus === 'interested' ? 'enrolled' : 'interested';
-                              handleStatusChange(aluno.id, turma.curso_id, newStatus);
+                              handleStatusChangeInTurma(aluno.id, turma.curso_id, newStatus, turma.id);
                             }}
                             className="p-1 rounded-lg transition-colors hover:bg-dark-lighter"
                             title={`Clique para alternar status`}
