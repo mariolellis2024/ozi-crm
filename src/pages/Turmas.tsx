@@ -776,7 +776,7 @@ export function Turmas() {
                       <div className={`flex items-center ${occupancyColorClass}`}>
                         <Users className="h-4 w-4 mr-2" />
                         <span className="font-bold">Vagas:</span>
-                        <span> {turma.cadeiras} em {sala?.nome}</span>
+                        <span> {turma.cadeiras - alunosMatriculados} em {sala?.nome}</span>
                       </div>
                       <div className="text-gray-400">
                         <p><span className="font-medium">Início:</span> {new Date(turma.start_date).toLocaleDateString()}</p>
