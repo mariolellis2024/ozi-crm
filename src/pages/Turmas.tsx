@@ -809,7 +809,7 @@ export function Turmas() {
                         return (
                           <div key={ph.professor_id} className="flex justify-between items-center">
                             <span className="text-gray-300 font-medium">{professor?.nome}</span>
-                            <span>{ph.hours}h</span>
+                            <span className="text-gray-300">{ph.hours}h</span>
                           </div>
                         );
                       })}
