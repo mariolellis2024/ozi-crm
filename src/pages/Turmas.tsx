@@ -750,7 +750,7 @@ export function Turmas() {
                       <span>{statusConfig[status].label}</span>
                     </div>
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-semibold text-white">{turma.name}</h3>
+                      <h3 className="text-xl font-semibold text-white">{turma.name.replace(/\s+\d+$/, '')}</h3>
                       <div className="flex items-center gap-1 text-gray-400 text-sm">
                         {getPeriodIcon(turma.period)}
                         <span>{getPeriodLabel(turma.period)}</span>
