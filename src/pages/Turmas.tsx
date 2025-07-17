@@ -70,6 +70,7 @@ interface EmptySlot {
 interface CourseSuggestion {
   curso: Curso;
   interestedCount: number;
+  recommendedPeriods: { period: Period; count: number }[];
 }
 
 export function Turmas() {
@@ -103,12 +104,25 @@ export function Turmas() {
 
   function calculateCourseSuggestions(alunosData: Aluno[], cursosData: Curso[]) {
     const courseInterestCount: { [cursoId: string]: number } = {};
+    const coursePeriodCount: { [cursoId: string]: { [period in Period]: number } } = {};
     
     // Count interested students for each course
     alunosData.forEach(aluno => {
       aluno.curso_interests?.forEach(interest => {
         if (interest.status === 'interested') {
           courseInterestCount[interest.curso_id] = (courseInterestCount[interest.curso_id] || 0) + 1;
+          
+          // Initialize period count for this course if not exists
+          if (!coursePeriodCount[interest.curso_id]) {
+            coursePeriodCount[interest.curso_id] = { manha: 0, tarde: 0, noite: 0 };
+          }
+          
+          // Count periods for this student
+          if (aluno.available_periods && aluno.available_periods.length > 0) {
+            aluno.available_periods.forEach(period => {
+              coursePeriodCount[interest.curso_id][period]++;
+            });
+          }
         }
       });
     });
@@ -117,7 +131,16 @@ export function Turmas() {
     const suggestions: CourseSuggestion[] = Object.entries(courseInterestCount)
       .map(([cursoId, count]) => {
         const curso = cursosData.find(c => c.id === cursoId);
-        return curso ? { curso, interestedCount: count } : null;
+        if (!curso) return null;
+        
+        // Get recommended periods sorted by student availability
+        const periodCounts = coursePeriodCount[cursoId] || { manha: 0, tarde: 0, noite: 0 };
+        const recommendedPeriods = Object.entries(periodCounts)
+          .map(([period, count]) => ({ period: period as Period, count }))
+          .filter(p => p.count > 0)
+          .sort((a, b) => b.count - a.count);
+        
+        return { curso, interestedCount: count, recommendedPeriods };
       })
       .filter((suggestion): suggestion is CourseSuggestion => suggestion !== null)
       .sort((a, b) => b.interestedCount - a.interestedCount);
@@ -702,6 +725,38 @@ export function Turmas() {
                           }`}>
                             {suggestion.curso.carga_horaria}h
                           </span>
+                        </div>
+                        <div className="space-y-1">
+                          <span className={`block text-xs font-medium ${
+                            index <= 2 ? 'text-orange-200' : 'text-teal-200'
+                          }`}>Horários recomendados:</span>
+                          <div className="flex flex-wrap gap-1">
+                            {suggestion.recommendedPeriods.length > 0 ? (
+                              suggestion.recommendedPeriods.map(({ period, count }) => (
+                                <div
+                                  key={period}
+                                  className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                                    index === 0 
+                                      ? 'bg-red-500/20 text-red-300' 
+                                      : index === 1 
+                                      ? 'bg-orange-500/20 text-orange-300'
+                                      : index === 2
+                                      ? 'bg-amber-500/20 text-amber-300'
+                                      : 'bg-teal-500/20 text-teal-300'
+                                  }`}
+                                >
+                                  {getPeriodIcon(period)}
+                                  <span>{getPeriodLabel(period)} ({count})</span>
+                                </div>
+                              ))
+                            ) : (
+                              <span className={`text-xs ${
+                                index <= 2 ? 'text-orange-300' : 'text-teal-300'
+                              }`}>
+                                Não informado pelos alunos
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
