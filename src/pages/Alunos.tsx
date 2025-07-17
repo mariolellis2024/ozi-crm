@@ -437,17 +437,7 @@ export function Alunos() {
                     </button>
                   </th>
                   <th className="text-left p-4 text-gray-400 font-medium">Contato</th>
-                  <th className="text-left p-4 text-gray-400 font-medium">Empresa</th>
                   <th className="text-left p-4 text-gray-400 font-medium">Horários Disponíveis</th>
-                  <th className="text-left p-4">
-                    <button
-                      onClick={() => handleSort('created_at')}
-                      className="flex items-center text-gray-400 font-medium hover:text-white transition-colors"
-                    >
-                      Cadastrado em
-                      <ArrowUpDown className={`ml-2 h-4 w-4 ${sortField === 'created_at' ? 'text-teal-accent' : ''}`} />
-                    </button>
-                  </th>
                   <th className="text-left p-4 text-gray-400 font-medium">Cursos</th>
                   <th className="text-right p-4 text-gray-400 font-medium">Ações</th>
                 </tr>
@@ -465,9 +455,6 @@ export function Alunos() {
                       </div>
                     </td>
                     <td className="p-4">
-                      <span className="text-gray-400">{aluno.empresa || '-'}</span>
-                    </td>
-                    <td className="p-4">
                       <div className="flex flex-wrap gap-1">
                         {(aluno.available_periods || []).map(period => (
                           <div
@@ -482,9 +469,6 @@ export function Alunos() {
                           <span className="text-gray-400 text-sm">Não informado</span>
                         )}
                       </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="text-gray-400">{formatDate(aluno.created_at)}</span>
                     </td>
                     <td className="p-4">
                       <div className="space-y-4">
@@ -569,7 +553,7 @@ export function Alunos() {
                 ))}
                 {filteredAlunos.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-gray-400">
+                    <td colSpan={5} className="text-center py-8 text-gray-400">
                       Nenhum aluno encontrado
                     </td>
                   </tr>
