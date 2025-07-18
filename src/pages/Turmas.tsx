@@ -6,6 +6,7 @@ import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 
 type Period = 'manha' | 'tarde' | 'noite';
+type TurmaStatus = 'aberta' | 'andamento' | 'finalizada' | 'all';
 
 const PERIODS: { value: Period; label: string; icon: typeof Sun }[] = [
   { value: 'manha', label: 'Manhã', icon: Sun },
@@ -77,6 +78,7 @@ export function Turmas() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPeriod, setFilterPeriod] = useState<Period | 'all'>('all');
   const [filterCurso, setFilterCurso] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<TurmaStatus>('all');
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     turmaId: '',
@@ -93,6 +95,51 @@ export function Turmas() {
     imposto: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  function getTurmaStatus(startDate: string, endDate: string): TurmaStatus {
+    const today = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Remove time component for accurate date comparison
+    today.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    
+    if (today < start) {
+      return 'aberta'; // Ainda não começou
+    } else if (today >= start && today <= end) {
+      return 'andamento'; // Em andamento
+    } else {
+      return 'finalizada'; // Já terminou
+    }
+  }
+
+  function getStatusColor(status: TurmaStatus): string {
+    switch (status) {
+      case 'aberta':
+        return 'text-blue-400';
+      case 'andamento':
+        return 'text-green-400';
+      case 'finalizada':
+        return 'text-gray-400';
+      default:
+        return 'text-gray-400';
+    }
+  }
+
+  function getStatusLabel(status: TurmaStatus): string {
+    switch (status) {
+      case 'aberta':
+        return 'Aberta';
+      case 'andamento':
+        return 'Em Andamento';
+      case 'finalizada':
+        return 'Finalizada';
+      default:
+        return '';
+    }
+  }
 
   useEffect(() => {
     loadData();
@@ -312,8 +359,10 @@ export function Turmas() {
     
     const matchesPeriod = filterPeriod === 'all' || turma.period === filterPeriod;
     const matchesCurso = filterCurso === 'all' || turma.curso_id === filterCurso;
+    const turmaStatus = getTurmaStatus(turma.start_date, turma.end_date);
+    const matchesStatus = filterStatus === 'all' || turmaStatus === filterStatus;
     
-    return matchesSearch && matchesPeriod && matchesCurso;
+    return matchesSearch && matchesPeriod && matchesCurso && matchesStatus;
   });
 
   return (
@@ -459,6 +508,17 @@ export function Turmas() {
                   </option>
                 ))}
               </select>
+              
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as TurmaStatus)}
+                className="bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+              >
+                <option value="all">Todos os status</option>
+                <option value="aberta">Abertas</option>
+                <option value="andamento">Em Andamento</option>
+                <option value="finalizada">Finalizadas</option>
+              </select>
             </div>
           </div>
         </div>
@@ -469,6 +529,17 @@ export function Turmas() {
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold text-white mb-2">{turma.name}</h3>
+                  <div className="mb-3">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      getTurmaStatus(turma.start_date, turma.end_date) === 'aberta' 
+                        ? 'bg-blue-500/20 text-blue-400'
+                        : getTurmaStatus(turma.start_date, turma.end_date) === 'andamento'
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-gray-500/20 text-gray-400'
+                    }`}>
+                      {getStatusLabel(getTurmaStatus(turma.start_date, turma.end_date))}
+                    </span>
+                  </div>
                   <div className="space-y-3">
                     <div className="flex items-center text-gray-400">
                       <Calendar className="h-4 w-4 mr-2" />
