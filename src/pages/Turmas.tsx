@@ -77,6 +77,7 @@ export function Turmas() {
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [professores, setProfessores] = useState<Professor[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [salas, setSalas] = useState<Sala[]>([]);
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [courseSuggestions, setCourseSuggestions] = useState<CourseSuggestion[]>([]);
