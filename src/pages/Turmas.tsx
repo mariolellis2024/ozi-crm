@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Pencil, Trash2, X, Calendar, Users, MapPin, DollarSign, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Calendar, Users, MapPin, DollarSign, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon, Search, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
@@ -74,6 +74,9 @@ export function Turmas() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterPeriod, setFilterPeriod] = useState<Period | 'all'>('all');
+  const [filterCurso, setFilterCurso] = useState<string>('all');
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     turmaId: '',
@@ -302,6 +305,17 @@ export function Turmas() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   }
 
+  const filteredTurmas = turmas.filter(turma => {
+    const matchesSearch = turma.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      turma.curso?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      turma.sala?.nome.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesPeriod = filterPeriod === 'all' || turma.period === filterPeriod;
+    const matchesCurso = filterCurso === 'all' || turma.curso_id === filterCurso;
+    
+    return matchesSearch && matchesPeriod && matchesCurso;
+  });
+
   return (
     <div className="p-8 fade-in">
       <div className="max-w-7xl mx-auto">
@@ -404,8 +418,53 @@ export function Turmas() {
           </div>
         )}
 
+        <div className="mb-6 space-y-4 scale-in-delay-1">
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-64">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar turmas, cursos ou salas..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-dark-lighter border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <select
+                value={filterPeriod}
+                onChange={(e) => setFilterPeriod(e.target.value as Period | 'all')}
+                className="bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+              >
+                <option value="all">Todos os períodos</option>
+                {PERIODS.map(period => (
+                  <option key={period.value} value={period.value}>
+                    {period.label}
+                  </option>
+                ))}
+              </select>
+              
+              <select
+                value={filterCurso}
+                onChange={(e) => setFilterCurso(e.target.value)}
+                className="bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+              >
+                <option value="all">Todos os cursos</option>
+                {cursos.map(curso => (
+                  <option key={curso.id} value={curso.id}>
+                    {curso.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 scale-in-delay-1">
-          {turmas.map((turma) => (
+          {filteredTurmas.map((turma) => (
             <div key={turma.id} className="bg-dark-card rounded-2xl p-6 hover-lift hover-scale-sm">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
@@ -467,9 +526,9 @@ export function Turmas() {
               </div>
             </div>
           ))}
-          {turmas.length === 0 && (
+          {filteredTurmas.length === 0 && (
             <div className="col-span-full text-center text-gray-400 py-8">
-              Nenhuma turma cadastrada
+              {turmas.length === 0 ? 'Nenhuma turma cadastrada' : 'Nenhuma turma encontrada com os filtros aplicados'}
             </div>
           )}
         </div>
