@@ -343,17 +343,20 @@ export function Alunos() {
     <div className="p-8 fade-in">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8 fade-in-delay-1">
-          <h1 className="text-3xl font-bold text-white">Alunos</h1>
+          <div className="slide-in-left">
+            <h1 className="text-3xl font-bold text-white">Alunos</h1>
+            <p className="text-gray-400 mt-2">Gerencie seus alunos e acompanhe o progresso nos cursos</p>
+          </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center px-4 py-2 bg-teal-accent text-dark rounded-lg hover:bg-teal-accent/90 transition-colors hover-scale"
+            className="flex items-center px-4 py-2 bg-teal-accent text-dark rounded-lg hover:bg-teal-accent/90 transition-colors hover-glow slide-in-right"
           >
             <Plus className="h-5 w-5 mr-2" />
             Novo Aluno
           </button>
         </div>
 
-        <div className="mb-6 fade-in-delay-1">
+        <div className="mb-6 scale-in">
           <div className="bg-dark-card rounded-2xl p-6 hover-lift">
             <div className="flex items-center justify-between">
               <div>
@@ -370,7 +373,7 @@ export function Alunos() {
           </div>
         </div>
 
-        <div className="mb-6 space-y-4 fade-in-delay-2">
+        <div className="mb-6 space-y-4 scale-in-delay-1">
           <div>
             <input
               type="text"
@@ -422,7 +425,7 @@ export function Alunos() {
           </div>
         </div>
 
-        <div className="bg-dark-card rounded-2xl overflow-hidden fade-in-delay-3">
+        <div className="bg-dark-card rounded-2xl overflow-hidden scale-in-delay-2">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

@@ -46,8 +46,8 @@ export function Login() {
 
   return (
     <div className="min-h-screen bg-dark flex items-center justify-center p-4 fade-in">
-      <div className="max-w-md w-full space-y-8 bg-dark-card p-8 rounded-2xl fade-in-delay-1 hover-lift">
-        <div className="text-center fade-in-delay-2">
+      <div className="max-w-md w-full space-y-8 bg-dark-card p-8 rounded-2xl scale-in hover-lift">
+        <div className="text-center scale-in-delay-1">
           <img src="/favicon.webp" alt="Pepper Heads Logo" className="mx-auto h-12 w-12 rounded" />
           <h2 className="mt-6 text-3xl font-bold text-white">
             {isSignUp ? 'Crie sua conta' : 'Pepper Heads CRM'}
@@ -57,7 +57,7 @@ export function Login() {
           </p>
         </div>
 
-        <div className="fade-in-delay-3">
+        <div className="scale-in-delay-2">
           <AuthForm
           isSignUp={isSignUp}
           isLoading={isLoading}
