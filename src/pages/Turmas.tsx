@@ -655,9 +655,17 @@ export function Turmas() {
                     <select
                       id="curso_id"
                       value={formData.curso_id}
-                      onChange={(e) => setFormData({ ...formData, curso_id: e.target.value })}
                       className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
                       required
+                      onChange={(e) => {
+                        const selectedCursoId = e.target.value;
+                        const selectedCurso = cursos.find(c => c.id === selectedCursoId);
+                        setFormData({ 
+                          ...formData, 
+                          curso_id: selectedCursoId,
+                          name: selectedCurso ? selectedCurso.nome : ''
+                        });
+                      }}
                     >
                       <option value="">Selecione um curso</option>
                       {cursos.map(curso => (
