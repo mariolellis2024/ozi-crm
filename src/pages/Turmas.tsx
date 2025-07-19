@@ -106,7 +106,8 @@ export function Turmas() {
     period: 'manha' as Period,
     start_date: '',
     end_date: '',
-    imposto: ''
+    imposto: '',
+    professores: [] as Array<{ professor_id: string; hours: number }>
   });
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -311,8 +312,13 @@ export function Turmas() {
       if (!curso) throw new Error('Curso não encontrado');
 
       const turmaData = {
-        ...formData,
+        name: formData.name,
+        curso_id: formData.curso_id,
+        sala_id: formData.sala_id,
         cadeiras: Number(formData.cadeiras),
+        period: formData.period,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
         potencial_faturamento: curso.preco * Number(formData.cadeiras),
         imposto: Number(formData.imposto)
       };
@@ -324,13 +330,23 @@ export function Turmas() {
           .eq('id', editingId);
         
         if (error) throw error;
+
+        // Update professors
+        await updateTurmaProfessores(editingId, formData.professores);
         toast.success('Turma atualizada com sucesso!');
       } else {
-        const { error } = await supabase
+        const { data: newTurma, error } = await supabase
           .from('turmas')
-          .insert([turmaData]);
+          .insert([turmaData])
+          .select()
+          .single();
         
         if (error) throw error;
+
+        // Add professors
+        if (newTurma) {
+          await updateTurmaProfessores(newTurma.id, formData.professores);
+        }
         toast.success('Turma criada com sucesso!');
       }
 
@@ -343,12 +359,41 @@ export function Turmas() {
         period: 'manha',
         start_date: '',
         end_date: '',
-        imposto: ''
+        imposto: '',
+        professores: []
       });
       setEditingId(null);
       loadData();
     } catch (error) {
       toast.error('Erro ao salvar turma');
+    }
+  }
+
+  async function updateTurmaProfessores(turmaId: string, professoresData: Array<{ professor_id: string; hours: number }>) {
+    try {
+      // Remove existing professor assignments
+      await supabase
+        .from('turma_professores')
+        .delete()
+        .eq('turma_id', turmaId);
+
+      // Add new professor assignments
+      if (professoresData.length > 0) {
+        const assignments = professoresData.map(prof => ({
+          turma_id: turmaId,
+          professor_id: prof.professor_id,
+          hours: prof.hours
+        }));
+
+        const { error } = await supabase
+          .from('turma_professores')
+          .insert(assignments);
+
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error updating turma professores:', error);
+      throw error;
     }
   }
 
@@ -393,7 +438,11 @@ export function Turmas() {
       period: turma.period,
       start_date: turma.start_date,
       end_date: turma.end_date,
-      imposto: turma.imposto.toString()
+      imposto: turma.imposto.toString(),
+      professores: turma.professores?.map(prof => ({
+        professor_id: prof.id,
+        hours: prof.hours
+      })) || []
     });
     setEditingId(turma.id);
     setIsModalOpen(true);
@@ -409,7 +458,8 @@ export function Turmas() {
       period: 'manha',
       start_date: '',
       end_date: '',
-      imposto: ''
+      imposto: '',
+      professores: []
     });
     setEditingId(null);
   }
@@ -887,6 +937,7 @@ export function Turmas() {
           setFormData={setFormData}
           cursos={cursos}
           salas={salas}
+          professores={professores}
           onSubmit={handleSubmit}
           onClose={handleCloseModal}
         />
