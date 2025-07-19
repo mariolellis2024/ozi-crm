@@ -27,7 +27,7 @@ export function OrganicBackground() {
             </linearGradient>
           </defs>
           <path d="M -100,150 Q 200,100 400,150 T 800,150 T 1200,150 T 1700,150" />
-          <path d="M -200,150 Q 200,100 400,150 T 800,150 T 1200,150 T 1700,150 T 2100,150 T 2500,150" />
+          <path d="M -200,150 Q 200,100 400,150 T 800,150 T 1200,150 T 1700,150" />
         </svg>
       </div>
 
@@ -47,8 +47,8 @@ export function OrganicBackground() {
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
           </defs>
-          <path d="M -100,300 Q 300,200 600,300 T 1200,300 T 1900,300" />
-          <path d="M -200,300 Q 300,200 600,300 T 1200,300 T 1900,300 T 2300,300 T 2700,300" />
+          <path d="M -100,300 Q 300,200 600,300 T 1200,300 T 1700,300" />
+          <path d="M -200,300 Q 300,200 600,300 T 1200,300 T 1700,300" />
         </svg>
       </div>
 
@@ -68,8 +68,8 @@ export function OrganicBackground() {
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
           </defs>
-          <path d="M -100,450 Q 400,350 800,450 T 1700,450" />
-          <path d="M -200,450 Q 400,350 800,450 T 1700,450 T 2100,450 T 2500,450" />
+          <path d="M -100,450 Q 400,350 800,450 T 1200,450 T 1700,450" />
+          <path d="M -200,450 Q 400,350 800,450 T 1200,450 T 1700,450" />
         </svg>
       </div>
 
@@ -89,8 +89,8 @@ export function OrganicBackground() {
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
           </defs>
-          <path d="M -100,600 Q 200,500 400,600 T 800,600 T 1300,600" />
-          <path d="M -200,600 Q 200,500 400,600 T 800,600 T 1300,600 T 1700,600 T 2100,600" />
+          <path d="M -100,600 Q 200,500 400,600 T 800,600 T 1200,600 T 1700,600" />
+          <path d="M -200,600 Q 200,500 400,600 T 800,600 T 1200,600 T 1700,600" />
         </svg>
       </div>
 
@@ -110,8 +110,8 @@ export function OrganicBackground() {
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
           </defs>
-          <path d="M -100,750 Q 500,650 1000,750 T 2200,750" />
-          <path d="M -200,750 Q 500,650 1000,750 T 2200,750 T 2600,750 T 3000,750" />
+          <path d="M -100,750 Q 500,650 1000,750 T 1700,750" />
+          <path d="M -200,750 Q 500,650 1000,750 T 1700,750" />
         </svg>
       </div>
 
