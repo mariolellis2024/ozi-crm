@@ -816,7 +816,7 @@ export function Turmas() {
           <div className="flex items-center gap-4 slide-in-right">
             <button
               onClick={() => setShowSuggestions(!showSuggestions)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105 ${
+              className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105 ${
                 showSuggestions 
                   ? 'bg-orange-500 text-white hover:bg-orange-600' 
                   : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 hover:text-orange-300'
@@ -832,7 +832,7 @@ export function Turmas() {
             </button>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center px-4 py-2 bg-teal-accent text-dark rounded-lg hover:bg-teal-accent/90 transition-colors hover-glow"
+              className="relative z-10 flex items-center px-4 py-2 bg-teal-accent text-dark rounded-lg hover:bg-teal-accent/90 transition-colors hover-glow"
             >
               <Plus className="h-5 w-5 mr-2" />
               Nova Turma
