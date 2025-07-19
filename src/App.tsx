@@ -10,6 +10,7 @@ import { Turmas } from './pages/Turmas';
 import { Salas } from './pages/Salas';
 import { Layout } from './components/Layout';
 import { Toaster } from 'react-hot-toast';
+import { AnimatedBackground } from './components/AnimatedBackground';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -58,6 +59,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <AnimatedBackground />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route
