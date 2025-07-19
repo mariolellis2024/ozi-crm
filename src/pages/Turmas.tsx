@@ -862,6 +862,13 @@ export function Turmas() {
                         }, 0) || 0;
                         const faturamentoLiquido = faturamentoBruto - custoImpostos - custoProfessores;
                         
+                        // Cálculo do faturamento atual (baseado em alunos matriculados)
+                        const alunosMatriculados = turma.alunos_enrolled?.length || 0;
+                        const faturamentoBrutoAtual = alunosMatriculados * (turma.curso?.preco || 0);
+                        const custoImpostosAtual = faturamentoBrutoAtual * (turma.imposto / 100);
+                        const faturamentoLiquidoAtual = faturamentoBrutoAtual - custoImpostosAtual - custoProfessores;
+                        const valorEmAberto = faturamentoLiquido - faturamentoLiquidoAtual;
+                        
                         return (
                           <div className="space-y-2">
                             <div className="flex items-center text-teal-accent">
@@ -984,6 +991,39 @@ export function Turmas() {
                         </div>
                       </div>
                     )}
+                    
+                    {/* Valor em aberto */}
+                    {(() => {
+                      const faturamentoBruto = turma.cadeiras * (turma.curso?.preco || 0);
+                      const custoImpostos = faturamentoBruto * (turma.imposto / 100);
+                      const custoProfessores = turma.professores?.reduce((total, prof) => {
+                        const professor = professores.find(p => p.id === prof.id);
+                        return total + (prof.hours * (professor?.valor_hora || 0));
+                      }, 0) || 0;
+                      const faturamentoLiquido = faturamentoBruto - custoImpostos - custoProfessores;
+                      
+                      const alunosMatriculados = turma.alunos_enrolled?.length || 0;
+                      const faturamentoBrutoAtual = alunosMatriculados * (turma.curso?.preco || 0);
+                      const custoImpostosAtual = faturamentoBrutoAtual * (turma.imposto / 100);
+                      const faturamentoLiquidoAtual = faturamentoBrutoAtual - custoImpostosAtual - custoProfessores;
+                      const valorEmAberto = faturamentoLiquido - faturamentoLiquidoAtual;
+                      
+                      return valorEmAberto > 0 ? (
+                        <div className="mt-3 p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-orange-400 font-medium text-sm">
+                              Valor em Aberto
+                            </span>
+                          </div>
+                          <div className="text-orange-300 font-semibold">
+                            {formatCurrency(valorEmAberto)}
+                          </div>
+                          <div className="text-xs text-orange-400/70 mt-1">
+                            Falta para atingir o lucro líquido potencial
+                          </div>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
                 <div className="flex space-x-2 ml-4">
