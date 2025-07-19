@@ -8,14 +8,14 @@ export function OrganicBackground() {
           <defs>
             <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="20%" stopColor="rgba(255, 255, 255, 0.18)" />
-              <stop offset="80%" stopColor="rgba(255, 255, 255, 0.18)" />
+              <stop offset="20%" stopColor="rgba(255, 255, 255, 0.09)" />
+              <stop offset="80%" stopColor="rgba(255, 255, 255, 0.09)" />
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
             <linearGradient id="gradient1-light" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(66, 153, 225, 0)" />
-              <stop offset="20%" stopColor="rgba(66, 153, 225, 0.24)" />
-              <stop offset="80%" stopColor="rgba(66, 153, 225, 0.24)" />
+              <stop offset="20%" stopColor="rgba(66, 153, 225, 0.12)" />
+              <stop offset="80%" stopColor="rgba(66, 153, 225, 0.12)" />
               <stop offset="100%" stopColor="rgba(66, 153, 225, 0)" />
             </linearGradient>
           </defs>
@@ -28,14 +28,14 @@ export function OrganicBackground() {
           <defs>
             <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="15%" stopColor="rgba(255, 255, 255, 0.15)" />
-              <stop offset="85%" stopColor="rgba(255, 255, 255, 0.15)" />
+              <stop offset="15%" stopColor="rgba(255, 255, 255, 0.075)" />
+              <stop offset="85%" stopColor="rgba(255, 255, 255, 0.075)" />
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
             <linearGradient id="gradient2-light" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(66, 153, 225, 0)" />
-              <stop offset="15%" stopColor="rgba(66, 153, 225, 0.21)" />
-              <stop offset="85%" stopColor="rgba(66, 153, 225, 0.21)" />
+              <stop offset="15%" stopColor="rgba(66, 153, 225, 0.105)" />
+              <stop offset="85%" stopColor="rgba(66, 153, 225, 0.105)" />
               <stop offset="100%" stopColor="rgba(66, 153, 225, 0)" />
             </linearGradient>
           </defs>
@@ -48,14 +48,14 @@ export function OrganicBackground() {
           <defs>
             <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="25%" stopColor="rgba(255, 255, 255, 0.12)" />
-              <stop offset="75%" stopColor="rgba(255, 255, 255, 0.12)" />
+              <stop offset="25%" stopColor="rgba(255, 255, 255, 0.06)" />
+              <stop offset="75%" stopColor="rgba(255, 255, 255, 0.06)" />
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
             <linearGradient id="gradient3-light" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(66, 153, 225, 0)" />
-              <stop offset="25%" stopColor="rgba(66, 153, 225, 0.18)" />
-              <stop offset="75%" stopColor="rgba(66, 153, 225, 0.18)" />
+              <stop offset="25%" stopColor="rgba(66, 153, 225, 0.09)" />
+              <stop offset="75%" stopColor="rgba(66, 153, 225, 0.09)" />
               <stop offset="100%" stopColor="rgba(66, 153, 225, 0)" />
             </linearGradient>
           </defs>
@@ -68,14 +68,14 @@ export function OrganicBackground() {
           <defs>
             <linearGradient id="gradient4" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="18%" stopColor="rgba(255, 255, 255, 0.21)" />
-              <stop offset="82%" stopColor="rgba(255, 255, 255, 0.21)" />
+              <stop offset="18%" stopColor="rgba(255, 255, 255, 0.105)" />
+              <stop offset="82%" stopColor="rgba(255, 255, 255, 0.105)" />
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
             <linearGradient id="gradient4-light" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(66, 153, 225, 0)" />
-              <stop offset="18%" stopColor="rgba(66, 153, 225, 0.27)" />
-              <stop offset="82%" stopColor="rgba(66, 153, 225, 0.27)" />
+              <stop offset="18%" stopColor="rgba(66, 153, 225, 0.135)" />
+              <stop offset="82%" stopColor="rgba(66, 153, 225, 0.135)" />
               <stop offset="100%" stopColor="rgba(66, 153, 225, 0)" />
             </linearGradient>
           </defs>
@@ -88,14 +88,14 @@ export function OrganicBackground() {
           <defs>
             <linearGradient id="gradient5" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="12%" stopColor="rgba(255, 255, 255, 0.09)" />
-              <stop offset="88%" stopColor="rgba(255, 255, 255, 0.09)" />
+              <stop offset="12%" stopColor="rgba(255, 255, 255, 0.045)" />
+              <stop offset="88%" stopColor="rgba(255, 255, 255, 0.045)" />
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
             <linearGradient id="gradient5-light" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(66, 153, 225, 0)" />
-              <stop offset="12%" stopColor="rgba(66, 153, 225, 0.15)" />
-              <stop offset="88%" stopColor="rgba(66, 153, 225, 0.15)" />
+              <stop offset="12%" stopColor="rgba(66, 153, 225, 0.075)" />
+              <stop offset="88%" stopColor="rgba(66, 153, 225, 0.075)" />
               <stop offset="100%" stopColor="rgba(66, 153, 225, 0)" />
             </linearGradient>
           </defs>
