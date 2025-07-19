@@ -315,10 +315,6 @@ export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasPr
                                   style={{ width: `${ocupacao}%` }}
                                 ></div>
                                 
-                                <div className="flex items-center gap-1 mb-1">
-                                  <period.icon className="h-3 w-3" />
-                                </div>
-                                
                                 <div className="flex items-center gap-1 opacity-90">
                                   <BookOpen className="h-2.5 w-2.5" />
                                   <span className="truncate text-xs">
@@ -341,7 +337,6 @@ export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasPr
                               key={period.value}
                               className="h-6 bg-gray-800/30 border border-gray-700/50 rounded-md flex items-center justify-center opacity-50"
                             >
-                              <period.icon className="h-3 w-3 text-gray-600" />
                             </div>
                           );
                         })}
