@@ -146,11 +146,6 @@
 }
 
 /* Fundo com linhas orgânicas animadas */
-body {
-  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-  position: relative;
-  transition: all 0.3s ease;
-}
 
 /* Linhas orgânicas principais */
 .organic-line {
