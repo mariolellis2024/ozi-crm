@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Pencil, Trash2, X, Calendar, Users, MapPin, DollarSign, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon, Search, Filter } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Calendar, Users, MapPin, DollarSign, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon, Search, Filter, BookOpen, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
@@ -43,7 +43,11 @@ interface Turma {
     id: string;
     nome: string;
   }>;
-  alunos_cursando?: Array<{
+  alunos_enrolled?: Array<{
+    id: string;
+    nome: string;
+  }>;
+  alunos_completed?: Array<{
     id: string;
     nome: string;
   }>;
@@ -206,7 +210,16 @@ export function Turmas() {
             id: interest.aluno.id,
             nome: interest.aluno.nome
           })),
-        alunos_cursando: interessesResult.data
+        alunos_enrolled: interessesResult.data
+          .filter((interest: any) => 
+            interest.turma_id === turma.id && 
+            interest.status === 'enrolled'
+          )
+          .map((interest: any) => ({
+            id: interest.aluno.id,
+            nome: interest.aluno.nome
+          })),
+        alunos_completed: interessesResult.data
           .filter((interest: any) => 
             interest.turma_id === turma.id && 
             interest.status === 'completed'
@@ -723,20 +736,20 @@ export function Turmas() {
                       </div>
                     )}
                     
-                    {/* Alunos Cursando */}
-                    {turma.alunos_cursando && turma.alunos_cursando.length > 0 && (
-                      <div className="mt-3 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                    {/* Alunos Matriculados (Cursando) */}
+                    {turma.alunos_enrolled && turma.alunos_enrolled.length > 0 && (
+                      <div className="mt-3 p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
                         <div className="flex items-center gap-2 mb-2">
-                          <Users className="h-4 w-4 text-green-400" />
-                          <span className="text-green-400 font-medium text-sm">
-                            {turma.alunos_cursando.length} Cursando
+                          <Users className="h-4 w-4 text-yellow-400" />
+                          <span className="text-yellow-400 font-medium text-sm">
+                            {turma.alunos_enrolled.length} Cursando
                           </span>
                         </div>
                         <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {turma.alunos_cursando.map((aluno) => (
-                            <div key={aluno.id} className="flex items-center justify-between gap-2 text-green-300 text-xs">
+                          {turma.alunos_enrolled.map((aluno) => (
+                            <div key={aluno.id} className="flex items-center justify-between gap-2 text-yellow-300 text-xs">
                               <div className="flex items-center gap-2">
-                                <Clock className="h-3 w-3 text-green-400" />
+                                <Clock className="h-3 w-3 text-yellow-400" />
                                 <span>{aluno.nome}</span>
                               </div>
                               <div className="flex gap-1">
@@ -759,22 +772,22 @@ export function Turmas() {
                           ))}
                         </div>
                         <div className="mt-2 text-emerald-400 text-xs font-medium">
-                          Faturamento: {formatCurrency((turma.curso?.preco || 0) * turma.alunos_cursando.length)}
+                          Faturamento: {formatCurrency((turma.curso?.preco || 0) * turma.alunos_enrolled.length)}
                         </div>
                       </div>
                     )}
                     
                     {/* Alunos Concluídos */}
-                    {turma.alunos_concluidos && turma.alunos_concluidos.length > 0 && (
+                    {turma.alunos_completed && turma.alunos_completed.length > 0 && (
                       <div className="mt-3 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
                         <div className="flex items-center gap-2 mb-2">
                           <Users className="h-4 w-4 text-emerald-400" />
                           <span className="text-emerald-400 font-medium text-sm">
-                            {turma.alunos_concluidos.length} Concluído{turma.alunos_concluidos.length > 1 ? 's' : ''}
+                            {turma.alunos_completed.length} Concluído{turma.alunos_completed.length > 1 ? 's' : ''}
                           </span>
                         </div>
                         <div className="space-y-1 max-h-20 overflow-y-auto">
-                          {turma.alunos_concluidos.map((aluno) => (
+                          {turma.alunos_completed.map((aluno) => (
                             <div key={aluno.id} className="flex items-center gap-2 text-emerald-300 text-xs">
                               <Check className="h-3 w-3 text-emerald-400" />
                               <span>{aluno.nome}</span>
@@ -782,63 +795,7 @@ export function Turmas() {
                           ))}
                         </div>
                         <div className="mt-2 text-emerald-400 text-xs font-medium">
-                          Concluído: {formatCurrency((turma.curso?.preco || 0) * turma.alunos_concluidos.length)}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Alunos Cursando */}
-                    {turma.alunos_cursando && turma.alunos_cursando.length > 0 && (
-                      <div className="mt-3 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Users className="h-4 w-4 text-green-400" />
-                          <span className="text-green-400 font-medium text-sm">
-                            {turma.alunos_cursando.length} Cursando
-                          </span>
-                        </div>
-                        <div className="space-y-1 max-h-20 overflow-y-auto">
-                          {turma.alunos_cursando.slice(0, 3).map((aluno) => (
-                            <div key={aluno.id} className="flex items-center gap-2 text-green-300 text-xs">
-                              {getStatusIcon(aluno.status)}
-                              <span>{aluno.nome}</span>
-                            </div>
-                          ))}
-                          {turma.alunos_cursando.length > 3 && (
-                            <div className="text-green-400 text-xs font-medium">
-                              +{turma.alunos_cursando.length - 3} mais
-                            </div>
-                          )}
-                        </div>
-                        <div className="mt-2 text-emerald-400 text-xs font-medium">
-                          Faturamento: {formatCurrency((turma.curso?.preco || 0) * turma.alunos_cursando.length)}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Alunos Concluídos */}
-                    {turma.alunos_concluidos && turma.alunos_concluidos.length > 0 && (
-                      <div className="mt-3 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Users className="h-4 w-4 text-emerald-400" />
-                          <span className="text-emerald-400 font-medium text-sm">
-                            {turma.alunos_concluidos.length} Concluído{turma.alunos_concluidos.length > 1 ? 's' : ''}
-                          </span>
-                        </div>
-                        <div className="space-y-1 max-h-20 overflow-y-auto">
-                          {turma.alunos_concluidos.slice(0, 3).map((aluno) => (
-                            <div key={aluno.id} className="flex items-center gap-2 text-emerald-300 text-xs">
-                              {getStatusIcon(aluno.status)}
-                              <span>{aluno.nome}</span>
-                            </div>
-                          ))}
-                          {turma.alunos_concluidos.length > 3 && (
-                            <div className="text-emerald-400 text-xs font-medium">
-                              +{turma.alunos_concluidos.length - 3} mais
-                            </div>
-                          )}
-                        </div>
-                        <div className="mt-2 text-emerald-400 text-xs font-medium">
-                          Concluído: {formatCurrency((turma.curso?.preco || 0) * turma.alunos_concluidos.length)}
+                          Concluído: {formatCurrency((turma.curso?.preco || 0) * turma.alunos_completed.length)}
                         </div>
                       </div>
                     )}
