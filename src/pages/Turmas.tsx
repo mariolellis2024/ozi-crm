@@ -39,6 +39,14 @@ interface Turma {
     nome: string;
     hours: number;
   }>;
+  alunos_interessados?: Array<{
+    id: string;
+    nome: string;
+  }>;
+  alunos_cursando?: Array<{
+    id: string;
+    nome: string;
+  }>;
 }
 
 interface Curso {
@@ -147,7 +155,7 @@ export function Turmas() {
 
   async function loadData() {
     try {
-      const [turmasResult, cursosResult, salasResult, professoresResult] = await Promise.all([
+      const [turmasResult, cursosResult, salasResult, professoresResult, interessesResult] = await Promise.all([
         supabase
           .from('turmas')
           .select(`
@@ -163,13 +171,22 @@ export function Turmas() {
           .order('created_at', { ascending: false }),
         supabase.from('cursos').select('*').order('nome'),
         supabase.from('salas').select('*').order('nome'),
-        supabase.from('professores').select('*').order('nome')
+        supabase.from('professores').select('*').order('nome'),
+        supabase
+          .from('aluno_curso_interests')
+          .select(`
+            curso_id,
+            status,
+            turma_id,
+            aluno:alunos(id, nome)
+          `)
       ]);
 
       if (turmasResult.error) throw turmasResult.error;
       if (cursosResult.error) throw cursosResult.error;
       if (salasResult.error) throw salasResult.error;
       if (professoresResult.error) throw professoresResult.error;
+      if (interessesResult.error) throw interessesResult.error;
 
       const turmasData = turmasResult.data.map(turma => ({
         ...turma,
@@ -177,7 +194,26 @@ export function Turmas() {
           id: tp.professor.id,
           nome: tp.professor.nome,
           hours: tp.hours
-        })) || []
+        })) || [],
+        alunos_interessados: interessesResult.data
+          .filter((interest: any) => 
+            interest.curso_id === turma.curso_id && 
+            interest.status === 'interested' &&
+            !interest.turma_id
+          )
+          .map((interest: any) => ({
+            id: interest.aluno.id,
+            nome: interest.aluno.nome
+          })),
+        alunos_cursando: interessesResult.data
+          .filter((interest: any) => 
+            interest.turma_id === turma.id && 
+            interest.status === 'enrolled'
+          )
+          .map((interest: any) => ({
+            id: interest.aluno.id,
+            nome: interest.aluno.nome
+          }))
       }));
 
       setTurmas(turmasData);
@@ -566,6 +602,61 @@ export function Turmas() {
                         {formatCurrency(turma.potencial_faturamento)}
                       </span>
                     </div>
+                    
+                    {/* Alunos Interessados */}
+                    {turma.alunos_interessados && turma.alunos_interessados.length > 0 && (
+                      <div className="mt-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Users className="h-4 w-4 text-blue-400" />
+                          <span className="text-blue-400 font-medium text-sm">
+                            {turma.alunos_interessados.length} Interessado{turma.alunos_interessados.length > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <div className="space-y-1 max-h-20 overflow-y-auto">
+                          {turma.alunos_interessados.slice(0, 3).map((aluno) => (
+                            <div key={aluno.id} className="text-blue-300 text-xs">
+                              • {aluno.nome}
+                            </div>
+                          ))}
+                          {turma.alunos_interessados.length > 3 && (
+                            <div className="text-blue-400 text-xs font-medium">
+                              +{turma.alunos_interessados.length - 3} mais
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-2 text-emerald-400 text-xs font-medium">
+                          Potencial: {formatCurrency((turma.curso?.preco || 0) * turma.alunos_interessados.length)}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Alunos Cursando */}
+                    {turma.alunos_cursando && turma.alunos_cursando.length > 0 && (
+                      <div className="mt-3 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Users className="h-4 w-4 text-green-400" />
+                          <span className="text-green-400 font-medium text-sm">
+                            {turma.alunos_cursando.length} Cursando
+                          </span>
+                        </div>
+                        <div className="space-y-1 max-h-20 overflow-y-auto">
+                          {turma.alunos_cursando.slice(0, 3).map((aluno) => (
+                            <div key={aluno.id} className="text-green-300 text-xs">
+                              • {aluno.nome}
+                            </div>
+                          ))}
+                          {turma.alunos_cursando.length > 3 && (
+                            <div className="text-green-400 text-xs font-medium">
+                              +{turma.alunos_cursando.length - 3} mais
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-2 text-emerald-400 text-xs font-medium">
+                          Faturamento: {formatCurrency((turma.curso?.preco || 0) * turma.alunos_cursando.length)}
+                        </div>
+                      </div>
+                    )}
+                    
                     {turma.professores && turma.professores.length > 0 && (
                       <div className="mt-3">
                         <p className="text-gray-400 text-sm mb-1">Professores:</p>
