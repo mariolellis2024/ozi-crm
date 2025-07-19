@@ -2,10 +2,10 @@ import React from 'react';
 
 export function OrganicBackground() {
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" style={{ backgroundColor: '#1b1d21' }}>
+    <div className="fixed inset-0 pointer-events-none z-0" style={{ backgroundColor: '#1b1d21' }}>
       {/* Linhas orgânicas */}
       <div className="organic-line">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: '100vw', height: '100vh' }}>
+        <svg>
           <defs>
             <linearGradient id="fadeGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
@@ -27,12 +27,12 @@ export function OrganicBackground() {
             </linearGradient>
           </defs>
           <path d="M -100,150 Q 200,100 400,150 T 800,150 T 1200,150 T 1700,150" />
-          <path d="M 0,15 Q 20,10 40,15 T 80,15 T 120,15" stroke="url(#gradient1)" strokeWidth="0.15" fill="none" />
+          <path d="M -200,150 Q 200,100 400,150 T 800,150 T 1200,150 T 1700,150 T 2100,150 T 2500,150" />
         </svg>
       </div>
 
       <div className="organic-line">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: '100vw', height: '100vh' }}>
+        <svg>
           <defs>
             <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
@@ -48,12 +48,12 @@ export function OrganicBackground() {
             </linearGradient>
           </defs>
           <path d="M -100,300 Q 300,200 600,300 T 1200,300 T 1900,300" />
-          <path d="M 0,30 Q 30,20 60,30 T 120,30" stroke="url(#gradient2)" strokeWidth="0.2" fill="none" />
+          <path d="M -200,300 Q 300,200 600,300 T 1200,300 T 1900,300 T 2300,300 T 2700,300" />
         </svg>
       </div>
 
       <div className="organic-line">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: '100vw', height: '100vh' }}>
+        <svg>
           <defs>
             <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
@@ -69,12 +69,12 @@ export function OrganicBackground() {
             </linearGradient>
           </defs>
           <path d="M -100,450 Q 400,350 800,450 T 1700,450" />
-          <path d="M 0,45 Q 40,35 80,45 T 120,45" stroke="url(#gradient3)" strokeWidth="0.1" fill="none" />
+          <path d="M -200,450 Q 400,350 800,450 T 1700,450 T 2100,450 T 2500,450" />
         </svg>
       </div>
 
       <div className="organic-line">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: '100vw', height: '100vh' }}>
+        <svg>
           <defs>
             <linearGradient id="gradient4" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
@@ -90,12 +90,12 @@ export function OrganicBackground() {
             </linearGradient>
           </defs>
           <path d="M -100,600 Q 200,500 400,600 T 800,600 T 1300,600" />
-          <path d="M 0,60 Q 20,50 40,60 T 80,60 T 120,60" stroke="url(#gradient4)" strokeWidth="0.15" fill="none" />
+          <path d="M -200,600 Q 200,500 400,600 T 800,600 T 1300,600 T 1700,600 T 2100,600" />
         </svg>
       </div>
 
       <div className="organic-line">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: '100vw', height: '100vh' }}>
+        <svg>
           <defs>
             <linearGradient id="gradient5" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
@@ -111,7 +111,7 @@ export function OrganicBackground() {
             </linearGradient>
           </defs>
           <path d="M -100,750 Q 500,650 1000,750 T 2200,750" />
-          <path d="M 0,75 Q 50,65 100,75 T 120,75" stroke="url(#gradient5)" strokeWidth="0.25" fill="none" />
+          <path d="M -200,750 Q 500,650 1000,750 T 2200,750 T 2600,750 T 3000,750" />
         </svg>
       </div>
 
