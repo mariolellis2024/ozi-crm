@@ -72,3 +72,5 @@ export function Login() {
           onEmailChange={(e) => setEmail(e.target.value)}
           onPasswordChange={(e) => setPassword(e.target.value)}
           onSubmit={handleSubmit}
+  )
+}
