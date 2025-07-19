@@ -401,52 +401,52 @@ export function Turmas() {
         </div>
 
         {showSuggestions && suggestions.length > 0 && (
-          <div className="mb-6 bg-gradient-to-br from-orange-500/10 to-amber-500/10 border border-orange-500/20 rounded-2xl p-6 fade-in-delay-3 relative scale-in">
+          <div className="mb-6 glass-effect p-6 fade-in-delay-3 relative scale-in border border-orange-500/30">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <Lightbulb className="h-6 w-6 text-orange-400" />
-                <h2 className="text-xl font-semibold text-white">Sugestões de Novas Turmas</h2>
+                <h2 className="text-xl font-semibold text-gray-900">Sugestões de Novas Turmas</h2>
               </div>
               <button
                 onClick={() => setShowSuggestions(false)}
-                className="text-orange-400 hover:text-white transition-colors"
+                className="text-orange-400 hover:text-orange-600 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <p className="text-gray-300 mb-6">
+            <p className="text-gray-700 mb-6">
               Baseado no interesse dos alunos cadastrados, considere criar turmas para:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {suggestions.slice(0, 6).map((suggestion, index) => (
                 <div
                   key={suggestion.curso.id}
-                  className="bg-gradient-to-br from-orange-900/30 to-amber-900/30 border border-orange-500/30 rounded-xl p-4 hover:border-orange-400/50 transition-colors"
+                  className="glass-effect border border-orange-500/30 p-4 hover:border-orange-400/50 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold text-white">{suggestion.curso.nome}</h3>
+                    <h3 className="font-semibold text-gray-900">{suggestion.curso.nome}</h3>
                     <span className="bg-orange-500/20 text-orange-300 px-2 py-1 rounded-lg text-xs font-medium">
                       #{index + 1}
                     </span>
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Alunos interessados:</span>
-                      <span className="text-white font-semibold">{suggestion.interestedCount}</span>
+                      <span className="text-gray-600">Alunos interessados:</span>
+                      <span className="text-gray-900 font-semibold">{suggestion.interestedCount}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Faturamento potencial:</span>
+                      <span className="text-gray-600">Faturamento potencial:</span>
                       <span className="text-emerald-400 font-semibold">
                         {formatCurrency(suggestion.potentialRevenue)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Carga horária:</span>
-                      <span className="text-white">{suggestion.curso.carga_horaria}h</span>
+                      <span className="text-gray-600">Carga horária:</span>
+                      <span className="text-gray-900">{suggestion.curso.carga_horaria}h</span>
                     </div>
                     {suggestion.recommendedPeriods.length > 0 && (
                       <div>
-                        <span className="text-gray-400 text-xs">Horários recomendados:</span>
+                        <span className="text-gray-600 text-xs">Horários recomendados:</span>
                         <div className="flex gap-1 mt-1">
                           {suggestion.recommendedPeriods.map(period => (
                             <div
@@ -477,7 +477,7 @@ export function Turmas() {
                   placeholder="Buscar turmas, cursos ou salas..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-dark-lighter border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                  className="w-full pl-10 pr-4 py-2 glass-effect border-0 text-gray-900 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                 />
               </div>
             </div>
@@ -486,7 +486,7 @@ export function Turmas() {
               <select
                 value={filterPeriod}
                 onChange={(e) => setFilterPeriod(e.target.value as Period | 'all')}
-                className="bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                className="glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
               >
                 <option value="all">Todos os períodos</option>
                 {PERIODS.map(period => (
@@ -499,7 +499,7 @@ export function Turmas() {
               <select
                 value={filterCurso}
                 onChange={(e) => setFilterCurso(e.target.value)}
-                className="bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                className="glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
               >
                 <option value="all">Todos os cursos</option>
                 {cursos.map(curso => (
@@ -512,7 +512,7 @@ export function Turmas() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as TurmaStatus)}
-                className="bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                className="glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
               >
                 <option value="all">Todos os status</option>
                 <option value="aberta">Abertas</option>
@@ -525,10 +525,10 @@ export function Turmas() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 scale-in-delay-1">
           {filteredTurmas.map((turma) => (
-            <div key={turma.id} className="bg-dark-card rounded-2xl p-6 hover-lift hover-scale-sm">
+            <div key={turma.id} className="glass-effect p-6 hover-lift hover-scale-sm">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-white mb-2">{turma.name}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{turma.name}</h3>
                   <div className="mb-3">
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                       getTurmaStatus(turma.start_date, turma.end_date) === 'aberta' 
@@ -541,22 +541,22 @@ export function Turmas() {
                     </span>
                   </div>
                   <div className="space-y-3">
-                    <div className="flex items-center text-gray-400">
+                    <div className="flex items-center text-gray-700">
                       <Calendar className="h-4 w-4 mr-2" />
                       <span>{formatDate(turma.start_date)} - {formatDate(turma.end_date)}</span>
                     </div>
-                    <div className="flex items-center text-gray-400">
+                    <div className="flex items-center text-gray-700">
                       <Clock className="h-4 w-4 mr-2" />
                       <span className="flex items-center gap-1">
                         {getPeriodIcon(turma.period)}
                         {getPeriodLabel(turma.period)}
                       </span>
                     </div>
-                    <div className="flex items-center text-gray-400">
+                    <div className="flex items-center text-gray-700">
                       <MapPin className="h-4 w-4 mr-2" />
                       <span>{turma.sala?.nome}</span>
                     </div>
-                    <div className="flex items-center text-gray-400">
+                    <div className="flex items-center text-gray-700">
                       <Users className="h-4 w-4 mr-2" />
                       <span>{turma.cadeiras} vagas</span>
                     </div>
@@ -568,10 +568,10 @@ export function Turmas() {
                     </div>
                     {turma.professores && turma.professores.length > 0 && (
                       <div className="mt-3">
-                        <p className="text-gray-400 text-sm mb-1">Professores:</p>
+                        <p className="text-gray-600 text-sm mb-1">Professores:</p>
                         <div className="space-y-1">
                           {turma.professores.map((prof) => (
-                            <div key={prof.id} className="text-white text-sm">
+                            <div key={prof.id} className="text-gray-900 text-sm">
                               {prof.nome} ({prof.hours}h)
                             </div>
                           ))}
@@ -583,13 +583,13 @@ export function Turmas() {
                 <div className="flex space-x-2 ml-4">
                   <button
                     onClick={() => handleEdit(turma)}
-                    className="p-2 text-gray-400 hover:text-white transition-colors"
+                    className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(turma.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                    className="p-2 text-gray-600 hover:text-red-500 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -598,7 +598,7 @@ export function Turmas() {
             </div>
           ))}
           {filteredTurmas.length === 0 && (
-            <div className="col-span-full text-center text-gray-400 py-8">
+            <div className="col-span-full text-center text-gray-600 py-8">
               {turmas.length === 0 ? 'Nenhuma turma cadastrada' : 'Nenhuma turma encontrada com os filtros aplicados'}
             </div>
           )}
@@ -606,9 +606,9 @@ export function Turmas() {
 
         {isModalOpen && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-dark-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="glass-effect p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-white">
+                <h2 className="text-xl font-semibold text-gray-900">
                   {editingId ? 'Editar Turma' : 'Nova Turma'}
                 </h2>
                 <button
@@ -626,7 +626,7 @@ export function Turmas() {
                     });
                     setEditingId(null);
                   }}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-600 hover:text-gray-900 transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -635,7 +635,7 @@ export function Turmas() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-400 mb-1">
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                       Nome da Turma
                     </label>
                     <input
@@ -643,20 +643,20 @@ export function Turmas() {
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                      className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                       required
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="curso_id" className="block text-sm font-medium text-gray-400 mb-1">
+                    <label htmlFor="curso_id" className="block text-sm font-medium text-gray-700 mb-1">
                       Curso
                     </label>
                     <select
                       id="curso_id"
                       value={formData.curso_id}
                       onChange={(e) => setFormData({ ...formData, curso_id: e.target.value })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                      className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                       required
                     >
                       <option value="">Selecione um curso</option>
@@ -669,14 +669,14 @@ export function Turmas() {
                   </div>
 
                   <div>
-                    <label htmlFor="sala_id" className="block text-sm font-medium text-gray-400 mb-1">
+                    <label htmlFor="sala_id" className="block text-sm font-medium text-gray-700 mb-1">
                       Sala
                     </label>
                     <select
                       id="sala_id"
                       value={formData.sala_id}
                       onChange={(e) => setFormData({ ...formData, sala_id: e.target.value })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                      className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                       required
                     >
                       <option value="">Selecione uma sala</option>
@@ -689,7 +689,7 @@ export function Turmas() {
                   </div>
 
                   <div>
-                    <label htmlFor="cadeiras" className="block text-sm font-medium text-gray-400 mb-1">
+                    <label htmlFor="cadeiras" className="block text-sm font-medium text-gray-700 mb-1">
                       Número de Vagas
                     </label>
                     <input
@@ -697,21 +697,21 @@ export function Turmas() {
                       id="cadeiras"
                       value={formData.cadeiras}
                       onChange={(e) => setFormData({ ...formData, cadeiras: e.target.value })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                      className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                       min="1"
                       required
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="period" className="block text-sm font-medium text-gray-400 mb-1">
+                    <label htmlFor="period" className="block text-sm font-medium text-gray-700 mb-1">
                       Período
                     </label>
                     <select
                       id="period"
                       value={formData.period}
                       onChange={(e) => setFormData({ ...formData, period: e.target.value as Period })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                      className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                       required
                     >
                       {PERIODS.map(period => (
@@ -723,7 +723,7 @@ export function Turmas() {
                   </div>
 
                   <div>
-                    <label htmlFor="imposto" className="block text-sm font-medium text-gray-400 mb-1">
+                    <label htmlFor="imposto" className="block text-sm font-medium text-gray-700 mb-1">
                       Imposto (%)
                     </label>
                     <input
@@ -731,7 +731,7 @@ export function Turmas() {
                       id="imposto"
                       value={formData.imposto}
                       onChange={(e) => setFormData({ ...formData, imposto: e.target.value })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                      className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                       min="0"
                       max="100"
                       step="0.01"
@@ -740,7 +740,7 @@ export function Turmas() {
                   </div>
 
                   <div>
-                    <label htmlFor="start_date" className="block text-sm font-medium text-gray-400 mb-1">
+                    <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-1">
                       Data de Início
                     </label>
                     <input
@@ -748,13 +748,13 @@ export function Turmas() {
                       id="start_date"
                       value={formData.start_date}
                       onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                      className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                       required
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="end_date" className="block text-sm font-medium text-gray-400 mb-1">
+                    <label htmlFor="end_date" className="block text-sm font-medium text-gray-700 mb-1">
                       Data de Término
                     </label>
                     <input
@@ -762,7 +762,7 @@ export function Turmas() {
                       id="end_date"
                       value={formData.end_date}
                       onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                      className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                       required
                     />
                   </div>

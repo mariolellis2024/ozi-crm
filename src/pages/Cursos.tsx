@@ -223,12 +223,12 @@ export function Cursos() {
             const lucroHora = curso.preco / curso.carga_horaria;
             
             return (
-              <div key={curso.id} className="bg-dark-card rounded-2xl p-6 hover-lift hover-scale-sm">
+              <div key={curso.id} className="glass-effect p-6 hover-lift hover-scale-sm">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-xl font-semibold text-white mb-2">{curso.nome}</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{curso.nome}</h3>
                     <div className="space-y-3">
-                      <div className="flex items-center text-gray-400">
+                      <div className="flex items-center text-gray-700">
                         <Clock className="h-4 w-4 mr-2" />
                         <span>{curso.carga_horaria} horas</span>
                       </div>
@@ -262,13 +262,13 @@ export function Cursos() {
                   <div className="flex space-x-2">
                     <button
                       onClick={() => handleEdit(curso)}
-                      className="p-2 text-gray-400 hover:text-white transition-colors"
+                      className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(curso.id)}
-                      className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                      className="p-2 text-gray-600 hover:text-red-500 transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -278,7 +278,7 @@ export function Cursos() {
             );
           })}
           {cursos.length === 0 && (
-            <div className="col-span-full text-center text-gray-400 py-8">
+            <div className="col-span-full text-center text-gray-600 py-8">
               Nenhum curso cadastrado
             </div>
           )}
@@ -286,9 +286,9 @@ export function Cursos() {
 
         {isModalOpen && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-            <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md">
+            <div className="glass-effect p-6 w-full max-w-md">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-white">
+                <h2 className="text-xl font-semibold text-gray-900">
                   {editingId ? 'Editar Curso' : 'Novo Curso'}
                 </h2>
                 <button
@@ -297,7 +297,7 @@ export function Cursos() {
                     setFormData({ nome: '', carga_horaria: '', preco: '' });
                     setEditingId(null);
                   }}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-600 hover:text-gray-900 transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -305,7 +305,7 @@ export function Cursos() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="nome" className="block text-sm font-medium text-gray-400 mb-1">
+                  <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">
                     Nome
                   </label>
                   <input
@@ -313,13 +313,13 @@ export function Cursos() {
                     id="nome"
                     value={formData.nome}
                     onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="carga_horaria" className="block text-sm font-medium text-gray-400 mb-1">
+                  <label htmlFor="carga_horaria" className="block text-sm font-medium text-gray-700 mb-1">
                     Carga Horária (horas)
                   </label>
                   <input
@@ -327,14 +327,14 @@ export function Cursos() {
                     id="carga_horaria"
                     value={formData.carga_horaria}
                     onChange={(e) => setFormData({ ...formData, carga_horaria: e.target.value })}
-                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                     min="1"
                     required
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="preco" className="block text-sm font-medium text-gray-400 mb-1">
+                  <label htmlFor="preco" className="block text-sm font-medium text-gray-700 mb-1">
                     Preço
                   </label>
                   <input
@@ -342,7 +342,7 @@ export function Cursos() {
                     id="preco"
                     value={formData.preco}
                     onChange={(e) => setFormData({ ...formData, preco: e.target.value })}
-                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                     min="0"
                     step="0.01"
                     required

@@ -170,13 +170,13 @@ export function Professores() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 scale-in-delay-1">
           {professores.map((professor) => (
-            <div key={professor.id} className="bg-dark-card rounded-2xl p-6 hover-lift hover-scale-sm">
+            <div key={professor.id} className="glass-effect p-6 hover-lift hover-scale-sm">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-xl font-semibold text-white mb-2">{professor.nome}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{professor.nome}</h3>
                   <div className="space-y-2">
-                    <p className="text-gray-400">{professor.email}</p>
-                    <p className="text-gray-400">{professor.whatsapp}</p>
+                    <p className="text-gray-700">{professor.email}</p>
+                    <p className="text-gray-700">{professor.whatsapp}</p>
                     <p className="text-teal-accent font-semibold">
                       {formatCurrency(professor.valor_hora)}/hora
                     </p>
@@ -185,13 +185,13 @@ export function Professores() {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => handleEdit(professor)}
-                    className="p-2 text-gray-400 hover:text-white transition-colors"
+                    className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(professor.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                    className="p-2 text-gray-600 hover:text-red-500 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -203,9 +203,9 @@ export function Professores() {
 
         {isModalOpen && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-            <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md">
+            <div className="glass-effect p-6 w-full max-w-md">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-white">
+                <h2 className="text-xl font-semibold text-gray-900">
                   {editingId ? 'Editar Professor' : 'Novo Professor'}
                 </h2>
                 <button
@@ -214,7 +214,7 @@ export function Professores() {
                     setFormData({ nome: '', email: '', whatsapp: '', valor_hora: '' });
                     setEditingId(null);
                   }}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-600 hover:text-gray-900 transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -222,7 +222,7 @@ export function Professores() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="nome" className="block text-sm font-medium text-gray-400 mb-1">
+                  <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">
                     Nome
                   </label>
                   <input
@@ -230,13 +230,13 @@ export function Professores() {
                     id="nome"
                     value={formData.nome}
                     onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-1">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                     Email
                   </label>
                   <input
@@ -244,13 +244,13 @@ export function Professores() {
                     id="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-400 mb-1">
+                  <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-1">
                     WhatsApp
                   </label>
                   <input
@@ -258,13 +258,13 @@ export function Professores() {
                     id="whatsapp"
                     value={formData.whatsapp}
                     onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="valor_hora" className="block text-sm font-medium text-gray-400 mb-1">
+                  <label htmlFor="valor_hora" className="block text-sm font-medium text-gray-700 mb-1">
                     Valor da Hora
                   </label>
                   <input
@@ -272,7 +272,7 @@ export function Professores() {
                     id="valor_hora"
                     value={formData.valor_hora}
                     onChange={(e) => setFormData({ ...formData, valor_hora: e.target.value })}
-                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                     min="0"
                     step="0.01"
                     required

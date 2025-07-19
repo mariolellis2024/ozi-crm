@@ -52,7 +52,7 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen flex fade-in">
       <aside className="w-64 bg-dark-lighter fixed h-full slide-in-left">
-        <div className="p-6 scale-in">
+        <div className="p-6 scale-in glass-effect m-4 mb-2">
           <div className="flex items-center justify-center space-x-3">
             <img src="/favicon.webp" alt="Pepper Heads Logo" className="h-8 w-8 flex-shrink-0 rounded" />
             <span className="text-xl font-bold text-white opacity-100">
@@ -61,12 +61,13 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </div>
         <nav className="mt-6 scale-in-delay-1">
+          <div className="glass-effect m-4 rounded-2xl overflow-hidden">
           {menuItems.map((item, index) => (
             <button
               key={index}
               onClick={() => navigate(item.path)}
-              className={`w-full flex items-center px-6 py-4 text-gray-400 hover:text-white hover:bg-dark-card transition-all duration-200 hover:translate-x-1 ${
-                location.pathname === item.path ? 'bg-dark-card text-white' : ''
+              className={`w-full flex items-center px-6 py-4 text-gray-700 hover:text-gray-900 hover:bg-white/20 transition-all duration-200 hover:translate-x-1 ${
+                location.pathname === item.path ? 'bg-white/30 text-gray-900 font-semibold' : ''
               }`}
             >
               <item.icon className="h-5 w-5 flex-shrink-0" />
@@ -75,17 +76,20 @@ export function Layout({ children }: LayoutProps) {
               </span>
             </button>
           ))}
+          </div>
         </nav>
         <div className="absolute bottom-0 w-full p-6 scale-in-delay-2">
+          <div className="glass-effect p-4 rounded-2xl">
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center text-gray-400 hover:text-white transition-all duration-200 hover:translate-x-1"
+            className="w-full flex items-center text-gray-700 hover:text-gray-900 transition-all duration-200 hover:translate-x-1"
           >
             <LogOut className="h-5 w-5 flex-shrink-0" />
             <span className="opacity-100 ml-4">
               Sair
             </span>
           </button>
+          </div>
         </div>
       </aside>
       <main className="ml-64 w-full fade-in-delay-1">
