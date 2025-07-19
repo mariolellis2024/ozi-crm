@@ -283,6 +283,8 @@ export function Cursos() {
             </div>
           )}
         </div>
+
+        <ConfirmationModal
           isOpen={confirmModal.isOpen}
           title="Excluir Curso"
           message={`Tem certeza que deseja excluir o curso "${confirmModal.cursoNome}"? Esta ação não pode ser desfeita e afetará todas as turmas relacionadas.`}
@@ -369,8 +371,6 @@ export function Cursos() {
           </div>
         </div>
       )}
-
-      <ConfirmationModal
     </div>
   );
 }
