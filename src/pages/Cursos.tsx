@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, X, Clock, TrendingUp, Users } from 'lucide-react'
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { ModalCurso } from '../components/ModalCurso';
 
 interface Curso {
   id: string;
@@ -284,81 +285,14 @@ export function Cursos() {
           )}
         </div>
 
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-white">
-                  {editingId ? 'Editar Curso' : 'Novo Curso'}
-                </h2>
-                <button
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setFormData({ nome: '', carga_horaria: '', preco: '' });
-                    setEditingId(null);
-                  }}
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="nome" className="block text-sm font-medium text-gray-400 mb-1">
-                    Nome
-                  </label>
-                  <input
-                    type="text"
-                    id="nome"
-                    value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="carga_horaria" className="block text-sm font-medium text-gray-400 mb-1">
-                    Carga Horária (horas)
-                  </label>
-                  <input
-                    type="number"
-                    id="carga_horaria"
-                    value={formData.carga_horaria}
-                    onChange={(e) => setFormData({ ...formData, carga_horaria: e.target.value })}
-                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                    min="1"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="preco" className="block text-sm font-medium text-gray-400 mb-1">
-                    Preço
-                  </label>
-                  <input
-                    type="number"
-                    id="preco"
-                    value={formData.preco}
-                    onChange={(e) => setFormData({ ...formData, preco: e.target.value })}
-                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                    min="0"
-                    step="0.01"
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-teal-accent text-dark font-medium rounded-lg px-4 py-2 hover:bg-teal-accent/90 transition-colors"
-                >
-                  {editingId ? 'Atualizar' : 'Cadastrar'}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
+        <ModalCurso
+          isOpen={isModalOpen}
+          editingId={editingId}
+          formData={formData}
+          setFormData={setFormData}
+          onSubmit={handleSubmit}
+          onClose={() => { setIsModalOpen(false); setFormData({ nome: '', carga_horaria: '', preco: '' }); setEditingId(null); }}
+        />
 
         <ConfirmationModal
           isOpen={confirmModal.isOpen}
