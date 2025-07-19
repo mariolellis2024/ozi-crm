@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Pencil, Trash2, X, Calendar, Users, MapPin, DollarSign, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon, Search, Filter, BookOpen, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Calendar, Users, MapPin, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon, Search, Filter, BookOpen, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { ModalTurma } from '../components/ModalTurma';
 
 type Period = 'manha' | 'tarde' | 'noite';
 type TurmaStatus = 'aberta' | 'andamento' | 'finalizada' | 'all';
@@ -396,6 +397,21 @@ export function Turmas() {
     });
     setEditingId(turma.id);
     setIsModalOpen(true);
+  }
+
+  function handleCloseModal() {
+    setIsModalOpen(false);
+    setFormData({
+      name: '',
+      curso_id: '',
+      sala_id: '',
+      cadeiras: '',
+      period: 'manha',
+      start_date: '',
+      end_date: '',
+      imposto: ''
+    });
+    setEditingId(null);
   }
 
   function formatDate(dateString: string) {
@@ -837,188 +853,16 @@ export function Turmas() {
           )}
         </div>
 
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-dark-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-white">
-                  {editingId ? 'Editar Turma' : 'Nova Turma'}
-                </h2>
-                <button
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setFormData({
-                      name: '',
-                      curso_id: '',
-                      sala_id: '',
-                      cadeiras: '',
-                      period: 'manha',
-                      start_date: '',
-                      end_date: '',
-                      imposto: ''
-                    });
-                    setEditingId(null);
-                  }}
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-400 mb-1">
-                      Nome da Turma
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="curso_id" className="block text-sm font-medium text-gray-400 mb-1">
-                      Curso
-                    </label>
-                    <select
-                      id="curso_id"
-                      value={formData.curso_id}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                      required
-                      onChange={(e) => {
-                        const selectedCursoId = e.target.value;
-                        const selectedCurso = cursos.find(c => c.id === selectedCursoId);
-                        setFormData({ 
-                          ...formData, 
-                          curso_id: selectedCursoId,
-                          name: selectedCurso ? selectedCurso.nome : ''
-                        });
-                      }}
-                    >
-                      <option value="">Selecione um curso</option>
-                      {cursos.map(curso => (
-                        <option key={curso.id} value={curso.id}>
-                          {curso.nome}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="sala_id" className="block text-sm font-medium text-gray-400 mb-1">
-                      Sala
-                    </label>
-                    <select
-                      id="sala_id"
-                      value={formData.sala_id}
-                      onChange={(e) => setFormData({ ...formData, sala_id: e.target.value })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                      required
-                    >
-                      <option value="">Selecione uma sala</option>
-                      {salas.map(sala => (
-                        <option key={sala.id} value={sala.id}>
-                          {sala.nome} ({sala.cadeiras} cadeiras)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="cadeiras" className="block text-sm font-medium text-gray-400 mb-1">
-                      Número de Vagas
-                    </label>
-                    <input
-                      type="number"
-                      id="cadeiras"
-                      value={formData.cadeiras}
-                      onChange={(e) => setFormData({ ...formData, cadeiras: e.target.value })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                      min="1"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="period" className="block text-sm font-medium text-gray-400 mb-1">
-                      Período
-                    </label>
-                    <select
-                      id="period"
-                      value={formData.period}
-                      onChange={(e) => setFormData({ ...formData, period: e.target.value as Period })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                      required
-                    >
-                      {PERIODS.map(period => (
-                        <option key={period.value} value={period.value}>
-                          {period.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="imposto" className="block text-sm font-medium text-gray-400 mb-1">
-                      Imposto (%)
-                    </label>
-                    <input
-                      type="number"
-                      id="imposto"
-                      value={formData.imposto}
-                      onChange={(e) => setFormData({ ...formData, imposto: e.target.value })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="start_date" className="block text-sm font-medium text-gray-400 mb-1">
-                      Data de Início
-                    </label>
-                    <input
-                      type="date"
-                      id="start_date"
-                      value={formData.start_date}
-                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="end_date" className="block text-sm font-medium text-gray-400 mb-1">
-                      Data de Término
-                    </label>
-                    <input
-                      type="date"
-                      id="end_date"
-                      value={formData.end_date}
-                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-teal-accent text-dark font-medium rounded-lg px-4 py-2 hover:bg-teal-accent/90 transition-colors"
-                >
-                  {editingId ? 'Atualizar' : 'Criar Turma'}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
+        <ModalTurma
+          isOpen={isModalOpen}
+          editingId={editingId}
+          formData={formData}
+          setFormData={setFormData}
+          cursos={cursos}
+          salas={salas}
+          onSubmit={handleSubmit}
+          onClose={handleCloseModal}
+        />
 
         <ConfirmationModal
           isOpen={confirmModal.isOpen}
