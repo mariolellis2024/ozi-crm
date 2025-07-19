@@ -193,12 +193,8 @@ export function Turmas() {
           .select(`
             curso_id,
             status,
-            aluno:alunos(available_periods)
-          `)
-            curso_id,
-            status,
             turma_id,
-            aluno:alunos(id, nome)
+            aluno:alunos(id, nome, available_periods)
           `)
       ]);
 
