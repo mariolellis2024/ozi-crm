@@ -533,6 +533,23 @@ export function Alunos() {
           </div>
         </div>
 
+        <div className="mb-4 scale-in-delay-1">
+          <div className="flex items-center justify-between bg-dark-lighter rounded-lg px-4 py-3 border border-gray-700">
+            <div className="flex items-center gap-3">
+              <Users className="h-5 w-5 text-teal-accent" />
+              <span className="text-white font-medium">
+                {filteredAlunos.length} aluno{filteredAlunos.length !== 1 ? 's' : ''} 
+                {searchTerm || filterInterestStatus !== 'all' || selectedCourseId ? ' encontrado' : ' cadastrado'}{filteredAlunos.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            {(searchTerm || filterInterestStatus !== 'all' || selectedCourseId) && alunos.length !== filteredAlunos.length && (
+              <span className="text-gray-400 text-sm">
+                de {alunos.length} total
+              </span>
+            )}
+          </div>
+        </div>
+
         <div className="bg-dark-card rounded-2xl overflow-hidden scale-in-delay-2">
           <div className="overflow-x-auto">
             <table className="w-full">
