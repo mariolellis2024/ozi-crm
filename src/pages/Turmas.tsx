@@ -841,7 +841,7 @@ export function Turmas() {
         </div>
 
         {showSuggestions && suggestions.length > 0 && (
-          <div className="mb-6 bg-gradient-to-br from-orange-500/10 to-amber-500/10 border border-orange-500/20 rounded-2xl p-6 fade-in-delay-3 relative scale-in">
+          <div className="mb-6 bg-gradient-to-br from-orange-500/10 to-amber-500/10 border border-orange-500/20 rounded-2xl p-6 fade-in-delay-3 relative scale-in z-10">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <Lightbulb className="h-6 w-6 text-orange-400" />
