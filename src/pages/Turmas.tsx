@@ -87,6 +87,7 @@ export function Turmas() {
   const [filterPeriod, setFilterPeriod] = useState<Period | 'all'>('all');
   const [filterCurso, setFilterCurso] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<TurmaStatus>('aberta');
+  const [expandedTurma, setExpandedTurma] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     turmaId: '',
@@ -208,7 +209,7 @@ export function Turmas() {
         alunos_cursando: interessesResult.data
           .filter((interest: any) => 
             interest.turma_id === turma.id && 
-            interest.status === 'enrolled'
+            interest.status === 'completed'
           )
           .map((interest: any) => ({
             id: interest.aluno.id,
@@ -386,6 +387,61 @@ export function Turmas() {
 
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleDateString('pt-BR');
+  }
+
+  async function handleEnrollStudent(alunoId: string, turmaId: string, cursoId: string) {
+    try {
+      const { error } = await supabase
+        .from('aluno_curso_interests')
+        .update({ 
+          status: 'enrolled',
+          turma_id: turmaId
+        })
+        .eq('aluno_id', alunoId)
+        .eq('curso_id', cursoId);
+      
+      if (error) throw error;
+      toast.success('Aluno matriculado na turma!');
+      loadData();
+    } catch (error) {
+      toast.error('Erro ao matricular aluno');
+    }
+  }
+
+  async function handleCompleteStudent(alunoId: string, turmaId: string, cursoId: string) {
+    try {
+      const { error } = await supabase
+        .from('aluno_curso_interests')
+        .update({ status: 'completed' })
+        .eq('aluno_id', alunoId)
+        .eq('curso_id', cursoId)
+        .eq('turma_id', turmaId);
+      
+      if (error) throw error;
+      toast.success('Aluno marcado como concluído!');
+      loadData();
+    } catch (error) {
+      toast.error('Erro ao marcar aluno como concluído');
+    }
+  }
+
+  async function handleUnenrollStudent(alunoId: string, cursoId: string) {
+    try {
+      const { error } = await supabase
+        .from('aluno_curso_interests')
+        .update({ 
+          status: 'interested',
+          turma_id: null
+        })
+        .eq('aluno_id', alunoId)
+        .eq('curso_id', cursoId);
+      
+      if (error) throw error;
+      toast.success('Aluno removido da turma');
+      loadData();
+    } catch (error) {
+      toast.error('Erro ao remover aluno da turma');
+    }
   }
 
   const filteredTurmas = turmas.filter(turma => {
@@ -612,21 +668,121 @@ export function Turmas() {
                             {turma.alunos_interessados.length} Interessado{turma.alunos_interessados.length > 1 ? 's' : ''}
                           </span>
                         </div>
-                        <div className="space-y-1 max-h-20 overflow-y-auto">
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
                           {turma.alunos_interessados.slice(0, 3).map((aluno) => (
-                            <div key={aluno.id} className="flex items-center gap-2 text-blue-300 text-xs">
-                              {getStatusIcon(aluno.status)}
-                              <span>{aluno.nome}</span>
+                            <div key={aluno.id} className="flex items-center justify-between gap-2 text-blue-300 text-xs">
+                              <div className="flex items-center gap-2">
+                                <BookOpen className="h-3 w-3 text-blue-400" />
+                                <span>{aluno.nome}</span>
+                              </div>
+                              <button
+                                onClick={() => handleEnrollStudent(aluno.id, turma.id, turma.curso_id)}
+                                className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs hover:bg-green-500/30 transition-colors"
+                                title="Matricular na turma"
+                              >
+                                Matricular
+                              </button>
                             </div>
                           ))}
                           {turma.alunos_interessados.length > 3 && (
-                            <div className="text-blue-400 text-xs font-medium">
-                              +{turma.alunos_interessados.length - 3} mais
+                            <div className="flex items-center justify-between">
+                              <div className="text-blue-400 text-xs font-medium">
+                                +{turma.alunos_interessados.length - 3} mais
+                              </div>
+                              <button
+                                onClick={() => setExpandedTurma(expandedTurma === turma.id ? null : turma.id)}
+                                className="text-blue-400 text-xs hover:text-blue-300 transition-colors"
+                              >
+                                {expandedTurma === turma.id ? 'Ver menos' : 'Ver todos'}
+                              </button>
                             </div>
                           )}
                         </div>
+                        {expandedTurma === turma.id && turma.alunos_interessados.length > 3 && (
+                          <div className="space-y-2 mt-2 pt-2 border-t border-blue-500/20">
+                            {turma.alunos_interessados.slice(3).map((aluno) => (
+                              <div key={aluno.id} className="flex items-center justify-between gap-2 text-blue-300 text-xs">
+                                <div className="flex items-center gap-2">
+                                  <BookOpen className="h-3 w-3 text-blue-400" />
+                                  <span>{aluno.nome}</span>
+                                </div>
+                                <button
+                                  onClick={() => handleEnrollStudent(aluno.id, turma.id, turma.curso_id)}
+                                  className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs hover:bg-green-500/30 transition-colors"
+                                  title="Matricular na turma"
+                                >
+                                  Matricular
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         <div className="mt-2 text-emerald-400 text-xs font-medium">
                           Potencial: {formatCurrency((turma.curso?.preco || 0) * turma.alunos_interessados.length)}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Alunos Cursando */}
+                    {turma.alunos_cursando && turma.alunos_cursando.length > 0 && (
+                      <div className="mt-3 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Users className="h-4 w-4 text-green-400" />
+                          <span className="text-green-400 font-medium text-sm">
+                            {turma.alunos_cursando.length} Cursando
+                          </span>
+                        </div>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {turma.alunos_cursando.map((aluno) => (
+                            <div key={aluno.id} className="flex items-center justify-between gap-2 text-green-300 text-xs">
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-3 w-3 text-green-400" />
+                                <span>{aluno.nome}</span>
+                              </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => handleCompleteStudent(aluno.id, turma.id, turma.curso_id)}
+                                  className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded text-xs hover:bg-emerald-500/30 transition-colors"
+                                  title="Marcar como concluído"
+                                >
+                                  Concluir
+                                </button>
+                                <button
+                                  onClick={() => handleUnenrollStudent(aluno.id, turma.curso_id)}
+                                  className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs hover:bg-red-500/30 transition-colors"
+                                  title="Remover da turma"
+                                >
+                                  Remover
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-2 text-emerald-400 text-xs font-medium">
+                          Faturamento: {formatCurrency((turma.curso?.preco || 0) * turma.alunos_cursando.length)}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Alunos Concluídos */}
+                    {turma.alunos_concluidos && turma.alunos_concluidos.length > 0 && (
+                      <div className="mt-3 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Users className="h-4 w-4 text-emerald-400" />
+                          <span className="text-emerald-400 font-medium text-sm">
+                            {turma.alunos_concluidos.length} Concluído{turma.alunos_concluidos.length > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <div className="space-y-1 max-h-20 overflow-y-auto">
+                          {turma.alunos_concluidos.map((aluno) => (
+                            <div key={aluno.id} className="flex items-center gap-2 text-emerald-300 text-xs">
+                              <Check className="h-3 w-3 text-emerald-400" />
+                              <span>{aluno.nome}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-2 text-emerald-400 text-xs font-medium">
+                          Concluído: {formatCurrency((turma.curso?.preco || 0) * turma.alunos_concluidos.length)}
                         </div>
                       </div>
                     )}
