@@ -78,7 +78,7 @@ interface Suggestion {
   curso: Curso;
   interestedCount: number;
   potentialRevenue: number;
-  recommendedPeriods: Period[];
+  mostDemandedPeriod?: Period;
 }
 
 export function Turmas() {
@@ -276,36 +276,62 @@ export function Turmas() {
         const curso = cursosData.find(c => c.id === interest.curso_id);
         if (!curso) return;
         
-        // Only count interests from students available in all periods or no period specified
         const studentPeriods = interest.aluno?.available_periods || [];
-        const isAvailableForAllPeriods = studentPeriods.length === 0;
 
         if (!suggestionMap[curso.id]) {
           suggestionMap[curso.id] = {
             curso,
             interestedCount: 0,
             potentialRevenue: 0,
-            recommendedPeriods: []
+            mostDemandedPeriod: undefined
           };
         }
 
         suggestionMap[curso.id].interestedCount++;
         suggestionMap[curso.id].potentialRevenue += curso.preco;
+      });
 
-        // Count period preferences only if student has specified periods
-        if (!isAvailableForAllPeriods) {
-          studentPeriods.forEach((period: Period) => {
-            if (!suggestionMap[curso.id].recommendedPeriods.includes(period)) {
-              suggestionMap[curso.id].recommendedPeriods.push(period);
-            }
-          });
+      // Calculate most demanded period for each course
+      const periodDemand: { [cursoId: string]: { manha: number; tarde: number; noite: number } } = {};
+      
+      interests.forEach((interest: any) => {
+        const curso = cursosData.find(c => c.id === interest.curso_id);
+        if (!curso) return;
+        
+        if (!periodDemand[curso.id]) {
+          periodDemand[curso.id] = { manha: 0, tarde: 0, noite: 0 };
+        }
+        
+        const studentPeriods = interest.aluno?.available_periods || [];
+        
+        if (studentPeriods.length === 0) {
+          // Student available for all periods
+          periodDemand[curso.id].manha++;
+          periodDemand[curso.id].tarde++;
+          periodDemand[curso.id].noite++;
         } else {
-          // If student is available for all periods, add all periods as recommended
-          ['manha', 'tarde', 'noite'].forEach((period: Period) => {
-            if (!suggestionMap[curso.id].recommendedPeriods.includes(period)) {
-              suggestionMap[curso.id].recommendedPeriods.push(period);
+          // Count specific periods
+          studentPeriods.forEach((period: Period) => {
+            periodDemand[curso.id][period]++;
+          });
+        }
+      });
+      
+      // Determine most demanded period for each suggestion
+      Object.values(suggestionMap).forEach(suggestion => {
+        const demand = periodDemand[suggestion.curso.id];
+        if (demand) {
+          let maxDemand = 0;
+          let mostDemanded: Period = 'manha';
+          
+          (['manha', 'tarde', 'noite'] as Period[]).forEach(period => {
+            if (demand[period] > maxDemand) {
+              maxDemand = demand[period];
+              mostDemanded = period;
             }
           });
+          
+          suggestion.mostDemandedPeriod = mostDemanded;
         }
       });
 
@@ -724,19 +750,14 @@ export function Turmas() {
                       <span className="text-gray-400">Carga horária:</span>
                       <span className="text-white">{suggestion.curso.carga_horaria}h</span>
                     </div>
-                    {suggestion.recommendedPeriods.length > 0 && (
+                    {suggestion.mostDemandedPeriod && (
                       <div>
-                        <span className="text-gray-400 text-xs">Horários recomendados:</span>
-                        <div className="flex gap-1 mt-1">
-                          {suggestion.recommendedPeriods.map(period => (
-                            <div
-                              key={period}
-                              className="flex items-center gap-1 px-2 py-1 bg-orange-500/20 text-orange-300 rounded text-xs"
-                            >
-                              {getPeriodIcon(period)}
-                              <span>{getPeriodLabel(period).slice(0, 1)}</span>
-                            </div>
-                          ))}
+                        <span className="text-gray-400 text-xs">Horário de maior demanda:</span>
+                        <div className="mt-1">
+                          <div className="flex items-center gap-1 px-2 py-1 bg-orange-500/20 text-orange-300 rounded text-xs">
+                            {getPeriodIcon(suggestion.mostDemandedPeriod)}
+                            <span>{getPeriodLabel(suggestion.mostDemandedPeriod)}</span>
+                          </div>
                         </div>
                       </div>
                     )}
