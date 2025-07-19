@@ -603,33 +603,6 @@ export function Turmas() {
               </div>
             </div>
             
-            {/* Cálculo do faturamento líquido */}
-            {(() => {
-              const faturamentoBruto = turma.cadeiras * (turma.curso?.preco || 0);
-              const custoImpostos = faturamentoBruto * (turma.imposto / 100);
-              const custoProfessores = turma.professores?.reduce((total, prof) => {
-                const professor = professores.find(p => p.id === prof.id);
-                return total + (prof.hours * (professor?.valor_hora || 0));
-              }, 0) || 0;
-              const faturamentoLiquido = faturamentoBruto - custoImpostos - custoProfessores;
-              
-              return (
-                <div className="space-y-2">
-                  <div className="flex items-center text-teal-accent">
-                    <span className="font-semibold">
-                      {formatCurrency(faturamentoLiquido)}
-                    </span>
-                    <span className="text-xs text-gray-400 ml-2">líquido</span>
-                  </div>
-                  <div className="text-xs text-gray-400 space-y-1">
-                    <div>Bruto: {formatCurrency(faturamentoBruto)}</div>
-                    <div>Impostos: -{formatCurrency(custoImpostos)}</div>
-                    <div>Professores: -{formatCurrency(custoProfessores)}</div>
-                  </div>
-                </div>
-              );
-            })()}
-            
             <div className="flex gap-2">
               <select
                 value={filterPeriod}
