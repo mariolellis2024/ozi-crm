@@ -73,7 +73,7 @@ export function Professores() {
             const endDate = new Date(tp.turma.end_date);
             endDate.setHours(0, 0, 0, 0);
             
-            const earnings = tp.hours * professor.valor_hora;
+            const earnings = Number(tp.hours) * Number(professor.valor_hora);
             
             if (endDate <= today) {
               // Turma já terminou - valor já recebido
@@ -83,6 +83,16 @@ export function Professores() {
               totalAReceber += earnings;
             }
           }
+        });
+        
+        console.log(`Professor ${professor.nome}:`, {
+          turmas: professorTurmas.map(tp => ({
+            hours: tp.hours,
+            endDate: tp.turma?.end_date,
+            earnings: Number(tp.hours) * Number(professor.valor_hora)
+          })),
+          totalAReceber,
+          totalRecebido
         });
         
         return {
