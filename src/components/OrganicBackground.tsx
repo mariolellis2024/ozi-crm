@@ -2,120 +2,107 @@ import React from 'react';
 
 export function OrganicBackground() {
   return (
-    <div className="fixed inset-0 pointer-events-none -z-10" style={{ backgroundColor: '#1b1d21' }}>
-      {/* Linhas orgânicas */}
+    <div className="fixed inset-0 pointer-events-none -z-10">
       <div className="organic-line">
-        <svg>
+        <svg viewBox="0 0 1600 800" preserveAspectRatio="none">
           <defs>
-            <linearGradient id="fadeGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="10%" stopColor="rgba(255, 255, 255, 0.3)" />
-              <stop offset="90%" stopColor="rgba(255, 255, 255, 0.3)" />
-              <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
-            </linearGradient>
             <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
               <stop offset="20%" stopColor="rgba(255, 255, 255, 0.3)" />
-              <stop offset="80%" stopColor="rgba(255, 255, 255, 0.1)" />
+              <stop offset="80%" stopColor="rgba(255, 255, 255, 0.3)" />
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
             <linearGradient id="gradient1-light" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="20%" stopColor="rgba(255, 255, 255, 0.4)" />
-              <stop offset="80%" stopColor="rgba(255, 255, 255, 0.2)" />
-              <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
+              <stop offset="0%" stopColor="rgba(66, 153, 225, 0)" />
+              <stop offset="20%" stopColor="rgba(66, 153, 225, 0.4)" />
+              <stop offset="80%" stopColor="rgba(66, 153, 225, 0.4)" />
+              <stop offset="100%" stopColor="rgba(66, 153, 225, 0)" />
             </linearGradient>
           </defs>
-          <path d="M -100,150 Q 200,100 400,150 T 800,150 T 1200,150 T 1700,150" />
-          <path d="M -200,150 Q 200,100 400,150 T 800,150 T 1200,150 T 1700,150" />
+          <path d="M -100,300 Q 200,200 400,300 T 800,300 T 1200,300 T 1700,300" />
         </svg>
       </div>
 
       <div className="organic-line">
-        <svg>
+        <svg viewBox="0 0 1600 800" preserveAspectRatio="none">
           <defs>
             <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="20%" stopColor="rgba(255, 255, 255, 0.2)" />
-              <stop offset="80%" stopColor="rgba(255, 255, 255, 0.05)" />
+              <stop offset="15%" stopColor="rgba(255, 255, 255, 0.25)" />
+              <stop offset="85%" stopColor="rgba(255, 255, 255, 0.25)" />
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
             <linearGradient id="gradient2-light" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="20%" stopColor="rgba(255, 255, 255, 0.3)" />
-              <stop offset="80%" stopColor="rgba(255, 255, 255, 0.1)" />
-              <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
+              <stop offset="0%" stopColor="rgba(66, 153, 225, 0)" />
+              <stop offset="15%" stopColor="rgba(66, 153, 225, 0.35)" />
+              <stop offset="85%" stopColor="rgba(66, 153, 225, 0.35)" />
+              <stop offset="100%" stopColor="rgba(66, 153, 225, 0)" />
             </linearGradient>
           </defs>
-          <path d="M -100,300 Q 200,250 400,300 T 800,300 T 1200,300 T 1700,300" />
-          <path d="M -200,300 Q 200,250 400,300 T 800,300 T 1200,300 T 1700,300" />
+          <path d="M -100,500 Q 300,400 600,500 T 1200,500 T 1700,500" />
         </svg>
       </div>
 
       <div className="organic-line">
-        <svg>
+        <svg viewBox="0 0 1600 800" preserveAspectRatio="none">
           <defs>
             <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="20%" stopColor="rgba(255, 255, 255, 0.15)" />
-              <stop offset="80%" stopColor="rgba(255, 255, 255, 0.03)" />
+              <stop offset="25%" stopColor="rgba(255, 255, 255, 0.2)" />
+              <stop offset="75%" stopColor="rgba(255, 255, 255, 0.2)" />
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
             <linearGradient id="gradient3-light" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="20%" stopColor="rgba(255, 255, 255, 0.25)" />
-              <stop offset="80%" stopColor="rgba(255, 255, 255, 0.08)" />
-              <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
+              <stop offset="0%" stopColor="rgba(66, 153, 225, 0)" />
+              <stop offset="25%" stopColor="rgba(66, 153, 225, 0.3)" />
+              <stop offset="75%" stopColor="rgba(66, 153, 225, 0.3)" />
+              <stop offset="100%" stopColor="rgba(66, 153, 225, 0)" />
             </linearGradient>
           </defs>
-          <path d="M -100,450 Q 200,400 400,450 T 800,450 T 1200,450 T 1700,450" />
-          <path d="M -200,450 Q 200,400 400,450 T 800,450 T 1200,450 T 1700,450" />
+          <path d="M -100,100 Q 400,50 800,100 T 1200,100 T 1700,100" />
         </svg>
       </div>
 
       <div className="organic-line">
-        <svg>
+        <svg viewBox="0 0 1600 800" preserveAspectRatio="none">
           <defs>
             <linearGradient id="gradient4" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="20%" stopColor="rgba(255, 255, 255, 0.2)" />
-              <stop offset="80%" stopColor="rgba(255, 255, 255, 0.05)" />
+              <stop offset="18%" stopColor="rgba(255, 255, 255, 0.35)" />
+              <stop offset="82%" stopColor="rgba(255, 255, 255, 0.35)" />
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
             <linearGradient id="gradient4-light" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="20%" stopColor="rgba(255, 255, 255, 0.3)" />
-              <stop offset="80%" stopColor="rgba(255, 255, 255, 0.1)" />
-              <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
+              <stop offset="0%" stopColor="rgba(66, 153, 225, 0)" />
+              <stop offset="18%" stopColor="rgba(66, 153, 225, 0.45)" />
+              <stop offset="82%" stopColor="rgba(66, 153, 225, 0.45)" />
+              <stop offset="100%" stopColor="rgba(66, 153, 225, 0)" />
             </linearGradient>
           </defs>
-          <path d="M -100,600 Q 200,500 400,600 T 800,600 T 1200,600 T 1700,600" />
-          <path d="M -200,600 Q 200,500 400,600 T 800,600 T 1200,600 T 1700,600" />
+          <path d="M -100,700 Q 200,600 400,700 T 800,700 T 1200,700 T 1700,700" />
         </svg>
       </div>
 
       <div className="organic-line">
-        <svg>
+        <svg viewBox="0 0 1600 800" preserveAspectRatio="none">
           <defs>
             <linearGradient id="gradient5" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="20%" stopColor="rgba(255, 255, 255, 0.25)" />
-              <stop offset="80%" stopColor="rgba(255, 255, 255, 0.08)" />
+              <stop offset="12%" stopColor="rgba(255, 255, 255, 0.15)" />
+              <stop offset="88%" stopColor="rgba(255, 255, 255, 0.15)" />
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
             <linearGradient id="gradient5-light" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
-              <stop offset="20%" stopColor="rgba(255, 255, 255, 0.35)" />
-              <stop offset="80%" stopColor="rgba(255, 255, 255, 0.12)" />
-              <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
+              <stop offset="0%" stopColor="rgba(66, 153, 225, 0)" />
+              <stop offset="12%" stopColor="rgba(66, 153, 225, 0.25)" />
+              <stop offset="88%" stopColor="rgba(66, 153, 225, 0.25)" />
+              <stop offset="100%" stopColor="rgba(66, 153, 225, 0)" />
             </linearGradient>
           </defs>
-          <path d="M -100,750 Q 200,700 400,750 T 800,750 T 1200,750 T 1700,750" />
-          <path d="M -200,750 Q 200,700 400,750 T 800,750 T 1200,750 T 1700,750" />
+          <path d="M -100,200 Q 500,100 1000,200 T 1700,200" />
         </svg>
       </div>
 
-      {/* Partículas orgânicas */}
       <div className="organic-particle"></div>
       <div className="organic-particle"></div>
       <div className="organic-particle"></div>
