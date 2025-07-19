@@ -78,7 +78,7 @@ export function Turmas() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPeriod, setFilterPeriod] = useState<Period | 'all'>('all');
   const [filterCurso, setFilterCurso] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<TurmaStatus>('aberta');
+  const [filterStatus, setFilterStatus] = useState<TurmaStatus>('all');
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     turmaId: '',
