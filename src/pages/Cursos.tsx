@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Pencil, Trash2, Clock, TrendingUp, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Clock, TrendingUp, Users, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalCurso } from '../components/ModalCurso';
+import { ModalCategorias } from '../components/ModalCategorias';
 
 interface Curso {
   id: string;
@@ -27,6 +28,7 @@ interface Turma {
 export function Cursos() {
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCategoriasModalOpen, setIsCategoriasModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
     carga_horaria: '',
@@ -242,13 +244,22 @@ export function Cursos() {
             <h1 className="text-3xl font-bold text-white">Cursos</h1>
             <p className="text-gray-400 mt-2">Gerencie o catálogo de cursos disponíveis</p>
           </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center px-4 py-2 bg-teal-accent text-dark rounded-lg hover:bg-teal-accent/90 transition-colors hover-glow slide-in-right"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Novo Curso
-          </button>
+          <div className="flex items-center gap-3 slide-in-right">
+            <button
+              onClick={() => setIsCategoriasModalOpen(true)}
+              className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors hover-glow"
+            >
+              <Tag className="h-5 w-5 mr-2" />
+              Categorias
+            </button>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center px-4 py-2 bg-teal-accent text-dark rounded-lg hover:bg-teal-accent/90 transition-colors hover-glow"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Novo Curso
+            </button>
+          </div>
         </div>
 
         <div className="space-y-8 scale-in-delay-1">
@@ -348,6 +359,12 @@ export function Cursos() {
           onConfirm={handleConfirmDelete}
           onCancel={handleCancelDelete}
           variant="danger"
+        />
+
+        <ModalCategorias
+          isOpen={isCategoriasModalOpen}
+          onClose={() => setIsCategoriasModalOpen(false)}
+          onCategoriesUpdated={loadCursos}
         />
       </div>
     </div>
