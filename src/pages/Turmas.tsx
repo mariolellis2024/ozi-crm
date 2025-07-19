@@ -6,7 +6,6 @@ import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalTurma } from '../components/ModalTurma';
 import { ModalAlunosInteressados } from '../components/ModalAlunosInteressados';
-import { CalendarOcupacaoSalas } from '../components/CalendarOcupacaoSalas';
 
 /**
  * Tipos de período disponíveis para as turmas
@@ -1238,14 +1237,6 @@ export function Turmas() {
           cursoNome={alunosInteressadosModal.cursoNome}
           cursoPreco={alunosInteressadosModal.cursoPreco}
           onStudentEnrolled={loadData}
-        />
-      </div>
-
-      {/* Calendário de Ocupação das Salas */}
-      <div className="mt-12">
-        <CalendarOcupacaoSalas 
-          salas={salas}
-          turmas={turmas}
         />
       </div>
     </div>
