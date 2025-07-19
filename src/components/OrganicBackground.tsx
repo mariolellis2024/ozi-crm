@@ -2,7 +2,7 @@ import React from 'react';
 
 export function OrganicBackground() {
   return (
-    <div className="fixed inset-0 pointer-events-none -z-50" style={{ backgroundColor: '#1b1d21' }}>
+    <div className="fixed inset-0 pointer-events-none -z-10" style={{ backgroundColor: '#1b1d21' }}>
       {/* Linhas orgânicas */}
       <div className="organic-line">
         <svg>
