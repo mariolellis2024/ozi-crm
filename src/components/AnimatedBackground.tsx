@@ -7,26 +7,26 @@ export function AnimatedBackground() {
       <div className="organic-line">
         <svg>
           <defs>
-            {/* Gradientes brancos e vermelhos alternados */}
+            {/* Gradientes vermelhos */}
             <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="rgba(255, 255, 255, 0.4)" />
-              <stop offset="100%" stopColor="rgba(255, 255, 255, 0.1)" />
-            </linearGradient>
-            <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(239, 68, 68, 0.4)" />
               <stop offset="100%" stopColor="rgba(239, 68, 68, 0.1)" />
             </linearGradient>
+            <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="rgba(220, 38, 38, 0.4)" />
+              <stop offset="100%" stopColor="rgba(220, 38, 38, 0.1)" />
+            </linearGradient>
             <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="rgba(255, 255, 255, 0.3)" />
-              <stop offset="100%" stopColor="rgba(255, 255, 255, 0.08)" />
+              <stop offset="0%" stopColor="rgba(185, 28, 28, 0.3)" />
+              <stop offset="100%" stopColor="rgba(185, 28, 28, 0.08)" />
             </linearGradient>
             <linearGradient id="gradient4" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="rgba(220, 38, 38, 0.3)" />
-              <stop offset="100%" stopColor="rgba(220, 38, 38, 0.08)" />
+              <stop offset="0%" stopColor="rgba(153, 27, 27, 0.3)" />
+              <stop offset="100%" stopColor="rgba(153, 27, 27, 0.08)" />
             </linearGradient>
             <linearGradient id="gradient5" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="rgba(255, 255, 255, 0.35)" />
-              <stop offset="100%" stopColor="rgba(255, 255, 255, 0.12)" />
+              <stop offset="0%" stopColor="rgba(239, 68, 68, 0.35)" />
+              <stop offset="100%" stopColor="rgba(239, 68, 68, 0.12)" />
             </linearGradient>
           </defs>
           <path className="organic-path-1" />
