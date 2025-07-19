@@ -308,6 +308,20 @@ export function Turmas() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
+      // Check for room conflicts before saving
+      const hasConflict = await checkRoomConflict(
+        formData.sala_id,
+        formData.period,
+        formData.start_date,
+        formData.end_date,
+        editingId
+      );
+
+      if (hasConflict) {
+        toast.error('Conflito de agendamento: Já existe uma turma nesta sala, no mesmo período e com datas sobrepostas');
+        return;
+      }
+
       const curso = cursos.find(c => c.id === formData.curso_id);
       if (!curso) throw new Error('Curso não encontrado');
 
@@ -366,6 +380,54 @@ export function Turmas() {
       loadData();
     } catch (error) {
       toast.error('Erro ao salvar turma');
+    }
+  }
+
+  async function checkRoomConflict(
+    salaId: string,
+    period: Period,
+    startDate: string,
+    endDate: string,
+    excludeTurmaId?: string | null
+  ): Promise<boolean> {
+    try {
+      let query = supabase
+        .from('turmas')
+        .select('id, name, start_date, end_date')
+        .eq('sala_id', salaId)
+        .eq('period', period);
+
+      // Exclude current turma when editing
+      if (excludeTurmaId) {
+        query = query.neq('id', excludeTurmaId);
+      }
+
+      const { data: existingTurmas, error } = await query;
+
+      if (error) throw error;
+
+      // Check for date overlaps
+      const newStart = new Date(startDate);
+      const newEnd = new Date(endDate);
+
+      for (const turma of existingTurmas) {
+        const existingStart = new Date(turma.start_date);
+        const existingEnd = new Date(turma.end_date);
+
+        // Check if dates overlap
+        const hasOverlap = (
+          (newStart <= existingEnd && newEnd >= existingStart)
+        );
+
+        if (hasOverlap) {
+          return true; // Conflict found
+        }
+      }
+
+      return false; // No conflict
+    } catch (error) {
+      console.error('Error checking room conflict:', error);
+      return false; // Allow operation if check fails
     }
   }
 
