@@ -63,6 +63,12 @@ export function ModalCurso({
 
   async function handleCategoriaSubmit(e: React.FormEvent) {
     e.preventDefault();
+    
+    if (!categoriaFormData.nome.trim()) {
+      toast.error('Nome da categoria é obrigatório');
+      return;
+    }
+    
     try {
       if (editingCategoriaId) {
         const { error } = await supabase
@@ -75,7 +81,7 @@ export function ModalCurso({
       } else {
         const { error } = await supabase
           .from('categorias')
-          .insert([categoriaFormData]);
+          .insert([{ nome: categoriaFormData.nome.trim() }]);
         
         if (error) throw error;
         toast.success('Categoria criada com sucesso!');
@@ -84,9 +90,10 @@ export function ModalCurso({
       setCategoriaFormData({ nome: '' });
       setEditingCategoriaId(null);
       setShowCategoriaForm(false);
-      loadCategorias();
+      await loadCategorias();
     } catch (error) {
-      toast.error('Erro ao salvar categoria');
+      console.error('Erro ao salvar categoria:', error);
+      toast.error(`Erro ao salvar categoria: ${error.message || 'Erro desconhecido'}`);
     }
   }
 
