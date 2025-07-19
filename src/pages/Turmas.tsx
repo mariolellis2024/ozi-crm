@@ -674,7 +674,7 @@ export function Turmas() {
                     
                     {/* Alunos Interessados */}
                     {turma.alunos_interessados && turma.alunos_interessados.length > 0 && (
-                      <div className="mt-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 w-full">
+                      <div className="mt-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 w-full col-span-full">
                         <div className="flex items-center gap-2 mb-2">
                           <Users className="h-4 w-4 text-blue-400" />
                           <span className="text-blue-400 font-medium text-sm">
