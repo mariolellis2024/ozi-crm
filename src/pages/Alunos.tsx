@@ -357,7 +357,7 @@ export function Alunos() {
         </div>
 
         <div className="mb-6 scale-in">
-          <div className="glass-effect p-6 hover-lift">
+          <div className="bg-dark-card rounded-2xl p-6 hover-lift">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-sm">Faturamento Potencial em Aberto</p>
@@ -380,7 +380,7 @@ export function Alunos() {
               placeholder="Buscar alunos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full max-w-md glass-effect border-0 px-4 py-2 text-gray-900 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-teal-accent"
+              className="w-full max-w-md bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
             />
           </div>
           
@@ -391,7 +391,7 @@ export function Alunos() {
             <select
               value={selectedCourseId || ''}
               onChange={(e) => setSelectedCourseId(e.target.value || null)}
-              className="w-full max-w-md glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
+              className="w-full max-w-md bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
             >
               <option value="">Todos os cursos</option>
               {cursos.map(curso => (
@@ -414,7 +414,7 @@ export function Alunos() {
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                     filterInterestStatus === option.value
                       ? 'bg-teal-accent text-dark'
-                      : 'glass-effect text-gray-700 hover:text-gray-900 hover:bg-white/30'
+                      : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
                   }`}
                 >
                   <option.icon className="h-4 w-4" />
@@ -425,7 +425,7 @@ export function Alunos() {
           </div>
         </div>
 
-        <div className="glass-effect overflow-hidden scale-in-delay-2">
+        <div className="bg-dark-card rounded-2xl overflow-hidden scale-in-delay-2">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -433,28 +433,28 @@ export function Alunos() {
                   <th className="text-left p-4">
                     <button
                       onClick={() => handleSort('nome')}
-                      className="flex items-center text-gray-700 font-medium hover:text-gray-900 transition-colors"
+                      className="flex items-center text-gray-400 font-medium hover:text-white transition-colors"
                     >
                       Nome
                       <ArrowUpDown className={`ml-2 h-4 w-4 ${sortField === 'nome' ? 'text-teal-accent' : ''}`} />
                     </button>
                   </th>
-                  <th className="text-left p-4 text-gray-700 font-medium">Contato</th>
-                  <th className="text-left p-4 text-gray-700 font-medium">Horários Disponíveis</th>
-                  <th className="text-left p-4 text-gray-700 font-medium">Cursos</th>
-                  <th className="text-right p-4 text-gray-700 font-medium">Ações</th>
+                  <th className="text-left p-4 text-gray-400 font-medium">Contato</th>
+                  <th className="text-left p-4 text-gray-400 font-medium">Horários Disponíveis</th>
+                  <th className="text-left p-4 text-gray-400 font-medium">Cursos</th>
+                  <th className="text-right p-4 text-gray-400 font-medium">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredAlunos.map((aluno) => (
-                  <tr key={aluno.id} className="border-b border-white/20">
+                  <tr key={aluno.id} className="border-b border-gray-700/50">
                     <td className="p-4">
-                      <span className="text-gray-900 font-medium">{aluno.nome}</span>
+                      <span className="text-white font-medium">{aluno.nome}</span>
                     </td>
                     <td className="p-4">
                       <div className="space-y-1">
-                        <div className="text-gray-700">{aluno.email}</div>
-                        <div className="text-gray-700">{aluno.whatsapp}</div>
+                        <div className="text-gray-400">{aluno.email}</div>
+                        <div className="text-gray-400">{aluno.whatsapp}</div>
                       </div>
                     </td>
                     <td className="p-4">
@@ -469,7 +469,7 @@ export function Alunos() {
                           </div>
                         ))}
                         {(!aluno.available_periods || aluno.available_periods.length === 0) && (
-                          <span className="text-gray-600 text-sm">Não informado</span>
+                          <span className="text-gray-400 text-sm">Não informado</span>
                         )}
                       </div>
                     </td>
@@ -482,7 +482,7 @@ export function Alunos() {
                           
                           return (
                             <div key={curso.id} className="flex items-center gap-3 py-1">
-                              <span className="text-gray-900 font-medium min-w-0 flex-1">{curso.nome}</span>
+                              <span className="text-white font-medium min-w-0 flex-1">{curso.nome}</span>
                               <div className="flex gap-1 flex-shrink-0">
                                 <button
                                   type="button"
@@ -490,7 +490,7 @@ export function Alunos() {
                                   className={`p-1.5 rounded-md transition-colors ${
                                     interest?.status === 'interested'
                                       ? 'bg-teal-accent/20 text-teal-accent'
-                                      : 'glass-effect text-gray-600 hover:text-gray-900'
+                                      : 'bg-dark text-gray-400 hover:text-white'
                                   }`}
                                   title="Interessado"
                                 >
@@ -502,7 +502,7 @@ export function Alunos() {
                                   className={`p-1.5 rounded-md transition-colors ${
                                     interest?.status === 'enrolled'
                                       ? 'bg-yellow-500/20 text-yellow-500'
-                                      : 'glass-effect text-gray-600 hover:text-gray-900'
+                                      : 'bg-dark text-gray-400 hover:text-white'
                                   }`}
                                   title="Cursando"
                                 >
@@ -514,7 +514,7 @@ export function Alunos() {
                                   className={`p-1.5 rounded-md transition-colors ${
                                     interest?.status === 'completed'
                                       ? 'bg-emerald-500/20 text-emerald-500'
-                                      : 'glass-effect text-gray-600 hover:text-gray-900'
+                                      : 'bg-dark text-gray-400 hover:text-white'
                                   }`}
                                   title="Concluído"
                                 >
@@ -524,7 +524,7 @@ export function Alunos() {
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveInterest(aluno.id, curso.id)}
-                                    className="p-1.5 text-gray-600 hover:text-red-500 transition-colors"
+                                    className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
                                     title="Remover"
                                   >
                                     <X className="h-3.5 w-3.5" />
@@ -540,13 +540,13 @@ export function Alunos() {
                       <div className="flex justify-end space-x-2">
                         <button
                           onClick={() => handleEdit(aluno)}
-                          className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                          className="p-2 text-gray-400 hover:text-white transition-colors"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(aluno.id)}
-                          className="p-2 text-gray-600 hover:text-red-500 transition-colors"
+                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -556,7 +556,7 @@ export function Alunos() {
                 ))}
                 {filteredAlunos.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center py-8 text-gray-600">
+                    <td colSpan={5} className="text-center py-8 text-gray-400">
                       Nenhum aluno encontrado
                     </td>
                   </tr>
@@ -568,9 +568,9 @@ export function Alunos() {
 
         {isModalOpen && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-            <div className="glass-effect p-6 w-full max-w-md">
+            <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-white">
                   {editingId ? 'Editar Aluno' : 'Novo Aluno'}
                 </h2>
                 <button
@@ -585,7 +585,7 @@ export function Alunos() {
                     });
                     setEditingId(null);
                   }}
-                  className="text-gray-600 hover:text-gray-900 transition-colors"
+                  className="text-gray-400 hover:text-white transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -593,7 +593,7 @@ export function Alunos() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="nome" className="block text-sm font-medium text-gray-400 mb-1">
                     Nome
                   </label>
                   <input
@@ -601,13 +601,13 @@ export function Alunos() {
                     id="nome"
                     value={formData.nome}
                     onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-1">
                     Email
                   </label>
                   <input
@@ -615,12 +615,12 @@ export function Alunos() {
                     id="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-400 mb-1">
                     WhatsApp
                   </label>
                   <input
@@ -628,13 +628,13 @@ export function Alunos() {
                     id="whatsapp"
                     value={formData.whatsapp}
                     onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                    className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="empresa" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="empresa" className="block text-sm font-medium text-gray-400 mb-1">
                     Empresa
                   </label>
                   <input
@@ -642,12 +642,12 @@ export function Alunos() {
                     id="empresa"
                     value={formData.empresa}
                     onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
-                    className="w-full glass-effect border-0 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
                     Horários Disponíveis
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -659,7 +659,7 @@ export function Alunos() {
                         className={`flex items-center justify-center gap-2 p-3 rounded-lg transition-colors ${
                           formData.available_periods.includes(period.value)
                             ? 'bg-teal-accent text-dark'
-                            : 'glass-effect text-gray-700 hover:text-gray-900 hover:bg-white/30'
+                            : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
                         }`}
                       >
                         <period.icon className="h-4 w-4" />
@@ -667,7 +667,7 @@ export function Alunos() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-600 mt-2">
+                  <p className="text-xs text-gray-500 mt-2">
                     Selecione os horários em que o aluno pode participar dos cursos
                   </p>
                 </div>

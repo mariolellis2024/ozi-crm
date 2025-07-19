@@ -43,7 +43,7 @@ export function ConfirmationModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 fade-in">
-      <div className="glass-effect p-6 w-full max-w-md fade-in-delay-1">
+      <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md fade-in-delay-1">
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-3">
             <AlertTriangle className={`h-6 w-6 ${styles.icon}`} />
@@ -62,7 +62,7 @@ export function ConfirmationModal({
         <div className="flex gap-3 justify-end">
           <button
             onClick={onCancel}
-            className="px-4 py-2 glass-effect text-gray-700 rounded-lg hover:bg-white/30 hover:text-gray-900 transition-colors"
+            className="px-4 py-2 bg-dark-lighter text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
           >
             {cancelText}
           </button>

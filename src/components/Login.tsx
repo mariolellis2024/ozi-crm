@@ -46,7 +46,7 @@ export function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 fade-in">
-      <div className="max-w-md w-full space-y-8 glass-effect p-8 scale-in hover-lift">
+      <div className="max-w-md w-full space-y-8 bg-dark-card p-8 rounded-2xl scale-in hover-lift">
         <div className="text-center scale-in-delay-1">
           <img src="/favicon.webp" alt="Pepper Heads Logo" className="mx-auto h-12 w-12 rounded" />
           <h2 className="mt-6 text-3xl font-bold text-white">
