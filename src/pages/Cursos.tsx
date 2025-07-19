@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Pencil, Trash2, X, Clock, TrendingUp, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Clock, TrendingUp, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
@@ -291,7 +291,11 @@ export function Cursos() {
           formData={formData}
           setFormData={setFormData}
           onSubmit={handleSubmit}
-          onClose={() => { setIsModalOpen(false); setFormData({ nome: '', carga_horaria: '', preco: '' }); setEditingId(null); }}
+          onClose={() => {
+            setIsModalOpen(false);
+            setFormData({ nome: '', carga_horaria: '', preco: '' });
+            setEditingId(null);
+          }}
         />
 
         <ConfirmationModal

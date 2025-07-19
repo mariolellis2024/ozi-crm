@@ -1,4 +1,3 @@
-```typescript
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
@@ -132,4 +131,3 @@ export function ModalCurso({
     document.body // Renderiza diretamente no body
   );
 }
-```
