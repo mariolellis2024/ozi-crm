@@ -734,7 +734,14 @@ export function Turmas() {
                     </div>
                     <div className="flex items-center text-gray-400">
                       <Users className="h-4 w-4 mr-2" />
-                      <span>{turma.cadeiras} vagas</span>
+                      <span>
+                        {turma.cadeiras - (turma.alunos_enrolled?.length || 0)} vagas disponíveis
+                        {turma.alunos_enrolled && turma.alunos_enrolled.length > 0 && (
+                          <span className="text-xs text-gray-500 ml-1">
+                            ({turma.alunos_enrolled.length}/{turma.cadeiras})
+                          </span>
+                        )}
+                      </span>
                     </div>
                     <div className="flex items-center text-teal-accent">
                       {(() => {
