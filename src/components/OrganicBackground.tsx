@@ -47,8 +47,8 @@ export function OrganicBackground() {
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
           </defs>
-          <path d="M -100,300 Q 300,200 600,300 T 1200,300 T 1700,300" />
-          <path d="M -200,300 Q 300,200 600,300 T 1200,300 T 1700,300" />
+          <path d="M -100,300 Q 200,250 400,300 T 800,300 T 1200,300 T 1700,300" />
+          <path d="M -200,300 Q 200,250 400,300 T 800,300 T 1200,300 T 1700,300" />
         </svg>
       </div>
 
@@ -68,8 +68,8 @@ export function OrganicBackground() {
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
           </defs>
-          <path d="M -100,450 Q 400,350 800,450 T 1200,450 T 1700,450" />
-          <path d="M -200,450 Q 400,350 800,450 T 1200,450 T 1700,450" />
+          <path d="M -100,450 Q 200,400 400,450 T 800,450 T 1200,450 T 1700,450" />
+          <path d="M -200,450 Q 200,400 400,450 T 800,450 T 1200,450 T 1700,450" />
         </svg>
       </div>
 
@@ -110,8 +110,8 @@ export function OrganicBackground() {
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
             </linearGradient>
           </defs>
-          <path d="M -100,750 Q 500,650 1000,750 T 1700,750" />
-          <path d="M -200,750 Q 500,650 1000,750 T 1700,750" />
+          <path d="M -100,750 Q 200,700 400,750 T 800,750 T 1200,750 T 1700,750" />
+          <path d="M -200,750 Q 200,700 400,750 T 800,750 T 1200,750 T 1700,750" />
         </svg>
       </div>
 
