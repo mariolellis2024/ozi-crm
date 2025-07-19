@@ -317,9 +317,6 @@ export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasPr
                                 
                                 <div className="flex items-center gap-1 mb-1">
                                   <period.icon className="h-3 w-3" />
-                                  <span className="font-medium truncate">
-                                    {turmaNoPeriodo.name}
-                                  </span>
                                 </div>
                                 
                                 <div className="flex items-center gap-1 opacity-90">
