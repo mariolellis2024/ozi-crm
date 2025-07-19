@@ -5,7 +5,6 @@
 /* Fundo principal */
 body {
     min-height: 100vh;
-    background: #1b1d21;
     position: relative;
     transition: all 0.3s ease;
 }
