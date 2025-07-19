@@ -14,7 +14,9 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif']
+        sans: ['Roboto', 'sans-serif'],
+        condensed: ['Roboto Condensed', 'sans-serif'],
+        slab: ['Roboto Slab', 'serif']
       }
     },
   },
