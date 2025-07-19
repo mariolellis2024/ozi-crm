@@ -51,7 +51,6 @@ export function ModalCurso({
       <div 
         className="bg-dark-card rounded-2xl p-6 w-full max-w-md shadow-xl transform transition-all"
         style={{
-          backgroundColor: 'var(--dark-card, #2a2a2a)',
           borderRadius: '1rem',
           padding: '1.5rem',
           width: '100%',
