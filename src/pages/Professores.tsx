@@ -97,16 +97,6 @@ export function Professores() {
       toast.error('Erro ao carregar professores');
     }
   }
-        .from('professores')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      setProfessores(data);
-    } catch (error) {
-      toast.error('Erro ao carregar professores');
-    }
-  }
 
   async function checkProfessorInUse(professorId: string): Promise<boolean> {
     const { data, error } = await supabase
@@ -241,25 +231,6 @@ export function Professores() {
                     <p className="text-teal-accent font-semibold">
                       {formatCurrency(professor.valor_hora)}/hora
                     </p>
-                    {(professor.total_a_receber !== undefined && professor.total_recebido !== undefined) && (
-                      <div className="space-y-1 pt-2 border-t border-gray-700">
-                        {professor.total_a_receber > 0 && (
-                          <p className="text-yellow-400 font-medium text-sm">
-                            A receber: {formatCurrency(professor.total_a_receber)}
-                          </p>
-                        )}
-                        {professor.total_recebido > 0 && (
-                          <p className="text-emerald-400 font-medium text-sm">
-                            Já recebido: {formatCurrency(professor.total_recebido)}
-                          </p>
-                        )}
-                        {professor.total_a_receber === 0 && professor.total_recebido === 0 && (
-                          <p className="text-gray-500 text-sm">
-                            Nenhuma turma atribuída
-                          </p>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
                 <div className="flex space-x-2">
