@@ -166,7 +166,7 @@ export function Turmas() {
           .from('turmas')
           .select(`
             *,
-            curso:cursos(*),
+            curso:cursos(*, categoria:categorias(nome)),
             sala:salas(*),
             professores:turma_professores(
               id,
@@ -650,7 +650,7 @@ export function Turmas() {
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold text-white mb-2">{turma.name}</h3>
-                  <div className="mb-3">
+                  <div className="mb-3 flex items-center gap-2 flex-wrap">
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                       getTurmaStatus(turma.start_date, turma.end_date) === 'aberta' 
                         ? 'bg-blue-500/20 text-blue-400'
@@ -660,6 +660,11 @@ export function Turmas() {
                     }`}>
                       {getStatusLabel(getTurmaStatus(turma.start_date, turma.end_date))}
                     </span>
+                    {turma.curso?.categoria?.nome && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                        {turma.curso.categoria.nome}
+                      </span>
+                    )}
                   </div>
                   <div className="space-y-3">
                     <div className="flex items-center text-gray-400">
