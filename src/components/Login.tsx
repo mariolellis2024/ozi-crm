@@ -58,6 +58,12 @@ export function Login() {
         </div>
 
         <div className="scale-in-delay-2">
+            <linearGradient id="gradient2-light" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style={{stopColor: 'rgba(66, 153, 225, 0)', stopOpacity: 0}} />
+              <stop offset="15%" style={{stopColor: 'rgba(66, 153, 225, 0.35)', stopOpacity: 1}} />
+              <stop offset="85%" style={{stopColor: 'rgba(66, 153, 225, 0.35)', stopOpacity: 1}} />
+              <stop offset="100%" style={{stopColor: 'rgba(66, 153, 225, 0)', stopOpacity: 0}} />
+            </linearGradient>
           <AuthForm
           isSignUp={isSignUp}
           isLoading={isLoading}
@@ -66,6 +72,18 @@ export function Login() {
           onEmailChange={(e) => setEmail(e.target.value)}
           onPasswordChange={(e) => setPassword(e.target.value)}
           onSubmit={handleSubmit}
+            <linearGradient id="gradient1-light" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style={{stopColor: 'rgba(66, 153, 225, 0)', stopOpacity: 0}} />
+              <stop offset="20%" style={{stopColor: 'rgba(66, 153, 225, 0.4)', stopOpacity: 1}} />
+              <stop offset="80%" style={{stopColor: 'rgba(66, 153, 225, 0.4)', stopOpacity: 1}} />
+              <stop offset="100%" style={{stopColor: 'rgba(66, 153, 225, 0)', stopOpacity: 0}} />
+            </linearGradient>
+            <linearGradient id="gradient3-light" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style={{stopColor: 'rgba(66, 153, 225, 0)', stopOpacity: 0}} />
+              <stop offset="25%" style={{stopColor: 'rgba(66, 153, 225, 0.3)', stopOpacity: 1}} />
+              <stop offset="75%" style={{stopColor: 'rgba(66, 153, 225, 0.3)', stopOpacity: 1}} />
+              <stop offset="100%" style={{stopColor: 'rgba(66, 153, 225, 0)', stopOpacity: 0}} />
+            </linearGradient>
           onToggleMode={() => setIsSignUp(!isSignUp)}
           />
         </div>
