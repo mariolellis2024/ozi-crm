@@ -96,6 +96,7 @@ export function Alunos() {
     
     alunosData.forEach(aluno => {
       aluno.curso_interests?.forEach(interest => {
+        // Only count students who are interested (not enrolled or completed)
         if (interest.status === 'interested') {
           const curso = cursosData.find(c => c.id === interest.curso_id);
           if (curso) {
