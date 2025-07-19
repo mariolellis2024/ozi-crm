@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Pencil, Trash2, Calendar, Users, MapPin, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon, Search, Filter, BookOpen, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Calendar, Users, MapPin, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon, Search, Filter, BookOpen, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
