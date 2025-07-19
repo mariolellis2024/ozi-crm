@@ -40,10 +40,13 @@ export function ModalAlunosInteressados({
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [enrollingStudents, setEnrollingStudents] = useState<Set<string>>(new Set());
+  const [enrolledCount, setEnrolledCount] = useState(0);
+  const [turmaCapacity, setTurmaCapacity] = useState(0);
 
   useEffect(() => {
     if (isOpen) {
       loadAlunosInteressados();
+      loadTurmaInfo();
     }
   }, [isOpen, cursoId, turmaPeriod]);
 
@@ -98,7 +101,38 @@ export function ModalAlunosInteressados({
     }
   }
 
+  async function loadTurmaInfo() {
+    try {
+      const [turmaResult, enrolledResult] = await Promise.all([
+        supabase
+          .from('turmas')
+          .select('cadeiras')
+          .eq('id', turmaId)
+          .single(),
+        supabase
+          .from('aluno_curso_interests')
+          .select('id')
+          .eq('turma_id', turmaId)
+          .eq('status', 'enrolled')
+      ]);
+
+      if (turmaResult.error) throw turmaResult.error;
+      if (enrolledResult.error) throw enrolledResult.error;
+
+      setTurmaCapacity(turmaResult.data.cadeiras);
+      setEnrolledCount(enrolledResult.data.length);
+    } catch (error) {
+      console.error('Erro ao carregar informações da turma:', error);
+    }
+  }
+
   async function handleEnrollStudent(alunoId: string) {
+    // Verificar se ainda há vagas disponíveis
+    if (enrolledCount >= turmaCapacity) {
+      toast.error('Turma lotada! Não há mais vagas disponíveis.');
+      return;
+    }
+
     setEnrollingStudents(prev => new Set(prev).add(alunoId));
     
     try {
@@ -117,6 +151,9 @@ export function ModalAlunosInteressados({
       
       // Remove the enrolled student from the list
       setAlunosInteressados(prev => prev.filter(aluno => aluno.id !== alunoId));
+      
+      // Update enrolled count
+      setEnrolledCount(prev => prev + 1);
       
       // Notify parent component to refresh data
       onStudentEnrolled();
@@ -201,13 +238,20 @@ export function ModalAlunosInteressados({
                     <button
                       onClick={() => handleEnrollStudent(aluno.id)}
                       disabled={enrollingStudents.has(aluno.id)}
-                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      disabled={enrollingStudents.has(aluno.id) || enrolledCount >= turmaCapacity}
+                      className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
+                        enrolledCount >= turmaCapacity 
+                          ? 'bg-gray-500 text-gray-300' 
+                          : 'bg-green-500 text-white hover:bg-green-600'
+                      }`}
                     >
                       {enrollingStudents.has(aluno.id) ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                           Matriculando...
                         </>
+                      ) : enrolledCount >= turmaCapacity ? (
+                        'Turma Lotada'
                       ) : (
                         'Matricular'
                       )}
@@ -233,12 +277,32 @@ export function ModalAlunosInteressados({
           )}
         </div>
 
+        {/* Informações da turma */}
+        <div className="mb-4 p-3 bg-dark-lighter rounded-lg border border-gray-700">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-400">Vagas da turma:</span>
+            <span className={`font-semibold ${
+              enrolledCount >= turmaCapacity ? 'text-red-400' : 'text-green-400'
+            }`}>
+              {enrolledCount}/{turmaCapacity}
+            </span>
+          </div>
+          {enrolledCount >= turmaCapacity && (
+            <div className="mt-2 text-xs text-red-400">
+              ⚠️ Turma lotada - Não é possível matricular mais alunos
+            </div>
+          )}
+        </div>
+
         {filteredAlunos.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-700">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-400">
-                {filteredAlunos.length} aluno{filteredAlunos.length !== 1 ? 's' : ''} interessado{filteredAlunos.length !== 1 ? 's' : ''}
-              </span>
+              <div className="text-gray-400">
+                <div>{filteredAlunos.length} aluno{filteredAlunos.length !== 1 ? 's' : ''} interessado{filteredAlunos.length !== 1 ? 's' : ''}</div>
+                <div className="text-xs mt-1">
+                  {Math.max(0, turmaCapacity - enrolledCount)} vaga{Math.max(0, turmaCapacity - enrolledCount) !== 1 ? 's' : ''} disponível{Math.max(0, turmaCapacity - enrolledCount) !== 1 ? 'eis' : ''}
+                </div>
+              </div>
               <span className="text-emerald-400 font-semibold">
                 Potencial: {formatCurrency(cursoPreco * filteredAlunos.length)}
               </span>

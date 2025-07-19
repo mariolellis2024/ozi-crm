@@ -883,7 +883,11 @@ export function Turmas() {
                     {/* Alunos Interessados */}
                     {turma.alunos_interessados && turma.alunos_interessados.length > 0 && (
                       <div 
-                        className="mt-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 w-full col-span-full cursor-pointer hover:bg-blue-500/15 transition-colors"
+                        className={`mt-3 p-3 rounded-lg border w-full col-span-full transition-colors ${
+                          (turma.alunos_enrolled?.length || 0) >= turma.cadeiras
+                            ? 'bg-gray-500/10 border-gray-500/20 cursor-not-allowed'
+                            : 'bg-blue-500/10 border-blue-500/20 cursor-pointer hover:bg-blue-500/15'
+                        }`}
                         onClick={() => handleOpenAlunosInteressados(turma)}
                       >
                         <div className="flex items-center gap-2 mb-2">
@@ -891,10 +895,15 @@ export function Turmas() {
                           <span className="text-blue-400 font-medium text-sm">
                             {turma.alunos_interessados.length} Interessado{turma.alunos_interessados.length > 1 ? 's' : ''}
                           </span>
-                          <span className="text-xs text-gray-400 ml-auto">Clique para ver lista</span>
+                          <span className="text-xs text-gray-400 ml-auto">
+                            {(turma.alunos_enrolled?.length || 0) >= turma.cadeiras 
+                              ? 'Turma lotada' 
+                              : 'Clique para ver lista'
+                            }
+                          </span>
                         </div>
                         <div className="mt-2 text-emerald-400 text-xs font-medium">
-                          Potencial: {formatCurrency((turma.curso?.preco || 0) * turma.alunos_interessados.length)}
+                          Potencial: {formatCurrency((turma.curso?.preco || 0) * Math.min(turma.alunos_interessados.length, Math.max(0, turma.cadeiras - (turma.alunos_enrolled?.length || 0))))}
                         </div>
                       </div>
                     )}
