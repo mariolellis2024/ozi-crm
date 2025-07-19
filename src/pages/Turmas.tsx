@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalTurma } from '../components/ModalTurma';
+import { ModalAlunosInteressados } from '../components/ModalAlunosInteressados';
 
 type Period = 'manha' | 'tarde' | 'noite';
 type TurmaStatus = 'aberta' | 'andamento' | 'finalizada' | 'all';
@@ -110,6 +111,14 @@ export function Turmas() {
     professores: [] as Array<{ professor_id: string; hours: number }>
   });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [alunosInteressadosModal, setAlunosInteressadosModal] = useState({
+    isOpen: false,
+    turmaId: '',
+    cursoId: '',
+    turmaPeriod: '' as Period,
+    cursoNome: '',
+    cursoPreco: 0
+  });
 
   function getTurmaStatus(startDate: string, endDate: string): TurmaStatus {
     const today = new Date();
@@ -585,6 +594,28 @@ export function Turmas() {
     }
   }
 
+  function handleOpenAlunosInteressados(turma: Turma) {
+    setAlunosInteressadosModal({
+      isOpen: true,
+      turmaId: turma.id,
+      cursoId: turma.curso_id,
+      turmaPeriod: turma.period,
+      cursoNome: turma.curso?.nome || '',
+      cursoPreco: turma.curso?.preco || 0
+    });
+  }
+
+  function handleCloseAlunosInteressados() {
+    setAlunosInteressadosModal({
+      isOpen: false,
+      turmaId: '',
+      cursoId: '',
+      turmaPeriod: 'manha',
+      cursoNome: '',
+      cursoPreco: 0
+    });
+  }
+
   const filteredTurmas = turmas.filter(turma => {
     const matchesSearch = turma.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       turma.curso?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -835,62 +866,17 @@ export function Turmas() {
                     
                     {/* Alunos Interessados */}
                     {turma.alunos_interessados && turma.alunos_interessados.length > 0 && (
-                      <div className="mt-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 w-full col-span-full">
+                      <div 
+                        className="mt-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 w-full col-span-full cursor-pointer hover:bg-blue-500/15 transition-colors"
+                        onClick={() => handleOpenAlunosInteressados(turma)}
+                      >
                         <div className="flex items-center gap-2 mb-2">
                           <Users className="h-4 w-4 text-blue-400" />
                           <span className="text-blue-400 font-medium text-sm">
                             {turma.alunos_interessados.length} Interessado{turma.alunos_interessados.length > 1 ? 's' : ''}
                           </span>
+                          <span className="text-xs text-gray-400 ml-auto">Clique para ver lista</span>
                         </div>
-                        <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {turma.alunos_interessados.slice(0, 3).map((aluno) => (
-                            <div key={aluno.id} className="flex items-center justify-between gap-2 text-blue-300 text-xs">
-                              <div className="flex items-center gap-2">
-                                <BookOpen className="h-3 w-3 text-blue-400" />
-                                <span>{aluno.nome}</span>
-                              </div>
-                              <button
-                                onClick={() => handleEnrollStudent(aluno.id, turma.id, turma.curso_id)}
-                                className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs hover:bg-green-500/30 transition-colors"
-                                title="Matricular na turma"
-                              >
-                                Matricular
-                              </button>
-                            </div>
-                          ))}
-                          {turma.alunos_interessados.length > 3 && (
-                            <div className="flex items-center justify-between">
-                              <div className="text-blue-400 text-xs font-medium">
-                                +{turma.alunos_interessados.length - 3} mais
-                              </div>
-                              <button
-                                onClick={() => setExpandedTurma(expandedTurma === turma.id ? null : turma.id)}
-                                className="text-blue-400 text-xs hover:text-blue-300 transition-colors"
-                              >
-                                {expandedTurma === turma.id ? 'Ver menos' : 'Ver todos'}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        {expandedTurma === turma.id && turma.alunos_interessados.length > 3 && (
-                          <div className="space-y-2 mt-2 pt-2 border-t border-blue-500/20">
-                            {turma.alunos_interessados.slice(3).map((aluno) => (
-                              <div key={aluno.id} className="flex items-center justify-between gap-2 text-blue-300 text-xs">
-                                <div className="flex items-center gap-2">
-                                  <BookOpen className="h-3 w-3 text-blue-400" />
-                                  <span>{aluno.nome}</span>
-                                </div>
-                                <button
-                                  onClick={() => handleEnrollStudent(aluno.id, turma.id, turma.curso_id)}
-                                  className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs hover:bg-green-500/30 transition-colors"
-                                  title="Matricular na turma"
-                                >
-                                  Matricular
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
                         <div className="mt-2 text-emerald-400 text-xs font-medium">
                           Potencial: {formatCurrency((turma.curso?.preco || 0) * turma.alunos_interessados.length)}
                         </div>
@@ -1020,6 +1006,17 @@ export function Turmas() {
           onConfirm={handleConfirmDelete}
           onCancel={handleCancelDelete}
           variant="danger"
+        />
+
+        <ModalAlunosInteressados
+          isOpen={alunosInteressadosModal.isOpen}
+          onClose={handleCloseAlunosInteressados}
+          turmaId={alunosInteressadosModal.turmaId}
+          cursoId={alunosInteressadosModal.cursoId}
+          turmaPeriod={alunosInteressadosModal.turmaPeriod}
+          cursoNome={alunosInteressadosModal.cursoNome}
+          cursoPreco={alunosInteressadosModal.cursoPreco}
+          onStudentEnrolled={loadData}
         />
       </div>
     </div>
