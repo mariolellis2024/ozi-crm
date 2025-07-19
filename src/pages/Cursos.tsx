@@ -318,7 +318,7 @@ export function Cursos() {
                 })}
               </div>
             </div>
-          })}
+          ))}
           {sortedCategories.length === 0 && (
             <div className="text-center text-gray-400 py-8">
               Nenhum curso cadastrado
