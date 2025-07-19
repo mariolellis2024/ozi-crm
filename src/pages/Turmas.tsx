@@ -193,6 +193,10 @@ export function Turmas() {
           .select(`
             curso_id,
             status,
+            aluno:alunos(available_periods)
+          `)
+            curso_id,
+            status,
             turma_id,
             aluno:alunos(id, nome)
           `)
@@ -215,7 +219,11 @@ export function Turmas() {
           .filter((interest: any) => 
             interest.curso_id === turma.curso_id && 
             interest.status === 'interested' &&
-            !interest.turma_id
+            !interest.turma_id &&
+            // Filter by period availability
+            (!interest.aluno.available_periods || 
+             interest.aluno.available_periods.length === 0 || 
+             interest.aluno.available_periods.includes(turma.period))
           )
           .map((interest: any) => ({
             id: interest.aluno.id,
@@ -271,6 +279,10 @@ export function Turmas() {
       interests.forEach((interest: any) => {
         const curso = cursosData.find(c => c.id === interest.curso_id);
         if (!curso) return;
+        
+        // Only count interests from students available in all periods or no period specified
+        const studentPeriods = interest.aluno?.available_periods || [];
+        const isAvailableForAllPeriods = studentPeriods.length === 0;
 
         if (!suggestionMap[curso.id]) {
           suggestionMap[curso.id] = {
@@ -284,13 +296,21 @@ export function Turmas() {
         suggestionMap[curso.id].interestedCount++;
         suggestionMap[curso.id].potentialRevenue += curso.preco;
 
-        // Count period preferences
-        const periods = interest.aluno?.available_periods || [];
-        periods.forEach((period: Period) => {
-          if (!suggestionMap[curso.id].recommendedPeriods.includes(period)) {
-            suggestionMap[curso.id].recommendedPeriods.push(period);
-          }
-        });
+        // Count period preferences only if student has specified periods
+        if (!isAvailableForAllPeriods) {
+          studentPeriods.forEach((period: Period) => {
+            if (!suggestionMap[curso.id].recommendedPeriods.includes(period)) {
+              suggestionMap[curso.id].recommendedPeriods.push(period);
+            }
+          });
+        } else {
+          // If student is available for all periods, add all periods as recommended
+          ['manha', 'tarde', 'noite'].forEach((period: Period) => {
+            if (!suggestionMap[curso.id].recommendedPeriods.includes(period)) {
+              suggestionMap[curso.id].recommendedPeriods.push(period);
+            }
+          });
+        }
       });
 
       // Filter suggestions with at least 2 interested students and sort by potential revenue
