@@ -315,25 +315,13 @@ export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasPr
                                   style={{ width: `${ocupacao}%` }}
                                 ></div>
                                 
-                                <div className="flex items-center gap-1 mb-1">
-                                  <period.icon className="h-3 w-3" />
-                                  <span className="font-medium truncate">
-                                    {turmaNoPeriodo.name}
-                                  </span>
-                                </div>
-                                
-                                <div className="flex items-center gap-1 opacity-90">
-                                  <BookOpen className="h-2.5 w-2.5" />
-                                  <span className="truncate text-xs">
+                                <div className="text-center">
+                                  <div className="font-medium truncate text-xs mb-1">
                                     {turmaNoPeriodo.curso?.nome}
-                                  </span>
-                                </div>
-                                
-                                <div className="flex items-center gap-1 mt-1 opacity-80">
-                                  <Users className="h-2.5 w-2.5" />
-                                  <span className="text-xs">
+                                  </div>
+                                  <div className="text-xs font-semibold">
                                     {alunosMatriculados}/{turmaNoPeriodo.cadeiras}
-                                  </span>
+                                  </div>
                                 </div>
                               </div>
                             );
