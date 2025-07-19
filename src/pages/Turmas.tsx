@@ -666,7 +666,6 @@ export function Turmas() {
                       <span>{turma.cadeiras} vagas</span>
                     </div>
                     <div className="flex items-center text-teal-accent">
-                      <DollarSign className="h-4 w-4 mr-2" />
                       <span className="font-semibold">
                         {formatCurrency(turma.potencial_faturamento)}
                       </span>
