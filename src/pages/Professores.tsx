@@ -12,12 +12,8 @@ interface Professor {
   email: string;
   whatsapp: string;
   valor_hora: number;
-}
-
-interface TurmaProfessor {
-  id: string;
-  turma_id: string;
-  professor_id: string;
+  total_a_receber?: number;
+  total_recebido?: number;
 }
 
 export function Professores() {
@@ -42,7 +38,65 @@ export function Professores() {
 
   async function loadProfessores() {
     try {
-      const { data, error } = await supabase
+      const [professoresResult, turmasResult] = await Promise.all([
+        supabase
+          .from('professores')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('turma_professores')
+          .select(`
+            professor_id,
+            hours,
+            turma:turmas(
+              id,
+              start_date,
+              end_date
+            )
+          `)
+      ]);
+      
+      if (professoresResult.error) throw professoresResult.error;
+      if (turmasResult.error) throw turmasResult.error;
+
+      // Calculate earnings for each professor
+      const professoresWithEarnings = professoresResult.data.map(professor => {
+        const professorTurmas = turmasResult.data.filter(tp => tp.professor_id === professor.id);
+        
+        let totalAReceber = 0;
+        let totalRecebido = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        professorTurmas.forEach(tp => {
+          if (tp.turma) {
+            const endDate = new Date(tp.turma.end_date);
+            endDate.setHours(0, 0, 0, 0);
+            
+            const earnings = tp.hours * professor.valor_hora;
+            
+            if (endDate <= today) {
+              // Turma já terminou - valor já recebido
+              totalRecebido += earnings;
+            } else {
+              // Turma ainda em andamento ou futura - valor a receber
+              totalAReceber += earnings;
+            }
+          }
+        });
+        
+        return {
+          ...professor,
+          total_a_receber: totalAReceber,
+          total_recebido: totalRecebido
+        };
+      });
+
+      setProfessores(professoresWithEarnings);
+    } catch (error) {
+      toast.error('Erro ao carregar professores');
+    }
+  }
         .from('professores')
         .select('*')
         .order('created_at', { ascending: false });
@@ -187,6 +241,25 @@ export function Professores() {
                     <p className="text-teal-accent font-semibold">
                       {formatCurrency(professor.valor_hora)}/hora
                     </p>
+                    {(professor.total_a_receber !== undefined && professor.total_recebido !== undefined) && (
+                      <div className="space-y-1 pt-2 border-t border-gray-700">
+                        {professor.total_a_receber > 0 && (
+                          <p className="text-yellow-400 font-medium text-sm">
+                            A receber: {formatCurrency(professor.total_a_receber)}
+                          </p>
+                        )}
+                        {professor.total_recebido > 0 && (
+                          <p className="text-emerald-400 font-medium text-sm">
+                            Já recebido: {formatCurrency(professor.total_recebido)}
+                          </p>
+                        )}
+                        {professor.total_a_receber === 0 && professor.total_recebido === 0 && (
+                          <p className="text-gray-500 text-sm">
+                            Nenhuma turma atribuída
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex space-x-2">
