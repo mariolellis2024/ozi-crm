@@ -50,7 +50,7 @@ export function Layout({ children }: LayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen flex fade-in">
+    <div className="min-h-screen bg-dark flex fade-in">
       <aside className="w-64 bg-dark-lighter fixed h-full slide-in-left">
         <div className="p-6 scale-in">
           <div className="flex items-center justify-center space-x-3">
