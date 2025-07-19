@@ -822,56 +822,6 @@ export function Turmas() {
               </select>
             </div>
           </div>
-          
-          <div className="bg-dark-card rounded-xl p-4">
-            <p className="text-gray-400 text-sm">Resumo Financeiro</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-              <div>
-                <p className="text-sm text-gray-400">A Receber (Em Andamento)</p>
-                <p className="text-lg font-bold text-yellow-400">
-                  {formatCurrency(
-                    filteredTurmas
-                      .filter(turma => getTurmaStatus(turma.start_date, turma.end_date) === 'andamento')
-                      .reduce((total, turma) => {
-                        const alunosMatriculados = turma.alunos_enrolled?.length || 0;
-                        return total + (alunosMatriculados * (turma.curso?.preco || 0));
-                      }, 0)
-                  )}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Recebido (Finalizadas)</p>
-                <p className="text-lg font-bold text-green-400">
-                  {formatCurrency(
-                    filteredTurmas
-                      .filter(turma => getTurmaStatus(turma.start_date, turma.end_date) === 'finalizada')
-                      .reduce((total, turma) => {
-                        const alunosCompletos = turma.alunos_completed?.length || 0;
-                        return total + (alunosCompletos * (turma.curso?.preco || 0));
-                      }, 0)
-                  )}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Potencial (Interessados)</p>
-                <p className="text-lg font-bold text-blue-400">
-                  {formatCurrency(
-                    filteredTurmas
-                      .filter(turma => getTurmaStatus(turma.start_date, turma.end_date) === 'aberta')
-                      .reduce((total, turma) => {
-                        const alunosInteressados = turma.alunos_interessados?.length || 0;
-                        const vagasDisponiveis = Math.max(0, turma.cadeiras - (turma.alunos_enrolled?.length || 0));
-                        const potencialMatriculas = Math.min(alunosInteressados, vagasDisponiveis);
-                        return total + (potencialMatriculas * (turma.curso?.preco || 0));
-                      }, 0)
-                  )}
-                </p>
-              </div>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Acompanhe o desempenho financeiro das turmas
-            </p>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 scale-in-delay-1">
