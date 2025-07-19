@@ -4,14 +4,36 @@ import { GraduationCap, User, LogOut, BookOpen, Home, ChevronLeft, ChevronRight,
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 
+/**
+ * Props do componente Layout
+ */
 interface LayoutProps {
   children: React.ReactNode;
 }
 
+/**
+ * Componente Layout Principal
+ * 
+ * Responsável por:
+ * - Renderizar a estrutura base da aplicação (sidebar + conteúdo)
+ * - Gerenciar navegação entre páginas
+ * - Controlar logout do usuário
+ * - Fornecer feedback visual de navegação ativa
+ * 
+ * @param children - Conteúdo a ser renderizado na área principal
+ */
 export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   
+  /**
+   * Gerencia o logout do usuário
+   * 
+   * Trata diferentes cenários de erro:
+   * - Sessão já expirada
+   * - Erros de rede
+   * - Outros erros inesperados
+   */
   const handleSignOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -41,6 +63,10 @@ export function Layout({ children }: LayoutProps) {
     }
   };
 
+  /**
+   * Configuração dos itens do menu de navegação
+   * Cada item contém ícone, label e rota correspondente
+   */
   const menuItems = [
     { icon: Home, label: 'Turmas', path: '/' },
     { icon: User, label: 'Alunos', path: '/alunos' },

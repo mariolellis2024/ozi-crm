@@ -6,22 +6,34 @@ import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalAluno } from '../components/ModalAluno';
 
+/**
+ * Tipos para ordenação e filtros
+ */
 type SortField = 'created_at' | 'nome';
 type SortDirection = 'asc' | 'desc';
 type Period = 'manha' | 'tarde' | 'noite';
 
+/**
+ * Configuração dos períodos disponíveis
+ */
 const PERIODS: { value: Period; label: string; icon: typeof Sun }[] = [
   { value: 'manha', label: 'Manhã', icon: Sun },
   { value: 'tarde', label: 'Tarde', icon: Sunset },
   { value: 'noite', label: 'Noite', icon: Moon }
 ];
 
+/**
+ * Interface para interesse de aluno em curso
+ */
 interface CursoInterest {
   id?: string;
   curso_id: string;
   status: 'interested' | 'enrolled' | 'completed';
 }
 
+/**
+ * Interface principal do aluno com relacionamentos
+ */
 interface Aluno {
   id: string;
   nome: string;
@@ -33,11 +45,24 @@ interface Aluno {
   created_at: string;
 }
 
+/**
+ * Interface para dados de curso
+ */
 interface Curso {
   id: string;
   nome: string;
 }
 
+/**
+ * Componente principal da página de Alunos
+ * 
+ * Funcionalidades:
+ * - Listagem de alunos com filtros avançados
+ * - Gestão de interesses em cursos
+ * - Cálculo de faturamento potencial
+ * - Controle de status (interessado/matriculado/concluído)
+ * - Busca e ordenação
+ */
 export function Alunos() {
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
@@ -62,6 +87,9 @@ export function Alunos() {
     alunoNome: ''
   });
 
+  /**
+   * Alterna a seleção de um período de disponibilidade
+   */
   function togglePeriod(period: Period) {
     const currentPeriods = formData.available_periods;
     const isSelected = currentPeriods.includes(period);
@@ -79,6 +107,9 @@ export function Alunos() {
     }
   }
 
+  /**
+   * Fecha o modal e limpa o formulário
+   */
   function handleCloseModal() {
     setIsModalOpen(false);
     setFormData({
@@ -91,6 +122,15 @@ export function Alunos() {
     setEditingId(null);
   }
 
+  /**
+   * Calcula o faturamento potencial baseado em alunos interessados
+   * 
+   * Considera apenas alunos com status 'interested'
+   * 
+   * @param alunosData - Lista de alunos
+   * @param cursosData - Lista de cursos com preços
+   * @returns Valor total do faturamento potencial
+   */
   function calculateOpenRevenue(alunosData: Aluno[], cursosData: Curso[]): number {
     let total = 0;
     
@@ -109,10 +149,17 @@ export function Alunos() {
     return total;
   }
 
+  /**
+   * Carrega dados iniciais da página
+   */
   useEffect(() => {
     loadData();
   }, []);
 
+  /**
+   * Carrega alunos e cursos do banco de dados
+   * Calcula faturamento potencial automaticamente
+   */
   async function loadData() {
     try {
       const [alunosResult, cursosResult] = await Promise.all([
@@ -149,6 +196,9 @@ export function Alunos() {
     }
   }
 
+  /**
+   * Ordena lista de alunos por campo e direção especificados
+   */
   function sortAlunos(alunosToSort: Aluno[], field: SortField, direction: SortDirection): Aluno[] {
     return [...alunosToSort].sort((a, b) => {
       if (field === 'created_at') {
@@ -163,6 +213,10 @@ export function Alunos() {
     });
   }
 
+  /**
+   * Gerencia mudança de ordenação
+   * Alterna direção se o mesmo campo for clicado novamente
+   */
   function handleSort(field: SortField) {
     const newDirection = field === sortField && sortDirection === 'desc' ? 'asc' : 'desc';
     setSortField(field);
@@ -170,6 +224,9 @@ export function Alunos() {
     setAlunos(sortAlunos(alunos, field, newDirection));
   }
 
+  /**
+   * Submete formulário de criação/edição de aluno
+   */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
@@ -204,6 +261,13 @@ export function Alunos() {
     }
   }
 
+  /**
+   * Atualiza o status de interesse de um aluno em um curso
+   * 
+   * @param alunoId - ID do aluno
+   * @param cursoId - ID do curso
+   * @param status - Novo status do interesse
+   */
   async function handleStatusChange(alunoId: string, cursoId: string, status: CursoInterest['status']) {
     try {
       // Check if interest already exists
@@ -242,6 +306,9 @@ export function Alunos() {
     }
   }
 
+  /**
+   * Remove completamente o interesse de um aluno em um curso
+   */
   async function handleRemoveInterest(alunoId: string, cursoId: string) {
     try {
       const { error } = await supabase
@@ -257,6 +324,9 @@ export function Alunos() {
     }
   }
 
+  /**
+   * Inicia processo de exclusão de aluno
+   */
   async function handleDelete(id: string) {
     const aluno = alunos.find(a => a.id === id);
     if (!aluno) return;
@@ -268,6 +338,9 @@ export function Alunos() {
     });
   }
 
+  /**
+   * Confirma e executa exclusão do aluno
+   */
   async function handleConfirmDelete() {
     try {
       const { error } = await supabase
@@ -285,10 +358,16 @@ export function Alunos() {
     }
   }
 
+  /**
+   * Cancela exclusão do aluno
+   */
   function handleCancelDelete() {
     setConfirmModal({ isOpen: false, alunoId: '', alunoNome: '' });
   }
 
+  /**
+   * Prepara formulário para edição de aluno existente
+   */
   function handleEdit(aluno: Aluno) {
     setFormData({
       nome: aluno.nome,
@@ -301,16 +380,25 @@ export function Alunos() {
     setIsModalOpen(true);
   }
 
+  /**
+   * Retorna ícone correspondente ao período
+   */
   function getPeriodIcon(period: Period) {
     const periodConfig = PERIODS.find(p => p.value === period);
     const Icon = periodConfig?.icon || Sun;
     return <Icon className="h-4 w-4" />;
   }
 
+  /**
+   * Retorna label em português do período
+   */
   function getPeriodLabel(period: Period) {
     return PERIODS.find(p => p.value === period)?.label || '';
   }
 
+  /**
+   * Formata data para exibição
+   */
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleString('pt-BR', {
       day: '2-digit',
@@ -321,6 +409,9 @@ export function Alunos() {
     });
   }
 
+  /**
+   * Filtra alunos baseado nos critérios de busca e filtros
+   */
   const filteredAlunos = alunos.filter(aluno => {
     // Filter by search term
     const matchesSearch = aluno.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -346,6 +437,9 @@ export function Alunos() {
     return matchesSearch && matchesInterestStatus;
   });
 
+  /**
+   * Opções de filtro por status de interesse
+   */
   const filterOptions = [
     { value: 'all' as const, label: 'Todos', icon: Filter },
     { value: 'interested' as const, label: 'Interessados', icon: BookOpen },

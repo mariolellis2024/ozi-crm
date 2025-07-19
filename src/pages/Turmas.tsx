@@ -7,15 +7,25 @@ import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalTurma } from '../components/ModalTurma';
 import { ModalAlunosInteressados } from '../components/ModalAlunosInteressados';
 
+/**
+ * Tipos de período disponíveis para as turmas
+ */
 type Period = 'manha' | 'tarde' | 'noite';
 type TurmaStatus = 'aberta' | 'andamento' | 'finalizada' | 'all';
 
+/**
+ * Configuração dos períodos com ícones correspondentes
+ */
 const PERIODS: { value: Period; label: string; icon: typeof Sun }[] = [
   { value: 'manha', label: 'Manhã', icon: Sun },
   { value: 'tarde', label: 'Tarde', icon: Sunset },
   { value: 'noite', label: 'Noite', icon: Moon }
 ];
 
+/**
+ * Interface para dados de uma turma
+ * Inclui relacionamentos com curso, sala, professores e alunos
+ */
 interface Turma {
   id: string;
   name: string;
@@ -55,6 +65,9 @@ interface Turma {
   }>;
 }
 
+/**
+ * Interfaces para entidades relacionadas
+ */
 interface Curso {
   id: string;
   nome: string;
@@ -74,6 +87,9 @@ interface Professor {
   valor_hora: number;
 }
 
+/**
+ * Interface para sugestões de novas turmas baseadas em demanda
+ */
 interface Suggestion {
   curso: Curso;
   interestedCount: number;
@@ -81,6 +97,17 @@ interface Suggestion {
   mostDemandedPeriod?: Period;
 }
 
+/**
+ * Componente principal da página de Turmas
+ * 
+ * Funcionalidades:
+ * - Listagem de turmas com filtros avançados
+ * - Criação e edição de turmas
+ * - Sugestões inteligentes baseadas em demanda
+ * - Gestão de alunos interessados/matriculados
+ * - Cálculos financeiros automáticos
+ * - Controle de conflitos de sala/horário
+ */
 export function Turmas() {
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
@@ -120,6 +147,13 @@ export function Turmas() {
     cursoPreco: 0
   });
 
+  /**
+   * Determina o status de uma turma baseado nas datas
+   * 
+   * @param startDate - Data de início da turma
+   * @param endDate - Data de término da turma
+   * @returns Status da turma (aberta/andamento/finalizada)
+   */
   function getTurmaStatus(startDate: string, endDate: string): TurmaStatus {
     const today = new Date();
     const start = new Date(startDate);
@@ -139,6 +173,9 @@ export function Turmas() {
     }
   }
 
+  /**
+   * Retorna a cor CSS correspondente ao status da turma
+   */
   function getStatusColor(status: TurmaStatus): string {
     switch (status) {
       case 'aberta':
@@ -152,6 +189,9 @@ export function Turmas() {
     }
   }
 
+  /**
+   * Retorna o label em português para o status da turma
+   */
   function getStatusLabel(status: TurmaStatus): string {
     switch (status) {
       case 'aberta':
@@ -169,6 +209,18 @@ export function Turmas() {
     loadData();
   }, []);
 
+  /**
+   * Carrega todos os dados necessários para a página
+   * 
+   * Busca:
+   * - Turmas com relacionamentos
+   * - Cursos disponíveis
+   * - Salas disponíveis
+   * - Professores
+   * - Interesses de alunos
+   * 
+   * Também processa dados para adicionar informações calculadas
+   */
   async function loadData() {
     try {
       const [turmasResult, cursosResult, salasResult, professoresResult, interessesResult] = await Promise.all([
@@ -257,6 +309,16 @@ export function Turmas() {
     }
   }
 
+  /**
+   * Gera sugestões de novas turmas baseadas na demanda de alunos
+   * 
+   * Analisa:
+   * - Número de alunos interessados por curso
+   * - Períodos de maior demanda
+   * - Potencial de faturamento
+   * 
+   * @param cursosData - Lista de cursos disponíveis
+   */
   async function generateSuggestions(cursosData: Curso[]) {
     try {
       const { data: interests, error } = await supabase
@@ -346,16 +408,30 @@ export function Turmas() {
     }
   }
 
+  /**
+   * Retorna o ícone correspondente ao período
+   */
   function getPeriodIcon(period: Period) {
     const periodConfig = PERIODS.find(p => p.value === period);
     const Icon = periodConfig?.icon || Sun;
     return <Icon className="h-4 w-4" />;
   }
 
+  /**
+   * Retorna o label em português do período
+   */
   function getPeriodLabel(period: Period) {
     return PERIODS.find(p => p.value === period)?.label || '';
   }
 
+  /**
+   * Submete o formulário de criação/edição de turma
+   * 
+   * Inclui validações:
+   * - Conflitos de sala/horário
+   * - Dados obrigatórios
+   * - Cálculos automáticos
+   */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
@@ -434,6 +510,16 @@ export function Turmas() {
     }
   }
 
+  /**
+   * Verifica se há conflito de sala no período e datas especificados
+   * 
+   * @param salaId - ID da sala
+   * @param period - Período da turma
+   * @param startDate - Data de início
+   * @param endDate - Data de término
+   * @param excludeTurmaId - ID da turma a excluir da verificação (para edição)
+   * @returns true se houver conflito, false caso contrário
+   */
   async function checkRoomConflict(
     salaId: string,
     period: Period,
@@ -482,6 +568,14 @@ export function Turmas() {
     }
   }
 
+  /**
+   * Atualiza os professores atribuídos a uma turma
+   * 
+   * Remove todas as atribuições existentes e cria novas
+   * 
+   * @param turmaId - ID da turma
+   * @param professoresData - Array com professores e suas horas
+   */
   async function updateTurmaProfessores(turmaId: string, professoresData: Array<{ professor_id: string; hours: number }>) {
     try {
       // Remove existing professor assignments
@@ -510,6 +604,10 @@ export function Turmas() {
     }
   }
 
+  /**
+   * Inicia o processo de exclusão de uma turma
+   * Abre modal de confirmação
+   */
   async function handleDelete(id: string) {
     const turma = turmas.find(t => t.id === id);
     if (!turma) return;
@@ -521,6 +619,9 @@ export function Turmas() {
     });
   }
 
+  /**
+   * Confirma e executa a exclusão da turma
+   */
   async function handleConfirmDelete() {
     try {
       const { error } = await supabase
@@ -538,10 +639,16 @@ export function Turmas() {
     }
   }
 
+  /**
+   * Cancela a exclusão da turma
+   */
   function handleCancelDelete() {
     setConfirmModal({ isOpen: false, turmaId: '', turmaNome: '' });
   }
 
+  /**
+   * Prepara o formulário para edição de uma turma existente
+   */
   function handleEdit(turma: Turma) {
     setFormData({
       name: turma.name,
@@ -561,6 +668,9 @@ export function Turmas() {
     setIsModalOpen(true);
   }
 
+  /**
+   * Fecha o modal e limpa o formulário
+   */
   function handleCloseModal() {
     setIsModalOpen(false);
     setFormData({
@@ -577,10 +687,16 @@ export function Turmas() {
     setEditingId(null);
   }
 
+  /**
+   * Formata data para exibição em português
+   */
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleDateString('pt-BR');
   }
 
+  /**
+   * Matricula um aluno interessado em uma turma específica
+   */
   async function handleEnrollStudent(alunoId: string, turmaId: string, cursoId: string) {
     try {
       const { error } = await supabase
@@ -600,6 +716,9 @@ export function Turmas() {
     }
   }
 
+  /**
+   * Marca um aluno como tendo concluído o curso
+   */
   async function handleCompleteStudent(alunoId: string, turmaId: string, cursoId: string) {
     try {
       const { error } = await supabase
@@ -617,6 +736,9 @@ export function Turmas() {
     }
   }
 
+  /**
+   * Remove um aluno de uma turma (volta para interessado)
+   */
   async function handleUnenrollStudent(alunoId: string, cursoId: string) {
     try {
       const { error } = await supabase
@@ -636,6 +758,9 @@ export function Turmas() {
     }
   }
 
+  /**
+   * Abre modal com lista de alunos interessados na turma
+   */
   function handleOpenAlunosInteressados(turma: Turma) {
     setAlunosInteressadosModal({
       isOpen: true,
@@ -647,6 +772,9 @@ export function Turmas() {
     });
   }
 
+  /**
+   * Fecha modal de alunos interessados
+   */
   function handleCloseAlunosInteressados() {
     setAlunosInteressadosModal({
       isOpen: false,
@@ -658,6 +786,9 @@ export function Turmas() {
     });
   }
 
+  /**
+   * Filtra turmas baseado nos critérios de busca e filtros
+   */
   const filteredTurmas = turmas.filter(turma => {
     const matchesSearch = turma.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       turma.curso?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -671,6 +802,9 @@ export function Turmas() {
     return matchesSearch && matchesPeriod && matchesCurso && matchesStatus;
   });
 
+  /**
+   * Configuração dos filtros de status disponíveis
+   */
   return (
     <div className="p-8 fade-in">
       <div className="max-w-7xl mx-auto">
