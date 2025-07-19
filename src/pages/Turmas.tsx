@@ -1072,7 +1072,7 @@ export function Turmas() {
                     
                     {/* Alunos Matriculados (Cursando) */}
                     {turma.alunos_enrolled && turma.alunos_enrolled.length > 0 && (
-                      <div className="mt-3 p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20 w-full mx-auto">
+                      <div className="mt-3 p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20 w-full">
                         <div className="flex items-center gap-2 mb-2">
                           <Users className="h-4 w-4 text-yellow-400" />
                           <span className="text-yellow-400 font-medium text-sm">
