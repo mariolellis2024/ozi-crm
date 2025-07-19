@@ -11,7 +11,11 @@ interface Curso {
   nome: string;
   carga_horaria: number;
   preco: number;
+  categoria_id?: string;
   interested_students_count?: number;
+  categoria?: {
+    nome: string;
+  };
 }
 
 interface Turma {
@@ -26,7 +30,8 @@ export function Cursos() {
   const [formData, setFormData] = useState({
     nome: '',
     carga_horaria: '',
-    preco: ''
+    preco: '',
+    categoria_id: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({
@@ -44,7 +49,10 @@ export function Cursos() {
       const [cursosResult, interestsResult] = await Promise.all([
         supabase
           .from('cursos')
-          .select('*')
+          .select(`
+            *,
+            categoria:categorias(nome)
+          `)
           .order('created_at', { ascending: false }),
         supabase
           .from('aluno_curso_interests')
@@ -68,13 +76,24 @@ export function Cursos() {
         interested_students_count: interestCounts[curso.id] || 0
       }));
 
-      // Sort courses by interested students count (descending), then by name (ascending)
-      const sortedCursos = cursosWithInterests.sort((a, b) => {
-        if (b.interested_students_count !== a.interested_students_count) {
-          return b.interested_students_count - a.interested_students_count;
+      // Group courses by category and sort
+      const cursosGrouped = cursosWithInterests.reduce((acc: { [key: string]: Curso[] }, curso) => {
+        const categoryName = curso.categoria?.nome || 'Sem Categoria';
+        if (!acc[categoryName]) {
+          acc[categoryName] = [];
         }
-        return a.nome.localeCompare(b.nome);
-      });
+        acc[categoryName].push(curso);
+        return acc;
+      }, {});
+
+      // Sort categories alphabetically and courses within each category
+      const sortedCursos: Curso[] = [];
+      Object.keys(cursosGrouped)
+        .sort((a, b) => a.localeCompare(b))
+        .forEach(categoryName => {
+          const cursosInCategory = cursosGrouped[categoryName].sort((a, b) => a.nome.localeCompare(b.nome));
+          sortedCursos.push(...cursosInCategory);
+        });
 
       setCursos(sortedCursos);
     } catch (error) {
@@ -152,7 +171,7 @@ export function Cursos() {
       }
 
       setIsModalOpen(false);
-      setFormData({ nome: '', carga_horaria: '', preco: '' });
+      setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '' });
       setEditingId(null);
       loadCursos();
     } catch (error) {
@@ -196,11 +215,24 @@ export function Cursos() {
     setFormData({
       nome: curso.nome,
       carga_horaria: curso.carga_horaria.toString(),
-      preco: curso.preco.toString()
+      preco: curso.preco.toString(),
+      categoria_id: curso.categoria_id || ''
     });
     setEditingId(curso.id);
     setIsModalOpen(true);
   }
+
+  // Group courses by category for display
+  const cursosGrouped = cursos.reduce((acc: { [key: string]: Curso[] }, curso) => {
+    const categoryName = curso.categoria?.nome || 'Sem Categoria';
+    if (!acc[categoryName]) {
+      acc[categoryName] = [];
+    }
+    acc[categoryName].push(curso);
+    return acc;
+  }, {});
+
+  const sortedCategories = Object.keys(cursosGrouped).sort((a, b) => a.localeCompare(b));
 
   return (
     <div className="p-8 fade-in">
@@ -219,67 +251,76 @@ export function Cursos() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 scale-in-delay-1">
-          {cursos.map((curso) => {
-            const lucroHora = curso.preco / curso.carga_horaria;
-            
-            return (
-              <div key={curso.id} className="bg-dark-card rounded-2xl p-6 hover-lift hover-scale-sm">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold text-white mb-2">{curso.nome}</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center text-gray-400">
-                        <Clock className="h-4 w-4 mr-2" />
-                        <span>{curso.carga_horaria} horas</span>
-                      </div>
-                      <p className="text-teal-accent font-semibold">
-                        {formatCurrency(curso.preco)}
-                      </p>
-                      <div className="flex items-center text-emerald-500">
-                        <TrendingUp className="h-4 w-4 mr-2" />
-                        <span className="font-semibold">
-                          {formatCurrency(lucroHora)}/hora
-                        </span>
-                      </div>
-                      {curso.interested_students_count !== undefined && curso.interested_students_count > 0 && (
-                        <>
-                          <div className="flex items-center text-blue-400">
-                            <Users className="h-4 w-4 mr-2" />
-                            <span className="font-semibold">
-                              {curso.interested_students_count} {curso.interested_students_count === 1 ? 'interessado' : 'interessados'}
-                            </span>
+        <div className="space-y-8 scale-in-delay-1">
+          {sortedCategories.map((categoryName) => (
+            <div key={categoryName}>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-gray-700 pb-2">
+                {categoryName}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {cursosGrouped[categoryName].map((curso) => {
+                  const lucroHora = curso.preco / curso.carga_horaria;
+                  
+                  return (
+                    <div key={curso.id} className="bg-dark-card rounded-2xl p-6 hover-lift hover-scale-sm">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-xl font-semibold text-white mb-2">{curso.nome}</h3>
+                          <div className="space-y-3">
+                            <div className="flex items-center text-gray-400">
+                              <Clock className="h-4 w-4 mr-2" />
+                              <span>{curso.carga_horaria} horas</span>
+                            </div>
+                            <p className="text-teal-accent font-semibold">
+                              {formatCurrency(curso.preco)}
+                            </p>
+                            <div className="flex items-center text-emerald-500">
+                              <TrendingUp className="h-4 w-4 mr-2" />
+                              <span className="font-semibold">
+                                {formatCurrency(lucroHora)}/hora
+                              </span>
+                            </div>
+                            {curso.interested_students_count !== undefined && curso.interested_students_count > 0 && (
+                              <>
+                                <div className="flex items-center text-blue-400">
+                                  <Users className="h-4 w-4 mr-2" />
+                                  <span className="font-semibold">
+                                    {curso.interested_students_count} {curso.interested_students_count === 1 ? 'interessado' : 'interessados'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center text-purple-400">
+                                  <TrendingUp className="h-4 w-4 mr-2" />
+                                  <span className="font-semibold">
+                                    {formatCurrency(curso.preco * curso.interested_students_count)} potencial
+                                  </span>
+                                </div>
+                              </>
+                            )}
                           </div>
-                          <div className="flex items-center text-purple-400">
-                            <TrendingUp className="h-4 w-4 mr-2" />
-                            <span className="font-semibold">
-                              {formatCurrency(curso.preco * curso.interested_students_count)} potencial
-                            </span>
-                          </div>
-                        </>
-                      )}
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEdit(curso)}
+                            className="p-2 text-gray-400 hover:text-white transition-colors"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(curso.id)}
+                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleEdit(curso)}
-                      className="p-2 text-gray-400 hover:text-white transition-colors"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(curso.id)}
-                      className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
-            );
+            </div>
           })}
-          {cursos.length === 0 && (
-            <div className="col-span-full text-center text-gray-400 py-8">
+          {sortedCategories.length === 0 && (
+            <div className="text-center text-gray-400 py-8">
               Nenhum curso cadastrado
             </div>
           )}
@@ -293,7 +334,7 @@ export function Cursos() {
           onSubmit={handleSubmit}
           onClose={() => {
             setIsModalOpen(false);
-            setFormData({ nome: '', carga_horaria: '', preco: '' });
+            setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '' });
             setEditingId(null);
           }}
         />
