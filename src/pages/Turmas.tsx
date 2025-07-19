@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Pencil, Trash2, X, Calendar, Users, MapPin, DollarSign, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon, Search, Filter } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Calendar, Users, MapPin, DollarSign, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 
 type Period = 'manha' | 'tarde' | 'noite';
-type TurmaStatus = 'aberta' | 'andamento' | 'finalizada' | 'all';
 
 const PERIODS: { value: Period; label: string; icon: typeof Sun }[] = [
   { value: 'manha', label: 'Manhã', icon: Sun },
@@ -75,10 +74,6 @@ export function Turmas() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterPeriod, setFilterPeriod] = useState<Period | 'all'>('all');
-  const [filterCurso, setFilterCurso] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<TurmaStatus>('all');
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     turmaId: '',
@@ -95,51 +90,6 @@ export function Turmas() {
     imposto: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);
-
-  function getTurmaStatus(startDate: string, endDate: string): TurmaStatus {
-    const today = new Date();
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    // Remove time component for accurate date comparison
-    today.setHours(0, 0, 0, 0);
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
-    
-    if (today < start) {
-      return 'aberta'; // Ainda não começou
-    } else if (today >= start && today <= end) {
-      return 'andamento'; // Em andamento
-    } else {
-      return 'finalizada'; // Já terminou
-    }
-  }
-
-  function getStatusColor(status: TurmaStatus): string {
-    switch (status) {
-      case 'aberta':
-        return 'text-blue-400';
-      case 'andamento':
-        return 'text-green-400';
-      case 'finalizada':
-        return 'text-gray-400';
-      default:
-        return 'text-gray-400';
-    }
-  }
-
-  function getStatusLabel(status: TurmaStatus): string {
-    switch (status) {
-      case 'aberta':
-        return 'Aberta';
-      case 'andamento':
-        return 'Em Andamento';
-      case 'finalizada':
-        return 'Finalizada';
-      default:
-        return '';
-    }
-  }
 
   useEffect(() => {
     loadData();
@@ -352,19 +302,6 @@ export function Turmas() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   }
 
-  const filteredTurmas = turmas.filter(turma => {
-    const matchesSearch = turma.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      turma.curso?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      turma.sala?.nome.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesPeriod = filterPeriod === 'all' || turma.period === filterPeriod;
-    const matchesCurso = filterCurso === 'all' || turma.curso_id === filterCurso;
-    const turmaStatus = getTurmaStatus(turma.start_date, turma.end_date);
-    const matchesStatus = filterStatus === 'all' || turmaStatus === filterStatus;
-    
-    return matchesSearch && matchesPeriod && matchesCurso && matchesStatus;
-  });
-
   return (
     <div className="p-8 fade-in">
       <div className="max-w-7xl mx-auto">
@@ -467,79 +404,12 @@ export function Turmas() {
           </div>
         )}
 
-        <div className="mb-6 space-y-4 scale-in-delay-1">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-64">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar turmas, cursos ou salas..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-dark-lighter border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                />
-              </div>
-            </div>
-            
-            <div className="flex gap-2">
-              <select
-                value={filterPeriod}
-                onChange={(e) => setFilterPeriod(e.target.value as Period | 'all')}
-                className="bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-              >
-                <option value="all">Todos os períodos</option>
-                {PERIODS.map(period => (
-                  <option key={period.value} value={period.value}>
-                    {period.label}
-                  </option>
-                ))}
-              </select>
-              
-              <select
-                value={filterCurso}
-                onChange={(e) => setFilterCurso(e.target.value)}
-                className="bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-              >
-                <option value="all">Todos os cursos</option>
-                {cursos.map(curso => (
-                  <option key={curso.id} value={curso.id}>
-                    {curso.nome}
-                  </option>
-                ))}
-              </select>
-              
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as TurmaStatus)}
-                className="bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-              >
-                <option value="all">Todos os status</option>
-                <option value="aberta">Abertas</option>
-                <option value="andamento">Em Andamento</option>
-                <option value="finalizada">Finalizadas</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 scale-in-delay-1">
-          {filteredTurmas.map((turma) => (
+          {turmas.map((turma) => (
             <div key={turma.id} className="bg-dark-card rounded-2xl p-6 hover-lift hover-scale-sm">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold text-white mb-2">{turma.name}</h3>
-                  <div className="mb-3">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      getTurmaStatus(turma.start_date, turma.end_date) === 'aberta' 
-                        ? 'bg-blue-500/20 text-blue-400'
-                        : getTurmaStatus(turma.start_date, turma.end_date) === 'andamento'
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-gray-500/20 text-gray-400'
-                    }`}>
-                      {getStatusLabel(getTurmaStatus(turma.start_date, turma.end_date))}
-                    </span>
-                  </div>
                   <div className="space-y-3">
                     <div className="flex items-center text-gray-400">
                       <Calendar className="h-4 w-4 mr-2" />
@@ -597,9 +467,9 @@ export function Turmas() {
               </div>
             </div>
           ))}
-          {filteredTurmas.length === 0 && (
+          {turmas.length === 0 && (
             <div className="col-span-full text-center text-gray-400 py-8">
-              {turmas.length === 0 ? 'Nenhuma turma cadastrada' : 'Nenhuma turma encontrada com os filtros aplicados'}
+              Nenhuma turma cadastrada
             </div>
           )}
         </div>
