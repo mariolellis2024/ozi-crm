@@ -80,7 +80,7 @@ export function Layout({ children }: LayoutProps) {
       <aside className="w-64 bg-dark-lighter fixed h-full slide-in-left">
         <div className="p-6 scale-in">
           <div className="flex items-center justify-center space-x-3">
-            <img src="/icon.webp" alt="Pepper Heads Logo" className="h-8 w-8 flex-shrink-0 rounded" />
+            <img src="/icon.webp" alt="Pepper Heads Logo" className="w-4/5 h-auto flex-shrink-0 rounded" />
           </div>
         </div>
         <nav className="mt-6 scale-in-delay-1">
