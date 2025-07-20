@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Pencil, Trash2, Calendar, Users, MapPin, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon, Search, Filter, BookOpen, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { formatCurrency, formatDate, parseDate, getCurrentDateGMT3, datesOverlap } from '../utils/format';
+import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalTurma } from '../components/ModalTurma';
 import { ModalAlunosInteressados } from '../components/ModalAlunosInteressados';
@@ -156,9 +156,9 @@ export function Turmas() {
    * @returns Status da turma (aberta/andamento/finalizada)
    */
   function getTurmaStatus(startDate: string, endDate: string): TurmaStatus {
-    const today = getCurrentDateGMT3();
-    const start = parseDate(startDate);
-    const end = parseDate(endDate);
+    const today = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
     
     // Remove time component for accurate date comparison
     today.setHours(0, 0, 0, 0);
@@ -553,9 +553,18 @@ export function Turmas() {
 
       if (error) throw error;
 
+      // Check for date overlaps
+      const newStart = new Date(startDate);
+      const newEnd = new Date(endDate);
+
       for (const turma of existingTurmas) {
-        // Check if dates overlap using GMT-3 aware function
-        const hasOverlap = datesOverlap(startDate, endDate, turma.start_date, turma.end_date);
+        const existingStart = new Date(turma.start_date);
+        const existingEnd = new Date(turma.end_date);
+
+        // Check if dates overlap
+        const hasOverlap = (
+          (newStart <= existingEnd && newEnd >= existingStart)
+        );
 
         if (hasOverlap) {
           return true; // Conflict found
@@ -686,6 +695,19 @@ export function Turmas() {
       professores: []
     });
     setEditingId(null);
+  }
+
+  /**
+   * Formata data para exibição em português
+   */
+  function formatDate(dateString: string) {
+    // Ensure we're working with the correct date format
+    const date = new Date(dateString + 'T00:00:00');
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   }
 
   /**
@@ -1238,10 +1260,7 @@ export function Turmas() {
       <div className="mt-12">
         <CalendarOcupacaoSalas 
           salas={salas}
-          turmas={turmas.filter(t => {
-            const today = getCurrentDateGMT3();
-            return isTurmaActiveOnDate(t, today);
-          })}
+          turmas={turmas}
         />
       </div>
     </div>
