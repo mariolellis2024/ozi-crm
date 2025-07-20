@@ -257,6 +257,8 @@ export function Turmas() {
       if (professoresResult.error) throw professoresResult.error;
       if (interessesResult.error) throw interessesResult.error;
 
+      // Debug: Log the raw data to check dates
+      console.log('Raw turmas data:', turmasResult.data);
       const turmasData = turmasResult.data.map(turma => ({
         ...turma,
         professores: turma.professores?.map((tp: any) => ({
@@ -699,7 +701,13 @@ export function Turmas() {
    * Formata data para exibição em português
    */
   function formatDate(dateString: string) {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    // Ensure we're working with the correct date format
+    const date = new Date(dateString + 'T00:00:00');
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   }
 
   /**
