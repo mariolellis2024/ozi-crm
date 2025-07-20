@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, MapPin, Clock, Sun, Sunset, Moon, Users, BookOpen } from 'lucide-react';
+import { getCurrentDateGMT3, isTurmaActiveOnDate } from '../utils/format';
 
 /**
  * Tipos para o calendário de ocupação
@@ -121,17 +122,6 @@ export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasPr
     setCurrentWeekStart(monday);
   };
 
-  /**
-   * Verifica se uma turma está ativa em uma data específica
-   */
-  const isTurmaActiveOnDate = (turma: Turma, date: Date): boolean => {
-    const startDate = new Date(turma.start_date);
-    const endDate = new Date(turma.end_date);
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(23, 59, 59, 999);
-    
-    return date >= startDate && date <= endDate;
-  };
 
   /**
    * Obtém as turmas ativas para uma sala e data específicas
