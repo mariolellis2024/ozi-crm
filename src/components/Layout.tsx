@@ -81,9 +81,6 @@ export function Layout({ children }: LayoutProps) {
         <div className="p-6 scale-in">
           <div className="flex items-center justify-center space-x-3">
             <img src="/icon.webp" alt="Pepper Heads Logo" className="h-8 w-8 flex-shrink-0 rounded" />
-            <span className="text-xl font-bold text-white opacity-100">
-              Pepper Heads
-            </span>
           </div>
         </div>
         <nav className="mt-6 scale-in-delay-1">
