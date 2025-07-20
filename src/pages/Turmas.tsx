@@ -505,7 +505,14 @@ export function Turmas() {
         professores: []
       });
       setEditingId(null);
-      loadData();
+      
+      // Force reload data to ensure UI is updated
+      await loadData();
+      
+      // Force a small delay to ensure state updates
+      setTimeout(() => {
+        loadData();
+      }, 100);
     } catch (error) {
       toast.error('Erro ao salvar turma');
     }
