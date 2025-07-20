@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Pencil, Trash2, Calendar, Users, MapPin, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon, Search, Filter, BookOpen, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { formatCurrency, formatDate, parseDate, getCurrentDateGMT3, datesOverlap, isTurmaActiveOnDate } from '../utils/format';
+import { formatCurrency, formatDate, parseDate, getCurrentDateGMT3, datesOverlap } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalTurma } from '../components/ModalTurma';
 import { ModalAlunosInteressados } from '../components/ModalAlunosInteressados';

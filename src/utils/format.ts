@@ -133,26 +133,3 @@ export function datesOverlap(start1: string, end1: string, start2: string, end2:
   
   return startDate1 <= endDate2 && endDate1 >= startDate2;
 }
-/**
- * Interface para objetos que contêm datas de turma
- */
-export interface TurmaDates {
-  start_date: string;
-  end_date: string;
-}
-
-/**
- * Verifica se uma turma está ativa em uma data específica
- * 
- * @param turma - Objeto com datas de início e fim
- * @param date - Data para verificar
- * @returns true se a turma está ativa na data
- */
-export function isTurmaActiveOnDate(turma: TurmaDates, date: Date): boolean {
-  const startDate = parseDate(turma.start_date);
-  const endDate = parseDate(turma.end_date);
-  startDate.setHours(0, 0, 0, 0);
-  endDate.setHours(23, 59, 59, 999);
-  
-  return date >= startDate && date <= endDate;
-}
