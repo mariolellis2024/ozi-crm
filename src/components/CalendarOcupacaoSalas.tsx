@@ -68,7 +68,7 @@ const PERIODS = [
  */
 export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasProps) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    const today = new Date();
+    const today = getCurrentDateGMT3();
     const dayOfWeek = today.getDay();
     const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Segunda-feira como início
     const monday = new Date(today);
@@ -112,7 +112,7 @@ export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasPr
    * Volta para a semana atual
    */
   const goToCurrentWeek = () => {
-    const today = new Date();
+    const today = getCurrentDateGMT3();
     const dayOfWeek = today.getDay();
     const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     const monday = new Date(today);

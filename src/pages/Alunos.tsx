@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Pencil, Trash2, BookOpen, Clock, Check, ArrowUpDown, Filter, TrendingUp, Sun, Sunset, Moon, X, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, formatDateTime } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalAluno } from '../components/ModalAluno';
 
@@ -400,13 +400,7 @@ export function Alunos() {
    * Formata data para exibição
    */
   function formatDate(dateString: string) {
-    return new Date(dateString).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatDateTime(dateString);
   }
 
   /**

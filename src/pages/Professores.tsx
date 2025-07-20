@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, parseDate, getCurrentDateGMT3 } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalProfessor } from '../components/ModalProfessor';
 
