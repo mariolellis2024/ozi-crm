@@ -125,8 +125,9 @@ export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasPr
    * Verifica se uma turma está ativa em uma data específica
    */
   const isTurmaActiveOnDate = (turma: Turma, date: Date): boolean => {
-    const startDate = new Date(turma.start_date);
-    const endDate = new Date(turma.end_date);
+    // Fix timezone issue by adding T00:00:00 to ensure local timezone
+    const startDate = new Date(turma.start_date + 'T00:00:00');
+    const endDate = new Date(turma.end_date + 'T00:00:00');
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(23, 59, 59, 999);
     
