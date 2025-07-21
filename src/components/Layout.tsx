@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { GraduationCap, User, LogOut, BookOpen, Home, ChevronLeft, ChevronRight, DoorClosed, TrendingUp } from 'lucide-react';
+import { GraduationCap, User, LogOut, BookOpen, Home, ChevronLeft, ChevronRight, DoorClosed } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -69,7 +69,6 @@ export function Layout({ children }: LayoutProps) {
    */
   const menuItems = [
     { icon: Home, label: 'Turmas', path: '/' },
-    { icon: TrendingUp, label: 'Vendas', path: '/vendas' },
     { icon: User, label: 'Alunos', path: '/alunos' },
     { icon: BookOpen, label: 'Cursos', path: '/cursos' },
     { icon: GraduationCap, label: 'Professores', path: '/professores' },
