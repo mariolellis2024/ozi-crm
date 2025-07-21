@@ -280,8 +280,8 @@ export function Turmas() {
       };
 
       // Check for conflicts
-      const conflictMessage = await checkConflicts(turmaData, editingId || undefined);
-      if (conflictMessage) {
+      const conflictMessage = await checkConflictsDetailed(turmaData, editingId || undefined);
+      if (conflictMessage !== null) {
         toast.error(conflictMessage);
         return;
       }
