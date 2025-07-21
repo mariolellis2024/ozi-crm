@@ -451,9 +451,9 @@ export function Turmas() {
       const hasConflict = await checkRoomConflict(
         formData.sala_id,
         formData.period,
-        potencial_faturamento: potencialFaturamento,
-        days_of_week: formData.days_of_week,
-        end_date: formData.end_date
+        potencialFaturamento,
+        formData.days_of_week,
+        formData.end_date
       );
 
       if (hasConflict) {
