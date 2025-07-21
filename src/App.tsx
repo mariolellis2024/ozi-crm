@@ -46,12 +46,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
   return (
     <Layout>
-      {React.Children.map(children, child => {
-        if (React.isValidElement(child)) {
-          return React.cloneElement(child, { user });
-        }
-        return child;
-      })}
+      {children}
     </Layout>
   );
 }
