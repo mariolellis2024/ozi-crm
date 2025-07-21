@@ -452,9 +452,8 @@ export function Turmas() {
         formData.sala_id,
         formData.period,
         potencial_faturamento: potencialFaturamento,
-        days_of_week: formData.days_of_week
-        formData.end_date,
-        editingId
+        days_of_week: formData.days_of_week,
+        end_date: formData.end_date
       );
 
       if (hasConflict) {
