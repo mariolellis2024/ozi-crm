@@ -1,6 +1,5 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { createPortal } from 'react-dom';
 import { X, Plus, Trash2, GraduationCap, Calendar } from 'lucide-react';
 
 type Period = 'manha' | 'tarde' | 'noite';
