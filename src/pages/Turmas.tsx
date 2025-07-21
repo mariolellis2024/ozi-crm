@@ -6,6 +6,7 @@ import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalTurma } from '../components/ModalTurma';
 import { ModalAlunosInteressados } from '../components/ModalAlunosInteressados';
+import { ModalAlunosMatriculados } from '../components/ModalAlunosMatriculados';
 import { CalendarOcupacaoSalas } from '../components/CalendarOcupacaoSalas';
 
 type Period = 'manha' | 'tarde' | 'noite';
@@ -85,6 +86,13 @@ export function Turmas() {
     turmaId: '',
     cursoId: '',
     turmaPeriod: '' as Period,
+    cursoNome: '',
+    cursoPreco: 0
+  });
+  const [alunosMatriculadosModal, setAlunosMatriculadosModal] = useState({
+    isOpen: false,
+    turmaId: '',
+    cursoId: '',
     cursoNome: '',
     cursoPreco: 0
   });
@@ -462,7 +470,33 @@ export function Turmas() {
     });
   }
 
+  function handleOpenAlunosMatriculados(turma: Turma) {
+    if (!turma.curso) return;
+    
+    setAlunosMatriculadosModal({
+      isOpen: true,
+      turmaId: turma.id,
+      cursoId: turma.curso_id,
+      cursoNome: turma.curso.nome,
+      cursoPreco: turma.curso.preco
+    });
+  }
+
+  function handleCloseAlunosMatriculados() {
+    setAlunosMatriculadosModal({
+      isOpen: false,
+      turmaId: '',
+      cursoId: '',
+      cursoNome: '',
+      cursoPreco: 0
+    });
+  }
+
   function handleStudentEnrolled() {
+    loadData(); // Reload data to update enrolled count
+  }
+
+  function handleStudentUnenrolled() {
     loadData(); // Reload data to update enrolled count
   }
 
@@ -751,6 +785,16 @@ export function Turmas() {
           cursoNome={alunosInteressadosModal.cursoNome}
           cursoPreco={alunosInteressadosModal.cursoPreco}
           onStudentEnrolled={handleStudentEnrolled}
+        />
+
+        <ModalAlunosMatriculados
+          isOpen={alunosMatriculadosModal.isOpen}
+          onClose={handleCloseAlunosMatriculados}
+          turmaId={alunosMatriculadosModal.turmaId}
+          cursoId={alunosMatriculadosModal.cursoId}
+          cursoNome={alunosMatriculadosModal.cursoNome}
+          cursoPreco={alunosMatriculadosModal.cursoPreco}
+          onStudentUnenrolled={handleStudentUnenrolled}
         />
       </div>
     </div>

@@ -1,0 +1,307 @@
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { X, Search, Users, BookOpen, UserMinus, AlertTriangle } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
+import { formatCurrency } from '../utils/format';
+
+interface AlunoMatriculado {
+  id: string;
+  nome: string;
+  email?: string;
+  whatsapp: string;
+  empresa?: string;
+}
+
+interface ModalAlunosMatriculadosProps {
+  isOpen: boolean;
+  onClose: () => void;
+  turmaId: string;
+  cursoId: string;
+  cursoNome: string;
+  cursoPreco: number;
+  onStudentUnenrolled: () => void;
+}
+
+export function ModalAlunosMatriculados({ 
+  isOpen, 
+  onClose, 
+  turmaId, 
+  cursoId, 
+  cursoNome,
+  cursoPreco,
+  onStudentUnenrolled
+}: ModalAlunosMatriculadosProps) {
+  const [alunosMatriculados, setAlunosMatriculados] = useState<AlunoMatriculado[]>([]);
+  const [filteredAlunos, setFilteredAlunos] = useState<AlunoMatriculado[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [unenrollingStudents, setUnenrollingStudents] = useState<Set<string>>(new Set());
+  const [confirmUnenroll, setConfirmUnenroll] = useState<{
+    isOpen: boolean;
+    alunoId: string;
+    alunoNome: string;
+  }>({
+    isOpen: false,
+    alunoId: '',
+    alunoNome: ''
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      loadAlunosMatriculados();
+    }
+  }, [isOpen, turmaId]);
+
+  useEffect(() => {
+    // Filter students based on search term
+    const filtered = alunosMatriculados.filter(aluno =>
+      aluno.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      aluno.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      aluno.whatsapp.includes(searchTerm)
+    );
+    setFilteredAlunos(filtered);
+  }, [alunosMatriculados, searchTerm]);
+
+  async function loadAlunosMatriculados() {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('aluno_curso_interests')
+        .select(`
+          aluno:alunos(
+            id,
+            nome,
+            email,
+            whatsapp,
+            empresa
+          )
+        `)
+        .eq('turma_id', turmaId)
+        .eq('status', 'enrolled');
+
+      if (error) throw error;
+
+      const alunosData = data.map(item => item.aluno);
+      setAlunosMatriculados(alunosData);
+    } catch (error) {
+      toast.error('Erro ao carregar alunos matriculados');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleUnenrollClick(alunoId: string, alunoNome: string) {
+    setConfirmUnenroll({
+      isOpen: true,
+      alunoId,
+      alunoNome
+    });
+  }
+
+  async function handleConfirmUnenroll() {
+    const { alunoId } = confirmUnenroll;
+    setUnenrollingStudents(prev => new Set(prev).add(alunoId));
+    
+    try {
+      // Change status back to interested and remove turma_id
+      const { error } = await supabase
+        .from('aluno_curso_interests')
+        .update({ 
+          status: 'interested',
+          turma_id: null
+        })
+        .eq('aluno_id', alunoId)
+        .eq('curso_id', cursoId)
+        .eq('turma_id', turmaId);
+      
+      if (error) throw error;
+      
+      toast.success('Aluno removido da turma com sucesso!');
+      
+      // Remove the unenrolled student from the list
+      setAlunosMatriculados(prev => prev.filter(aluno => aluno.id !== alunoId));
+      
+      // Notify parent component to refresh data
+      onStudentUnenrolled();
+    } catch (error) {
+      toast.error('Erro ao remover aluno da turma');
+    } finally {
+      setUnenrollingStudents(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(alunoId);
+        return newSet;
+      });
+      setConfirmUnenroll({
+        isOpen: false,
+        alunoId: '',
+        alunoNome: ''
+      });
+    }
+  }
+
+  function handleCancelUnenroll() {
+    setConfirmUnenroll({
+      isOpen: false,
+      alunoId: '',
+      alunoNome: ''
+    });
+  }
+
+  function handleClose() {
+    setSearchTerm('');
+    onClose();
+  }
+
+  return createPortal(
+    isOpen ? (
+    <div 
+      className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4"
+      onClick={handleClose}
+    >
+      <div 
+        className="bg-dark-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-3">
+            <Users className="h-6 w-6 text-green-400" />
+            <div>
+              <h2 className="text-xl font-semibold text-white">Alunos Matriculados</h2>
+              <p className="text-gray-400 text-sm">{cursoNome}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleClose}
+            className="text-gray-400 hover:text-white transition-colors"
+            type="button"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar por nome, email ou WhatsApp..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-dark-lighter border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-400"
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-400 border-t-transparent"></div>
+            </div>
+          ) : filteredAlunos.length > 0 ? (
+            <div className="space-y-3">
+              {filteredAlunos.map((aluno) => (
+                <div key={aluno.id} className="bg-dark-lighter rounded-lg p-4 border border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <BookOpen className="h-4 w-4 text-green-400" />
+                        <h3 className="font-semibold text-white">{aluno.nome}</h3>
+                      </div>
+                      <div className="space-y-1 text-sm text-gray-400">
+                        {aluno.email && <div>📧 {aluno.email}</div>}
+                        <div>📱 {aluno.whatsapp}</div>
+                        {aluno.empresa && <div>🏢 {aluno.empresa}</div>}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleUnenrollClick(aluno.id, aluno.nome)}
+                      disabled={unenrollingStudents.has(aluno.id)}
+                      className="px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 bg-red-500 text-white hover:bg-red-600"
+                    >
+                      {unenrollingStudents.has(aluno.id) ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                          Removendo...
+                        </>
+                      ) : (
+                        <>
+                          <UserMinus className="h-4 w-4" />
+                          Remover
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400">
+              {searchTerm ? (
+                <div>
+                  <Search className="h-8 w-8 mx-auto mb-2 text-gray-500" />
+                  <p>Nenhum aluno encontrado com "{searchTerm}"</p>
+                </div>
+              ) : (
+                <div>
+                  <Users className="h-8 w-8 mx-auto mb-2 text-gray-500" />
+                  <p>Nenhum aluno matriculado nesta turma</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {filteredAlunos.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-700">
+            <div className="flex items-center justify-between text-sm">
+              <div className="text-gray-400">
+                <div>{filteredAlunos.length} aluno{filteredAlunos.length !== 1 ? 's' : ''} matriculado{filteredAlunos.length !== 1 ? 's' : ''}</div>
+              </div>
+              <span className="text-emerald-400 font-semibold">
+                Faturamento: {formatCurrency(cursoPreco * filteredAlunos.length)}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Confirmação */}
+        {confirmUnenroll.isOpen && (
+          <div className="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md">
+              <div className="flex items-center gap-3 mb-4">
+                <AlertTriangle className="h-6 w-6 text-red-500" />
+                <h3 className="text-xl font-semibold text-white">Confirmar Remoção</h3>
+              </div>
+              
+              <p className="text-gray-300 mb-6">
+                Tem certeza que deseja remover <strong>{confirmUnenroll.alunoNome}</strong> desta turma?
+                <br />
+                <span className="text-sm text-gray-400 mt-2 block">
+                  O aluno voltará para a lista de interessados no curso.
+                </span>
+              </p>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleCancelUnenroll}
+                  className="px-4 py-2 bg-dark-lighter text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmUnenroll}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Remover da Turma
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+    ) : null,
+    document.body
+  );
+}
