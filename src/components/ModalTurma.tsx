@@ -190,11 +190,6 @@ export function ModalTurma({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     
-    if (!horasValidas && cargaHorariaCurso > 0) {
-      alert(`O total de horas dos professores (${totalHorasProfessores}h) deve ser igual à carga horária do curso (${cargaHorariaCurso}h)`);
-      return;
-    }
-
     if (!formData.days_of_week || formData.days_of_week.length === 0) {
       alert('Selecione pelo menos um dia da semana para a turma');
       return;
@@ -547,17 +542,11 @@ export function ModalTurma({
             <button
               type="submit"
               className={`w-full font-medium rounded-lg px-4 py-2 transition-colors ${
-                (horasValidas || cargaHorariaCurso === 0) && 
-                (formData.days_of_week || []).length > 0 && 
-                startDateValid
+                (formData.days_of_week || []).length > 0
                   ? 'bg-teal-accent text-dark hover:bg-teal-accent/90'
                   : 'bg-gray-600 text-gray-400 cursor-not-allowed'
               }`}
-              disabled={
-                (!horasValidas && cargaHorariaCurso > 0) || 
-                (formData.days_of_week || []).length === 0 || 
-                !startDateValid
-              }
+              disabled={(formData.days_of_week || []).length === 0}
             >
               {editingId ? 'Atualizar' : 'Criar Turma'}
             </button>
