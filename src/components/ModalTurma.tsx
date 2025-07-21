@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { X, Plus, Trash2, GraduationCap } from 'lucide-react';
+import { X, Plus, Trash2, GraduationCap, Calendar } from 'lucide-react';
 
 type Period = 'manha' | 'tarde' | 'noite';
 
@@ -22,6 +22,7 @@ interface ModalTurmaProps {
     end_date: string;
     imposto: string;
     professores: ProfessorAssignment[];
+    days_of_week: number[];
   };
   setFormData: React.Dispatch<React.SetStateAction<{
     name: string;
@@ -33,8 +34,9 @@ interface ModalTurmaProps {
     end_date: string;
     imposto: string;
     professores: ProfessorAssignment[];
+    days_of_week: number[];
   }>>;
-  cursos: Array<{ id: string; nome: string }>;
+  cursos: Array<{ id: string; nome: string; carga_horaria: number }>;
   salas: Array<{ id: string; nome: string; cadeiras: number }>;
   professores: Array<{ id: string; nome: string; valor_hora: number }>;
   onSubmit: (e: React.FormEvent) => void;
@@ -45,6 +47,16 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: 'manha', label: 'Manhã' },
   { value: 'tarde', label: 'Tarde' },
   { value: 'noite', label: 'Noite' }
+];
+
+const DAYS_OF_WEEK = [
+  { value: 1, label: 'Segunda-feira', short: 'Seg' },
+  { value: 2, label: 'Terça-feira', short: 'Ter' },
+  { value: 3, label: 'Quarta-feira', short: 'Qua' },
+  { value: 4, label: 'Quinta-feira', short: 'Qui' },
+  { value: 5, label: 'Sexta-feira', short: 'Sex' },
+  { value: 6, label: 'Sábado', short: 'Sáb' },
+  { value: 7, label: 'Domingo', short: 'Dom' }
 ];
 
 export function ModalTurma({ 
@@ -92,11 +104,33 @@ export function ModalTurma({
     });
   }
 
+  function toggleDayOfWeek(dayValue: number) {
+    const currentDays = formData.days_of_week || [];
+    const isSelected = currentDays.includes(dayValue);
+    
+    if (isSelected) {
+      setFormData({
+        ...formData,
+        days_of_week: currentDays.filter(day => day !== dayValue)
+      });
+    } else {
+      setFormData({
+        ...formData,
+        days_of_week: [...currentDays, dayValue].sort()
+      });
+    }
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     
     if (!horasValidas && cargaHorariaCurso > 0) {
       alert(`O total de horas dos professores (${totalHorasProfessores}h) deve ser igual à carga horária do curso (${cargaHorariaCurso}h)`);
+      return;
+    }
+
+    if (!formData.days_of_week || formData.days_of_week.length === 0) {
+      alert('Selecione pelo menos um dia da semana para a turma');
       return;
     }
 
@@ -269,6 +303,44 @@ export function ModalTurma({
             </div>
           </div>
 
+          {/* Seção de Dias da Semana */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-teal-accent" />
+              <h3 className="text-lg font-medium text-white">Dias da Semana</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {DAYS_OF_WEEK.map(day => (
+                <button
+                  key={day.value}
+                  type="button"
+                  onClick={() => toggleDayOfWeek(day.value)}
+                  className={`p-3 rounded-lg border transition-colors text-sm ${
+                    (formData.days_of_week || []).includes(day.value)
+                      ? 'bg-teal-accent text-dark border-teal-accent'
+                      : 'bg-dark-lighter text-gray-400 border-gray-700 hover:text-white hover:border-gray-600'
+                  }`}
+                >
+                  <div className="font-medium">{day.short}</div>
+                  <div className="text-xs opacity-80">{day.label.split('-')[0]}</div>
+                </button>
+              ))}
+            </div>
+            
+            <div className="text-sm text-gray-400">
+              {(formData.days_of_week || []).length === 0 ? (
+                <span className="text-red-400">⚠️ Selecione pelo menos um dia da semana</span>
+              ) : (
+                <span>
+                  Selecionados: {(formData.days_of_week || []).map(dayValue => 
+                    DAYS_OF_WEEK.find(d => d.value === dayValue)?.short
+                  ).join(', ')}
+                </span>
+              )}
+            </div>
+          </div>
+
           {/* Seção de Professores */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -372,14 +444,15 @@ export function ModalTurma({
               </div>
             )}
           </div>
+          
           <button
             type="submit"
             className={`w-full font-medium rounded-lg px-4 py-2 transition-colors ${
-              horasValidas || cargaHorariaCurso === 0
+              (horasValidas || cargaHorariaCurso === 0) && (formData.days_of_week || []).length > 0
                 ? 'bg-teal-accent text-dark hover:bg-teal-accent/90'
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             }`}
-            disabled={!horasValidas && cargaHorariaCurso > 0}
+            disabled={(!horasValidas && cargaHorariaCurso > 0) || (formData.days_of_week || []).length === 0}
           >
             {editingId ? 'Atualizar' : 'Criar Turma'}
           </button>

@@ -136,7 +136,8 @@ export function Turmas() {
     start_date: '',
     end_date: '',
     imposto: '',
-    professores: [] as Array<{ professor_id: string; hours: number }>
+    professores: [] as ProfessorAssignment[],
+    days_of_week: [] as number[]
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [alunosInteressadosModal, setAlunosInteressadosModal] = useState({
@@ -677,10 +678,11 @@ export function Turmas() {
       start_date: turma.start_date,
       end_date: turma.end_date,
       imposto: turma.imposto.toString(),
-      professores: turma.professores?.map(prof => ({
+      professores: turma.professores?.map(tp => ({
         professor_id: prof.id,
         hours: prof.hours
-      })) || []
+      })) || [],
+      days_of_week: turma.days_of_week || []
     });
     setEditingId(turma.id);
     setIsModalOpen(true);
@@ -700,7 +702,8 @@ export function Turmas() {
       start_date: '',
       end_date: '',
       imposto: '',
-      professores: []
+      professores: [],
+      days_of_week: []
     });
     setEditingId(null);
   }
