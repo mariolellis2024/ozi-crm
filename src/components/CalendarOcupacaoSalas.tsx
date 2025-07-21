@@ -131,7 +131,27 @@ export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasPr
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(23, 59, 59, 999);
     
-    return date >= startDate && date <= endDate;
+    // Check if date is within the turma's date range
+    const isWithinDateRange = date >= startDate && date <= endDate;
+    
+    // If not within date range, return false
+    if (!isWithinDateRange) {
+      return false;
+    }
+    
+    // Check if turma has specific days of week configured
+    if (!turma.days_of_week || turma.days_of_week.length === 0) {
+      // If no specific days configured, assume it happens every day within the date range
+      return true;
+    }
+    
+    // Convert JavaScript day of week (0=Sunday, 1=Monday, ..., 6=Saturday)
+    // to our format (1=Monday, 2=Tuesday, ..., 6=Saturday, 7=Sunday)
+    const jsDay = date.getDay();
+    const ourDay = jsDay === 0 ? 7 : jsDay; // Convert Sunday from 0 to 7
+    
+    // Check if the current day is in the turma's days_of_week array
+    return turma.days_of_week.includes(ourDay);
   };
 
   /**
