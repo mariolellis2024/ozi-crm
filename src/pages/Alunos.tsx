@@ -73,7 +73,7 @@ export function Alunos() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [filterInterestStatus, setFilterInterestStatus] = useState<CursoInterest['status'] | 'all'>('all');
+  const [filterInterestStatus, setFilterInterestStatus] = useState<CursoInterest['status'] | 'all' | 'no_interest'>('all');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nome: '',
@@ -488,16 +488,21 @@ export function Alunos() {
     // Filter by interest status
     let matchesInterestStatus = true;
     if (filterInterestStatus !== 'all') {
-      if (selectedCourseId) {
-        // Filter by specific course and status
-        matchesInterestStatus = aluno.curso_interests?.some(interest => 
-          interest.curso_id === selectedCourseId && interest.status === filterInterestStatus
-        ) || false;
+      if (filterInterestStatus === 'no_interest') {
+        // Filter students with no interests at all
+        matchesInterestStatus = !aluno.curso_interests || aluno.curso_interests.length === 0;
       } else {
-        // Filter by status across all courses
-        matchesInterestStatus = aluno.curso_interests?.some(interest => 
-          interest.status === filterInterestStatus
-        ) || false;
+        if (selectedCourseId) {
+          // Filter by specific course and status
+          matchesInterestStatus = aluno.curso_interests?.some(interest => 
+            interest.curso_id === selectedCourseId && interest.status === filterInterestStatus
+          ) || false;
+        } else {
+          // Filter by status across all courses
+          matchesInterestStatus = aluno.curso_interests?.some(interest => 
+            interest.status === filterInterestStatus
+          ) || false;
+        }
       }
     }
     
@@ -507,11 +512,12 @@ export function Alunos() {
   /**
    * Opções de filtro por status de interesse
    */
-  const filterOptions = [
+  const filterOptions: Array<{ value: CursoInterest['status'] | 'all' | 'no_interest'; label: string; icon: any }> = [
     { value: 'all' as const, label: 'Todos', icon: Filter },
     { value: 'interested' as const, label: 'Interessados', icon: BookOpen },
     { value: 'enrolled' as const, label: 'Cursando', icon: Clock },
-    { value: 'completed' as const, label: 'Concluídos', icon: Check }
+    { value: 'completed' as const, label: 'Concluídos', icon: Check },
+    { value: 'no_interest' as const, label: 'Sem Interesse', icon: X }
   ];
 
   return (
@@ -566,6 +572,7 @@ export function Alunos() {
             <select
               value={selectedCourseId || ''}
               onChange={(e) => setSelectedCourseId(e.target.value || null)}
+              disabled={filterInterestStatus === 'no_interest'}
               className="w-full max-w-md bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
             >
               <option value="">Todos os cursos</option>
@@ -575,6 +582,11 @@ export function Alunos() {
                 </option>
               ))}
             </select>
+            {filterInterestStatus === 'no_interest' && (
+              <p className="text-xs text-gray-500 mt-1">
+                Filtro por curso desabilitado para alunos sem interesse
+              </p>
+            )}
           </div>
 
           <div>
@@ -585,7 +597,13 @@ export function Alunos() {
               {filterOptions.map(option => (
                 <button
                   key={option.value}
-                  onClick={() => setFilterInterestStatus(option.value)}
+                  onClick={() => {
+                    setFilterInterestStatus(option.value);
+                    // Clear course filter when selecting "no_interest"
+                    if (option.value === 'no_interest') {
+                      setSelectedCourseId(null);
+                    }
+                  }}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                     filterInterestStatus === option.value
                       ? 'bg-teal-accent text-dark'
