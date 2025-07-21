@@ -248,26 +248,107 @@ export function Turmas() {
 
   async function checkConflicts(turmaData: any, editingId?: string): Promise<boolean> {
     try {
-      const { data: conflitos, error } = await supabase
+      // Check room conflicts
+      const { data: roomConflicts, error: roomError } = await supabase
         .from('turmas')
-        .select('id, name, start_date, end_date')
+        .select('id, name, start_date, end_date, days_of_week')
         .eq('sala_id', turmaData.sala_id)
         .eq('period', turmaData.period)
         .neq('id', editingId || '00000000-0000-0000-0000-000000000000');
 
-      if (error) throw error;
+      if (roomError) throw roomError;
 
-      // Check for date overlaps
-      const hasConflict = conflitos.some(turma => {
-        const existingStart = new Date(turma.start_date);
-        const existingEnd = new Date(turma.end_date);
+      // Check for room conflicts considering days of week
+      const hasRoomConflict = roomConflicts.some(existingTurma => {
+        // Check date overlap first
+        const existingStart = new Date(existingTurma.start_date);
+        const existingEnd = new Date(existingTurma.end_date);
         const newStart = new Date(turmaData.start_date);
         const newEnd = new Date(turmaData.end_date);
         
-        return (newStart <= existingEnd && newEnd >= existingStart);
+        const hasDateOverlap = (newStart <= existingEnd && newEnd >= existingStart);
+        
+        if (!hasDateOverlap) {
+          return false; // No date overlap, no conflict
+        }
+        
+        // If there's date overlap, check if they share any days of the week
+        const existingDays = existingTurma.days_of_week || [];
+        const newDays = turmaData.days_of_week || [];
+        
+        // If either turma has no specific days configured, assume conflict
+        if (existingDays.length === 0 || newDays.length === 0) {
+          return true;
+        }
+        
+        // Check if they share any common days
+        const hasCommonDays = existingDays.some(day => newDays.includes(day));
+        
+        return hasCommonDays;
       });
 
-      return hasConflict;
+      if (hasRoomConflict) {
+        return true;
+      }
+
+      // Check professor conflicts
+      if (turmaData.professores && turmaData.professores.length > 0) {
+        for (const professorAssignment of turmaData.professores) {
+          if (!professorAssignment.professor_id) continue;
+
+          const { data: professorConflicts, error: professorError } = await supabase
+            .from('turma_professores')
+            .select(`
+              turma:turmas(
+                id,
+                name,
+                period,
+                start_date,
+                end_date,
+                days_of_week
+              )
+            `)
+            .eq('professor_id', professorAssignment.professor_id);
+
+          if (professorError) throw professorError;
+
+          const hasProfessorConflict = professorConflicts.some(assignment => {
+            const existingTurma = assignment.turma;
+            if (!existingTurma || existingTurma.id === editingId) return false;
+
+            // Check if same period
+            if (existingTurma.period !== turmaData.period) return false;
+
+            // Check date overlap
+            const existingStart = new Date(existingTurma.start_date);
+            const existingEnd = new Date(existingTurma.end_date);
+            const newStart = new Date(turmaData.start_date);
+            const newEnd = new Date(turmaData.end_date);
+            
+            const hasDateOverlap = (newStart <= existingEnd && newEnd >= existingStart);
+            
+            if (!hasDateOverlap) {
+              return false;
+            }
+
+            // Check days of week overlap
+            const existingDays = existingTurma.days_of_week || [];
+            const newDays = turmaData.days_of_week || [];
+            
+            if (existingDays.length === 0 || newDays.length === 0) {
+              return true;
+            }
+            
+            return existingDays.some(day => newDays.includes(day));
+          });
+
+          if (hasProfessorConflict) {
+            return true;
+          }
+        }
+      }
+
+      return false;
     } catch (error) {
       console.error('Erro detalhado ao verificar conflitos:', error);
       throw error;
@@ -300,7 +381,7 @@ export function Turmas() {
       // Check for conflicts
       const hasConflict = await checkConflicts(turmaData, editingId || undefined);
       if (hasConflict) {
-        toast.error('Conflito detectado! Já existe uma turma nesta sala, período e com datas sobrepostas.');
+        toast.error('Conflito detectado! Já existe uma turma ou professor ocupado neste horário, período e dias da semana.');
         return;
       }
 
