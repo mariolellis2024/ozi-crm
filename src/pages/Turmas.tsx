@@ -379,7 +379,7 @@ export function Turmas() {
       };
 
       // Check for conflicts
-      const conflictMessage = await checkConflictsDetailed(turmaData, editingId || undefined);
+      const conflictMessage = await checkConflicts(turmaData, editingId || undefined);
       if (conflictMessage) {
         toast.error(conflictMessage);
         return;
