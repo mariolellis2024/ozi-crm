@@ -77,6 +77,59 @@ export function ModalTurma({
   const cargaHorariaCurso = selectedCurso?.carga_horaria || 0;
   const horasValidas = totalHorasProfessores === cargaHorariaCurso;
 
+  // Função para calcular a data de término automaticamente
+  function calculateEndDate(startDate: string, daysOfWeek: number[], totalHours: number): string {
+    if (!startDate || !daysOfWeek.length || !totalHours) return '';
+    
+    const hoursPerClass = 3; // 3 horas por aula
+    const totalClasses = Math.ceil(totalHours / hoursPerClass);
+    
+    const start = new Date(startDate + 'T00:00:00');
+    let currentDate = new Date(start);
+    let classesScheduled = 0;
+    
+    // Se a data de início não for um dos dias selecionados, avançar para o próximo dia válido
+    while (!daysOfWeek.includes(currentDate.getDay() === 0 ? 7 : currentDate.getDay())) {
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // Contar as aulas até completar o total necessário
+    while (classesScheduled < totalClasses) {
+      const dayOfWeek = currentDate.getDay() === 0 ? 7 : currentDate.getDay();
+      
+      if (daysOfWeek.includes(dayOfWeek)) {
+        classesScheduled++;
+        if (classesScheduled < totalClasses) {
+          // Avançar para o próximo dia de aula
+          do {
+            currentDate.setDate(currentDate.getDate() + 1);
+          } while (!daysOfWeek.includes(currentDate.getDay() === 0 ? 7 : currentDate.getDay()));
+        }
+      } else {
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
+    
+    return currentDate.toISOString().split('T')[0];
+  }
+
+  // Atualizar data de término automaticamente quando houver mudanças relevantes
+  React.useEffect(() => {
+    if (formData.start_date && formData.days_of_week.length > 0 && cargaHorariaCurso > 0) {
+      const calculatedEndDate = calculateEndDate(
+        formData.start_date, 
+        formData.days_of_week, 
+        cargaHorariaCurso
+      );
+      
+      if (calculatedEndDate && calculatedEndDate !== formData.end_date) {
+        setFormData(prev => ({
+          ...prev,
+          end_date: calculatedEndDate
+        }));
+      }
+    }
+  }, [formData.start_date, formData.days_of_week, cargaHorariaCurso]);
   function addProfessor() {
     setFormData({
       ...formData,
@@ -290,16 +343,21 @@ export function ModalTurma({
 
             <div>
               <label htmlFor="end_date" className="block text-sm font-medium text-gray-400 mb-1">
-                Data de Término
+                Data de Término (Calculada Automaticamente)
               </label>
               <input
                 type="date"
                 id="end_date"
                 value={formData.end_date}
-                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                readOnly
                 className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
                 required
               />
+              {formData.start_date && formData.days_of_week.length > 0 && cargaHorariaCurso > 0 && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Baseado em {Math.ceil(cargaHorariaCurso / 3)} aulas de 3h nos dias selecionados
+                </p>
+              )}
             </div>
           </div>
 
@@ -308,6 +366,7 @@ export function ModalTurma({
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-teal-accent" />
               <h3 className="text-lg font-medium text-white">Dias da Semana</h3>
+              <span className="text-sm text-gray-400">(3 horas por aula)</span>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -332,11 +391,25 @@ export function ModalTurma({
               {(formData.days_of_week || []).length === 0 ? (
                 <span className="text-red-400">⚠️ Selecione pelo menos um dia da semana</span>
               ) : (
-                <span>
-                  Selecionados: {(formData.days_of_week || []).map(dayValue => 
-                    DAYS_OF_WEEK.find(d => d.value === dayValue)?.short
-                  ).join(', ')}
-                </span>
+                <div className="space-y-1">
+                  <span>
+                    Selecionados: {(formData.days_of_week || []).map(dayValue => 
+                      DAYS_OF_WEEK.find(d => d.value === dayValue)?.short
+                    ).join(', ')}
+                  </span>
+                  {cargaHorariaCurso > 0 && (
+                    <div className="text-xs">
+                      <span className="text-teal-accent">
+                        {Math.ceil(cargaHorariaCurso / 3)} aulas necessárias
+                      </span>
+                      {formData.days_of_week.length > 0 && (
+                        <span className="ml-2">
+                          • {formData.days_of_week.length} dia{formData.days_of_week.length > 1 ? 's' : ''} por semana
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
