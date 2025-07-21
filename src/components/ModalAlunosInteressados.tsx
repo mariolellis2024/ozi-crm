@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { createPortal } from 'react-dom';
 import { X, Search, Users, BookOpen } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
