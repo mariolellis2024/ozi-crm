@@ -162,6 +162,18 @@ export function Alunos() {
     loadData();
   }, []);
 
+  // Update modal data when alunos data changes
+  useEffect(() => {
+    if (courseModal.isOpen && courseModal.aluno) {
+      const updatedAluno = alunos.find(a => a.id === courseModal.aluno!.id);
+      if (updatedAluno && JSON.stringify(updatedAluno.curso_interests) !== JSON.stringify(courseModal.aluno.curso_interests)) {
+        setCourseModal({
+          ...courseModal,
+          aluno: updatedAluno
+        });
+      }
+    }
+  }, [alunos, courseModal.isOpen, courseModal.aluno]);
   /**
    * Carrega alunos e cursos do banco de dados
    * Calcula faturamento potencial automaticamente
@@ -308,7 +320,18 @@ export function Alunos() {
       }
 
       toast.success('Status atualizado com sucesso!');
-      loadData();
+      await loadData();
+      
+      // Update the modal state with fresh data
+      if (courseModal.aluno) {
+        const updatedAluno = alunos.find(a => a.id === courseModal.aluno!.id);
+        if (updatedAluno) {
+          setCourseModal({
+            ...courseModal,
+            aluno: updatedAluno
+          });
+        }
+      }
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error('Erro ao atualizar status');
@@ -328,7 +351,18 @@ export function Alunos() {
       
       if (error) throw error;
       toast.success('Interesse removido com sucesso!');
-      loadData();
+      await loadData();
+      
+      // Update the modal state with fresh data
+      if (courseModal.aluno) {
+        const updatedAluno = alunos.find(a => a.id === courseModal.aluno!.id);
+        if (updatedAluno) {
+          setCourseModal({
+            ...courseModal,
+            aluno: updatedAluno
+          });
+        }
+      }
     } catch (error) {
       console.error('Error removing interest:', error);
       toast.error('Erro ao remover interesse');
