@@ -839,6 +839,25 @@ export function Turmas() {
           </div>
           <div className="flex items-center gap-4 slide-in-right">
             <button
+              onClick={handleMarkStudentsCompleted}
+              disabled={isProcessingCompletion}
+              className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105 ${
+                isProcessingCompletion
+                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                  : 'bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300'
+              }`}
+              title="Processar conclusões automáticas para turmas finalizadas"
+            >
+              {isProcessingCompletion ? (
+                <RefreshCw className="h-5 w-5 animate-spin" />
+              ) : (
+                <CheckCircle className="h-5 w-5" />
+              )}
+              <span>
+                {isProcessingCompletion ? 'Processando...' : 'Processar Conclusões'}
+              </span>
+            </button>
+            <button
               onClick={() => setShowSuggestions(!showSuggestions)}
               className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105 ${
                 showSuggestions 
@@ -998,14 +1017,6 @@ export function Turmas() {
                     }`}>
                       {getStatusLabel(getTurmaStatus(turma.start_date, turma.end_date))}
                     </span>
-                    {/* Indicador para turmas finalizadas com alunos ainda matriculados */}
-                    {getTurmaStatus(turma.start_date, turma.end_date) === 'finalizada' && 
-                     turma.alunos_enrolled && turma.alunos_enrolled.length > 0 && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        Processamento Pendente
-                      </span>
-                    )}
                     {turma.curso?.categoria?.nome && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
                         {turma.curso.categoria.nome}
