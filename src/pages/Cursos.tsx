@@ -6,6 +6,7 @@ import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalCurso } from '../components/ModalCurso';
 import { ModalCategorias } from '../components/ModalCategorias';
+import { useNavigate } from 'react-router-dom';
 
 interface Curso {
   id: string;
@@ -26,6 +27,7 @@ interface Turma {
 }
 
 export function Cursos() {
+  const navigate = useNavigate();
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoriasModalOpen, setIsCategoriasModalOpen] = useState(false);
@@ -295,13 +297,21 @@ export function Cursos() {
                               <>
                                 <div className="flex items-center text-blue-400">
                                   <Users className="h-4 w-4 mr-2" />
-                                  <span className="font-semibold">
+                                  <span 
+                                    className="font-semibold cursor-pointer hover:underline"
+                                    onClick={() => navigate(`/alunos?curso=${curso.id}&status=interested`)}
+                                    title="Ver alunos interessados neste curso"
+                                  >
                                     {curso.interested_students_count} {curso.interested_students_count === 1 ? 'interessado' : 'interessados'}
                                   </span>
                                 </div>
                                 <div className="flex items-center text-purple-400">
                                   <TrendingUp className="h-4 w-4 mr-2" />
-                                  <span className="font-semibold">
+                                  <span 
+                                    className="font-semibold cursor-pointer hover:underline"
+                                    onClick={() => navigate(`/alunos?curso=${curso.id}&status=interested`)}
+                                    title="Ver faturamento potencial deste curso"
+                                  >
                                     {formatCurrency(curso.preco * curso.interested_students_count)} potencial
                                   </span>
                                 </div>

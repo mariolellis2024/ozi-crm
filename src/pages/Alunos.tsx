@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalAluno } from '../components/ModalAluno';
+import { useSearchParams } from 'react-router-dom';
 
 /**
  * Tipos para ordenação e filtros
@@ -66,6 +67,7 @@ interface Curso {
  * - Busca e ordenação
  */
 export function Alunos() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [totalOpenRevenue, setTotalOpenRevenue] = useState<number>(0);
@@ -162,6 +164,19 @@ export function Alunos() {
     loadData();
   }, []);
 
+  // Handle URL parameters on component mount
+  useEffect(() => {
+    const cursoParam = searchParams.get('curso');
+    const statusParam = searchParams.get('status');
+    
+    if (cursoParam) {
+      setSelectedCourseId(cursoParam);
+    }
+    
+    if (statusParam && (statusParam === 'interested' || statusParam === 'enrolled' || statusParam === 'completed')) {
+      setFilterInterestStatus(statusParam as CursoInterest['status']);
+    }
+  }, [searchParams]);
   // Update modal data when alunos data changes
   useEffect(() => {
     if (courseModal.isOpen && courseModal.aluno) {
@@ -571,7 +586,19 @@ export function Alunos() {
             </label>
             <select
               value={selectedCourseId || ''}
-              onChange={(e) => setSelectedCourseId(e.target.value || null)}
+              onChange={(e) => {
+                const newCourseId = e.target.value || null;
+                setSelectedCourseId(newCourseId);
+                
+                // Update URL params
+                const newParams = new URLSearchParams(searchParams);
+                if (newCourseId) {
+                  newParams.set('curso', newCourseId);
+                } else {
+                  newParams.delete('curso');
+                }
+                setSearchParams(newParams);
+              }}
               disabled={filterInterestStatus === 'no_interest'}
               className="w-full max-w-md bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
             >
@@ -599,10 +626,22 @@ export function Alunos() {
                   key={option.value}
                   onClick={() => {
                     setFilterInterestStatus(option.value);
+                    
+                    // Update URL params
+                    const newParams = new URLSearchParams(searchParams);
+                    if (option.value !== 'all') {
+                      newParams.set('status', option.value);
+                    } else {
+                      newParams.delete('status');
+                    }
+                    
                     // Clear course filter when selecting "no_interest"
                     if (option.value === 'no_interest') {
                       setSelectedCourseId(null);
+                      newParams.delete('curso');
                     }
+                    
+                    setSearchParams(newParams);
                   }}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                     filterInterestStatus === option.value
