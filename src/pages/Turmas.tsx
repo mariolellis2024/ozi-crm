@@ -365,6 +365,7 @@ export function Turmas() {
         
         if (!periodDemand[curso.id]) {
           periodDemand[curso.id] = { manha: 0, tarde: 0, noite: 0 };
+        }
       // Sort by potential revenue (highest first) and take top 6, with minimum of 1 interested student
         
         const studentPeriods = interest.aluno?.available_periods || [];
