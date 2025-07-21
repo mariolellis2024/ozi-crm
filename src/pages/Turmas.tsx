@@ -244,7 +244,7 @@ export function Turmas() {
         .select('id, name, start_date, end_date')
         .eq('sala_id', turmaData.sala_id)
         .eq('period', turmaData.period)
-        .neq('id', editingId || '');
+        .neq('id', editingId || '00000000-0000-0000-0000-000000000000');
 
       if (error) throw error;
 
