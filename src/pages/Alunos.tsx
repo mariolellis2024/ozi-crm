@@ -86,6 +86,10 @@ export function Alunos() {
     alunoId: '',
     alunoNome: ''
   });
+  const [courseModal, setCourseModal] = useState({
+    isOpen: false,
+    aluno: null as Aluno | null
+  });
 
   /**
    * Alterna a seleção de um período de disponibilidade
@@ -366,6 +370,26 @@ export function Alunos() {
   }
 
   /**
+   * Abre modal para gerenciar cursos do aluno
+   */
+  function handleOpenCourseModal(aluno: Aluno) {
+    setCourseModal({
+      isOpen: true,
+      aluno: aluno
+    });
+  }
+
+  /**
+   * Fecha modal de gerenciamento de cursos
+   */
+  function handleCloseCourseModal() {
+    setCourseModal({
+      isOpen: false,
+      aluno: null
+    });
+  }
+
+  /**
    * Prepara formulário para edição de aluno existente
    */
   function handleEdit(aluno: Aluno) {
@@ -599,67 +623,13 @@ export function Alunos() {
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="space-y-4">
-                        {cursos.map(curso => {
-                          const interest = aluno.curso_interests?.find(
-                            ci => ci.curso_id === curso.id
-                          );
-                          
-                          return (
-                            <div key={curso.id} className="flex items-center gap-3 py-1">
-                              <span className="text-white font-medium min-w-0 flex-1">{curso.nome}</span>
-                              <div className="flex gap-1 flex-shrink-0">
-                                <button
-                                  type="button"
-                                  onClick={() => handleStatusChange(aluno.id, curso.id, 'interested')}
-                                  className={`p-1.5 rounded-md transition-colors ${
-                                    interest?.status === 'interested'
-                                      ? 'bg-teal-accent/20 text-teal-accent'
-                                      : 'bg-dark text-gray-400 hover:text-white'
-                                  }`}
-                                  title="Interessado"
-                                >
-                                  <BookOpen className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleStatusChange(aluno.id, curso.id, 'enrolled')}
-                                  className={`p-1.5 rounded-md transition-colors ${
-                                    interest?.status === 'enrolled'
-                                      ? 'bg-yellow-500/20 text-yellow-500'
-                                      : 'bg-dark text-gray-400 hover:text-white'
-                                  }`}
-                                  title="Cursando"
-                                >
-                                  <Clock className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleStatusChange(aluno.id, curso.id, 'completed')}
-                                  className={`p-1.5 rounded-md transition-colors ${
-                                    interest?.status === 'completed'
-                                      ? 'bg-emerald-500/20 text-emerald-500'
-                                      : 'bg-dark text-gray-400 hover:text-white'
-                                  }`}
-                                  title="Concluído"
-                                >
-                                  <Check className="h-3.5 w-3.5" />
-                                </button>
-                                {interest && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveInterest(aluno.id, curso.id)}
-                                    className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
-                                    title="Remover"
-                                  >
-                                    <X className="h-3.5 w-3.5" />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <button
+                        onClick={() => handleOpenCourseModal(aluno)}
+                        className="flex items-center gap-2 px-4 py-2 bg-teal-accent/20 text-teal-accent rounded-lg hover:bg-teal-accent/30 transition-colors"
+                      >
+                        <BookOpen className="h-4 w-4" />
+                        <span>Gerenciar Cursos</span>
+                      </button>
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end space-x-2">
@@ -711,6 +681,120 @@ export function Alunos() {
           onCancel={handleCancelDelete}
           variant="danger"
         />
+
+        {/* Modal de Gerenciamento de Cursos */}
+        {courseModal.isOpen && courseModal.aluno && (
+          <div 
+            className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4"
+            onClick={handleCloseCourseModal}
+          >
+            <div 
+              className="bg-dark-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-white">Gerenciar Cursos</h2>
+                  <p className="text-gray-400 mt-1">{courseModal.aluno.nome}</p>
+                </div>
+                <button
+                  onClick={handleCloseCourseModal}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {cursos.map(curso => {
+                  const interest = courseModal.aluno?.curso_interests?.find(
+                    ci => ci.curso_id === curso.id
+                  );
+                  
+                  return (
+                    <div key={curso.id} className="bg-dark-lighter rounded-lg p-4 border border-gray-700">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-white font-medium">{curso.nome}</h3>
+                          <p className="text-gray-400 text-sm">{formatCurrency(curso.preco)}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleStatusChange(courseModal.aluno!.id, curso.id, 'interested');
+                              loadData();
+                            }}
+                            className={`p-2 rounded-md transition-colors ${
+                              interest?.status === 'interested'
+                                ? 'bg-teal-accent/20 text-teal-accent'
+                                : 'bg-dark text-gray-400 hover:text-white'
+                            }`}
+                            title="Interessado"
+                          >
+                            <BookOpen className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleStatusChange(courseModal.aluno!.id, curso.id, 'enrolled');
+                              loadData();
+                            }}
+                            className={`p-2 rounded-md transition-colors ${
+                              interest?.status === 'enrolled'
+                                ? 'bg-yellow-500/20 text-yellow-500'
+                                : 'bg-dark text-gray-400 hover:text-white'
+                            }`}
+                            title="Cursando"
+                          >
+                            <Clock className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleStatusChange(courseModal.aluno!.id, curso.id, 'completed');
+                              loadData();
+                            }}
+                            className={`p-2 rounded-md transition-colors ${
+                              interest?.status === 'completed'
+                                ? 'bg-emerald-500/20 text-emerald-500'
+                                : 'bg-dark text-gray-400 hover:text-white'
+                            }`}
+                            title="Concluído"
+                          >
+                            <Check className="h-4 w-4" />
+                          </button>
+                          {interest && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleRemoveInterest(courseModal.aluno!.id, curso.id);
+                                loadData();
+                              }}
+                              className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                              title="Remover"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {interest && (
+                        <div className="mt-2 text-xs text-gray-400">
+                          Status: {
+                            interest.status === 'interested' ? 'Interessado' :
+                            interest.status === 'enrolled' ? 'Cursando' :
+                            'Concluído'
+                          }
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
