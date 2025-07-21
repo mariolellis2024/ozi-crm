@@ -274,10 +274,11 @@ export function Turmas() {
         return;
       }
 
+      // Ensure empty strings are converted to null for UUID fields
       const turmaData = {
         name: formData.name,
         curso_id: formData.curso_id,
-        sala_id: formData.sala_id,
+        sala_id: formData.sala_id || null,
         cadeiras: Number(formData.cadeiras),
         period: formData.period,
         start_date: formData.start_date,
@@ -327,18 +328,22 @@ export function Turmas() {
             .eq('turma_id', editingId);
         }
 
-        // Add new assignments
-        const assignments = formData.professores.map(prof => ({
+        // Add new assignments - filter out empty professor_ids
+        const assignments = formData.professores
+          .filter(prof => prof.professor_id && prof.professor_id.trim() !== '')
+          .map(prof => ({
           turma_id: turmaId,
           professor_id: prof.professor_id,
           hours: prof.hours
         }));
 
-        const { error: assignmentError } = await supabase
-          .from('turma_professores')
-          .insert(assignments);
+        if (assignments.length > 0) {
+          const { error: assignmentError } = await supabase
+            .from('turma_professores')
+            .insert(assignments);
 
-        if (assignmentError) throw assignmentError;
+          if (assignmentError) throw assignmentError;
+        }
       }
 
       setIsModalOpen(false);
