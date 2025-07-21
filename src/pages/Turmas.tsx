@@ -379,9 +379,9 @@ export function Turmas() {
       };
 
       // Check for conflicts
-      const hasConflict = await checkConflicts(turmaData, editingId || undefined);
-      if (hasConflict) {
-        toast.error('Conflito detectado! Já existe uma turma ou professor ocupado neste horário, período e dias da semana.');
+      const conflictMessage = await checkConflictsDetailed(turmaData, editingId || undefined);
+      if (conflictMessage) {
+        toast.error(conflictMessage);
         return;
       }
 
