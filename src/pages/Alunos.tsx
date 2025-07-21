@@ -305,8 +305,10 @@ export function Alunos() {
         if (error) throw error;
       }
 
+      toast.success('Status atualizado com sucesso!');
       loadData();
     } catch (error) {
+      console.error('Error updating status:', error);
       toast.error('Erro ao atualizar status');
     }
   }
@@ -323,8 +325,10 @@ export function Alunos() {
         .eq('curso_id', cursoId);
       
       if (error) throw error;
+      toast.success('Interesse removido com sucesso!');
       loadData();
     } catch (error) {
+      console.error('Error removing interest:', error);
       toast.error('Erro ao remover interesse');
     }
   }
@@ -725,8 +729,9 @@ export function Alunos() {
                           <button
                             type="button"
                             onClick={() => {
-                              handleStatusChange(courseModal.aluno!.id, curso.id, 'interested');
-                              loadData();
+                              if (courseModal.aluno) {
+                                handleStatusChange(courseModal.aluno.id, curso.id, 'interested');
+                              }
                             }}
                             className={`p-2 rounded-md transition-colors ${
                               interest?.status === 'interested'
@@ -740,8 +745,9 @@ export function Alunos() {
                           <button
                             type="button"
                             onClick={() => {
-                              handleStatusChange(courseModal.aluno!.id, curso.id, 'enrolled');
-                              loadData();
+                              if (courseModal.aluno) {
+                                handleStatusChange(courseModal.aluno.id, curso.id, 'enrolled');
+                              }
                             }}
                             className={`p-2 rounded-md transition-colors ${
                               interest?.status === 'enrolled'
@@ -755,8 +761,9 @@ export function Alunos() {
                           <button
                             type="button"
                             onClick={() => {
-                              handleStatusChange(courseModal.aluno!.id, curso.id, 'completed');
-                              loadData();
+                              if (courseModal.aluno) {
+                                handleStatusChange(courseModal.aluno.id, curso.id, 'completed');
+                              }
                             }}
                             className={`p-2 rounded-md transition-colors ${
                               interest?.status === 'completed'
@@ -771,8 +778,9 @@ export function Alunos() {
                             <button
                               type="button"
                               onClick={() => {
-                                handleRemoveInterest(courseModal.aluno!.id, curso.id);
-                                loadData();
+                                if (courseModal.aluno) {
+                                  handleRemoveInterest(courseModal.aluno.id, curso.id);
+                                }
                               }}
                               className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                               title="Remover"
