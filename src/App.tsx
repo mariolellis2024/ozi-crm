@@ -8,6 +8,7 @@ import { Alunos } from './pages/Alunos';
 import { Cursos } from './pages/Cursos';
 import { Turmas } from './pages/Turmas';
 import { Salas } from './pages/Salas';
+import { Vendas } from './pages/Vendas';
 import { Layout } from './components/Layout';
 import { Toaster } from 'react-hot-toast';
 import { OrganicBackground } from './components/OrganicBackground';
@@ -107,6 +108,14 @@ export default function App() {
           element={
             <PrivateRoute>
               <Salas />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/vendas"
+          element={
+            <PrivateRoute>
+              <Vendas />
             </PrivateRoute>
           }
         />

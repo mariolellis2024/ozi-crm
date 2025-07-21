@@ -302,7 +302,7 @@ export function Alunos() {
    * @param cursoId - ID do curso
    * @param status - Novo status do interesse
    */
-  async function handleStatusChange(alunoId: string, cursoId: string, status: CursoInterest['status']) {
+  async function handleStatusChange(alunoId: string, cursoId: string, status: CursoInterest['status'], salesStage?: string) {
     try {
       // Check if interest already exists
       const { data: existingInterest } = await supabase
@@ -312,11 +312,23 @@ export function Alunos() {
         .eq('curso_id', cursoId)
         .maybeSingle();
 
+      // Map status to sales_stage
+      const stageMapping = {
+        'interested': 'qualified',
+        'enrolled': 'enrolled',
+        'completed': 'enrolled'
+      };
+      
+      const defaultSalesStage = salesStage || stageMapping[status as keyof typeof stageMapping] || 'new_lead';
       if (existingInterest) {
         // Update existing interest
         const { error } = await supabase
           .from('aluno_curso_interests')
-          .update({ status })
+          .update({ 
+            status,
+            sales_stage: defaultSalesStage,
+            last_contact_date: new Date().toISOString()
+          })
           .eq('aluno_id', alunoId)
           .eq('curso_id', cursoId);
         
@@ -328,7 +340,10 @@ export function Alunos() {
           .insert([{
             aluno_id: alunoId,
             curso_id: cursoId,
-            status
+            status,
+            sales_stage: defaultSalesStage,
+            last_contact_date: new Date().toISOString(),
+            lead_source: 'website'
           }]);
         
         if (error) throw error;
