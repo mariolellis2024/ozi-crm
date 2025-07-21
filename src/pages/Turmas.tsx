@@ -732,6 +732,16 @@ export function Turmas() {
                   <span>Ver Alunos Interessados</span>
                 </button>
 
+                {/* Botão para ver alunos matriculados */}
+                {(turma.alunos_enrolled?.length || 0) > 0 && (
+                  <button
+                    onClick={() => handleOpenAlunosMatriculados(turma)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors"
+                  >
+                    <UserCheck className="h-4 w-4" />
+                    <span>Ver Alunos Matriculados ({turma.alunos_enrolled?.length || 0})</span>
+                  </button>
+                )}
                 <div className="mt-4 pt-4 border-t border-gray-700">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400 text-sm">Faturamento Potencial</span>
