@@ -142,6 +142,7 @@ export function ModalTurma({
       }
     }
   }, [formData.start_date, formData.days_of_week, cargaHorariaCurso]);
+  
   function addProfessor() {
     setFormData({
       ...formData,
@@ -203,7 +204,6 @@ export function ModalTurma({
   }
 
   return createPortal(
-    isOpen ? (
     isOpen ? (
       <div 
         className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4"
@@ -484,8 +484,7 @@ export function ModalTurma({
                                 <option key={professor.id} value={professor.id}>
                                   {professor.nome}
                                 </option>
-                              ))
-                            }
+                              ))}
                           </select>
                         </div>
                         <div className="flex gap-2">
