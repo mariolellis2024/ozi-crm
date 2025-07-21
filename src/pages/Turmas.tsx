@@ -341,143 +341,138 @@ export function Turmas() {
   }
 
   async function checkConflictsDetailed(newTurmaData: any, editingId?: string): Promise<string> {
-    try {
-      // Normaliza a data para o início do dia no fuso horário local
-      const normalizeDate = (dateStr: string) => {
-        const date = new Date(dateStr + 'T00:00:00'); // Cria a data no fuso horário local
-        date.setHours(0, 0, 0, 0); // Garante que seja exatamente meia-noite local
-        return date;
-      };
+    // Normaliza a data para o início do dia no fuso horário local
+    const normalizeDate = (dateStr: string) => {
+      const date = new Date(dateStr + 'T00:00:00'); // Cria a data no fuso horário local
+      date.setHours(0, 0, 0, 0); // Garante que seja exatamente meia-noite local
+      return date;
+    };
 
-      const newStartDate = normalizeDate(newTurmaData.start_date);
-      const newEndDate = normalizeDate(newTurmaData.end_date);
-      const newPeriod = newTurmaData.period;
-      const newSalaId = newTurmaData.sala_id;
-      const newDaysOfWeek = newTurmaData.days_of_week || [];
+    const newStartDate = normalizeDate(newTurmaData.start_date);
+    const newEndDate = normalizeDate(newTurmaData.end_date);
+    const newPeriod = newTurmaData.period;
+    const newSalaId = newTurmaData.sala_id;
+    const newDaysOfWeek = newTurmaData.days_of_week || [];
 
-      const getDayName = (dayNum: number): string => {
-        const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-        // Ajusta o índice: dayNum 1 = Segunda (índice 1), dayNum 7 = Domingo (índice 0)
-        return days[dayNum === 7 ? 0 : dayNum] || `Dia ${dayNum}`;
-      };
+    const getDayName = (dayNum: number): string => {
+      const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+      // Ajusta o índice: dayNum 1 = Segunda (índice 1), dayNum 7 = Domingo (índice 0)
+      return days[dayNum === 7 ? 0 : dayNum] || `Dia ${dayNum}`;
+    };
 
-      const getPeriodName = (period: string): string => {
-        switch (period) {
-          case 'manha': return 'Manhã';
-          case 'tarde': return 'Tarde';
-          case 'noite': return 'Noite';
-          default: return period;
-        }
-      };
-
-      const formatDateBR = (date: Date): string => {
-        return date.toLocaleDateString('pt-BR');
-      };
-
-      let query = supabase
-        .from('turmas')
-        .select(`
-          *,
-          curso:cursos(nome),
-          sala:salas(nome),
-          professores:turma_professores(
-            professor_id,
-            hours,
-            professor:professores(nome)
-          )
-        `);
-
-      if (editingId) {
-        query = query.neq('id', editingId);
+    const getPeriodName = (period: string): string => {
+      switch (period) {
+        case 'manha': return 'Manhã';
+        case 'tarde': return 'Tarde';
+        case 'noite': return 'Noite';
+        default: return period;
       }
+    };
 
-      const { data: existingTurmas, error } = await query;
-      if (error) throw error;
+    const formatDateBR = (date: Date): string => {
+      return date.toLocaleDateString('pt-BR');
+    };
 
-      // Verificação de conflitos de sala
-      if (newSalaId) {
-        for (const turma of existingTurmas) {
-          if (turma.sala_id === newSalaId && turma.period === newPeriod) {
-            const existingStartDate = normalizeDate(turma.start_date);
-            const existingEndDate = normalizeDate(turma.end_date);
+    let query = supabase
+      .from('turmas')
+      .select(`
+        *,
+        curso:cursos(nome),
+        sala:salas(nome),
+        professores:turma_professores(
+          professor_id,
+          hours,
+          professor:professores(nome)
+        )
+      `);
 
-            // Check date overlap
-            if (newStartDate <= existingEndDate && newEndDate >= existingStartDate) {
-              const existingDaysOfWeek = turma.days_of_week || [];
-              
-              let conflictingDays: number[] = [];
-              if (newDaysOfWeek.length === 0 && existingDaysOfWeek.length === 0) {
-                // Ambas as turmas são flexíveis, conflito em todos os dias
-                return `❌ CONFLITO DE SALA: A sala "${turma.sala?.nome}" já está ocupada pela turma "${turma.name}" no período da ${getPeriodName(turma.period)} (${formatDateBR(existingStartDate)} - ${formatDateBR(existingEndDate)}).`;
-              } else if (newDaysOfWeek.length === 0) {
-                // Nova turma flexível, conflita com os dias específicos da turma existente
-                conflictingDays = existingDaysOfWeek;
-              } else if (existingDaysOfWeek.length === 0) {
-                // Turma existente flexível, conflita com os dias específicos da nova turma
-                conflictingDays = newDaysOfWeek;
-              } else {
-                // Ambas têm dias específicos, encontra os dias em comum
-                conflictingDays = newDaysOfWeek.filter(day => existingDaysOfWeek.includes(day));
-              }
+    if (editingId) {
+      query = query.neq('id', editingId);
+    }
 
-              if (conflictingDays.length > 0) {
-                const daysText = conflictingDays.map(getDayName).join(', ');
-                return `❌ CONFLITO DE SALA: A sala "${turma.sala?.nome}" já está ocupada pela turma "${turma.name}" no período da ${getPeriodName(turma.period)} nos dias: ${daysText} (${formatDateBR(existingStartDate)} - ${formatDateBR(existingEndDate)}).`;
-              }
+    const { data: existingTurmas, error } = await query;
+    if (error) throw error;
+
+    // Verificação de conflitos de sala
+    if (newSalaId) {
+      for (const turma of existingTurmas) {
+        if (turma.sala_id === newSalaId && turma.period === newPeriod) {
+          const existingStartDate = normalizeDate(turma.start_date);
+          const existingEndDate = normalizeDate(turma.end_date);
+
+          // Verifica sobreposição de datas
+          if (newStartDate <= existingEndDate && newEndDate >= existingStartDate) {
+            const existingDaysOfWeek = turma.days_of_week || [];
+            
+            let conflictingDays: number[] = [];
+            if (newDaysOfWeek.length === 0 && existingDaysOfWeek.length === 0) {
+              // Ambas as turmas são flexíveis, conflito em todos os dias
+              return `❌ CONFLITO DE SALA: A sala "${turma.sala?.nome}" já está ocupada pela turma "${turma.name}" no período da ${getPeriodName(turma.period)} (${formatDateBR(existingStartDate)} - ${formatDateBR(existingEndDate)}).`;
+            } else if (newDaysOfWeek.length === 0) {
+              // Nova turma flexível, conflita com os dias específicos da turma existente
+              conflictingDays = existingDaysOfWeek;
+            } else if (existingDaysOfWeek.length === 0) {
+              // Turma existente flexível, conflita com os dias específicos da nova turma
+              conflictingDays = newDaysOfWeek;
+            } else {
+              // Ambas têm dias específicos, encontra os dias em comum
+              conflictingDays = newDaysOfWeek.filter(day => existingDaysOfWeek.includes(day));
+            }
+
+            if (conflictingDays.length > 0) {
+              const daysText = conflictingDays.map(getDayName).join(', ');
+              return `❌ CONFLITO DE SALA: A sala "${turma.sala?.nome}" já está ocupada pela turma "${turma.name}" no período da ${getPeriodName(turma.period)} nos dias: ${daysText} (${formatDateBR(existingStartDate)} - ${formatDateBR(existingEndDate)}).`;
             }
           }
         }
       }
+    }
 
-      // Verificação de conflitos de professor
-      if (newTurmaData.professores && newTurmaData.professores.length > 0) {
-        for (const newProf of newTurmaData.professores) {
-          if (!newProf.professor_id) continue;
+    // Verificação de conflitos de professor
+    if (newTurmaData.professores && newTurmaData.professores.length > 0) {
+      for (const newProf of newTurmaData.professores) {
+        if (!newProf.professor_id) continue;
 
-          for (const turma of existingTurmas) {
-            if (turma.period === newPeriod) {
-              const existingStartDate = normalizeDate(turma.start_date);
-              const existingEndDate = normalizeDate(turma.end_date);
+        for (const turma of existingTurmas) {
+          if (turma.period === newPeriod) {
+            const existingStartDate = normalizeDate(turma.start_date);
+            const existingEndDate = normalizeDate(turma.end_date);
 
-              // Check date overlap
-              if (newStartDate <= existingEndDate && newEndDate >= existingStartDate) {
-                // Check if this professor is assigned to this turma
-                const professorConflict = turma.professores?.find(
-                  (tp: any) => tp.professor_id === newProf.professor_id
-                );
+            // Verifica sobreposição de datas
+            if (newStartDate <= existingEndDate && newEndDate >= existingStartDate) {
+              // Verifica se este professor está atribuído a esta turma
+              const professorConflict = turma.professores?.find(
+                (tp: any) => tp.professor_id === newProf.professor_id
+              );
 
                 if (professorConflict) {
-                  const existingDaysOfWeek = turma.days_of_week || [];
-                  
-                  // Check days of week overlap
-                  let conflictingDays: number[] = [];
-                  if (newDaysOfWeek.length === 0 && existingDaysOfWeek.length === 0) {
-                    return `👨‍🏫 CONFLITO DE PROFESSOR: O professor "${professorConflict.professor?.nome}" já tem compromisso na turma "${turma.name}" (${turma.sala?.nome}) no período da ${getPeriodName(turma.period)} (${formatDateBR(existingStartDate)} - ${formatDateBR(existingEndDate)}).`;
-                  } else if (newDaysOfWeek.length === 0) {
-                    conflictingDays = existingDaysOfWeek;
-                  } else if (existingDaysOfWeek.length === 0) {
-                    conflictingDays = newDaysOfWeek;
-                  } else {
-                    conflictingDays = newDaysOfWeek.filter(day => existingDaysOfWeek.includes(day));
-                  }
+              if (professorConflict) {
+                const existingDaysOfWeek = turma.days_of_week || [];
+                
+                let conflictingDays: number[] = [];
+                if (newDaysOfWeek.length === 0 && existingDaysOfWeek.length === 0) {
+                  return `👨‍🏫 CONFLITO DE PROFESSOR: O professor "${professorConflict.professor?.nome}" já tem compromisso na turma "${turma.name}" (${turma.sala?.nome}) no período da ${getPeriodName(turma.period)} (${formatDateBR(existingStartDate)} - ${formatDateBR(existingEndDate)}).`;
+                } else if (newDaysOfWeek.length === 0) {
+                  conflictingDays = existingDaysOfWeek;
+                } else if (existingDaysOfWeek.length === 0) {
+                  conflictingDays = newDaysOfWeek;
+                } else {
+                  conflictingDays = newDaysOfWeek.filter(day => existingDaysOfWeek.includes(day));
+                }
 
-                  if (conflictingDays.length > 0) {
-                    const daysText = conflictingDays.map(getDayName).join(', ');
-                    return `👨‍🏫 CONFLITO DE PROFESSOR: O professor "${professorConflict.professor?.nome}" já tem compromisso na turma "${turma.name}" (${turma.sala?.nome}) no período da ${getPeriodName(turma.period)} nos dias: ${daysText} (${formatDateBR(existingStartDate)} - ${formatDateBR(existingEndDate)}).`;
-                  }
+                if (conflictingDays.length > 0) {
+                  const daysText = conflictingDays.map(getDayName).join(', ');
+                  return `👨‍🏫 CONFLITO DE PROFESSOR: O professor "${professorConflict.professor?.nome}" já tem compromisso na turma "${turma.name}" (${turma.sala?.nome}) no período da ${getPeriodName(turma.period)} nos dias: ${daysText} (${formatDateBR(existingStartDate)} - ${formatDateBR(existingEndDate)}).`;
                 }
               }
             }
           }
         }
       }
-
-      // Se chegou até aqui, não há conflitos
-      throw new Error('Nenhum conflito detectado - esta função só deve ser chamada quando há conflito confirmado');
-    } catch (error) {
-      console.error('Erro ao verificar conflitos:', error);
-      throw new Error('Erro interno ao verificar conflitos');
     }
+
+    // Se chegou até aqui, não há conflitos
+    return null;
   }
 
   async function handleSubmit(e: React.FormEvent) {
