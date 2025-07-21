@@ -205,6 +205,7 @@ export function ModalTurma({
   }
 
   return createPortal(
+    isOpen ? (
     <div 
       className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4"
       onClick={onClose}
@@ -564,7 +565,8 @@ export function ModalTurma({
           </button>
         </form>
       </div>
-    </div>,
+    </div>
+    ) : null,
     document.body
   );
 }

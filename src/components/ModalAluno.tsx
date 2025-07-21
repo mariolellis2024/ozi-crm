@@ -41,9 +41,9 @@ export function ModalAluno({
   onClose,
   togglePeriod
 }: ModalAlunoProps) {
-  if (!isOpen) return null;
 
   return createPortal(
+    isOpen ? (
     <div 
       className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4"
       onClick={onClose}
@@ -154,7 +154,8 @@ export function ModalAluno({
           </button>
         </form>
       </div>
-    </div>,
+    </div>
+    ) : null,
     document.body
   );
 }

@@ -118,9 +118,9 @@ export function ModalCategorias({ isOpen, onClose, onCategoriesUpdated }: ModalC
     onClose();
   }
 
-  if (!isOpen) return null;
 
   return createPortal(
+    isOpen ? (
     <div 
       className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4"
       onClick={handleClose}
@@ -241,7 +241,8 @@ export function ModalCategorias({ isOpen, onClose, onCategoriesUpdated }: ModalC
           </div>
         </div>
       </div>
-    </div>,
+    </div>
+    ) : null,
     document.body
   );
 }

@@ -22,7 +22,6 @@ export function ConfirmationModal({
   onCancel,
   variant = 'danger'
 }: ConfirmationModalProps) {
-  if (!isOpen) return null;
 
   const variantStyles = {
     danger: {
@@ -41,7 +40,8 @@ export function ConfirmationModal({
 
   const styles = variantStyles[variant];
 
-  return (
+  return createPortal(
+    isOpen ? (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 fade-in">
       <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md fade-in-delay-1">
         <div className="flex justify-between items-start mb-6">
@@ -75,5 +75,7 @@ export function ConfirmationModal({
         </div>
       </div>
     </div>
+    ) : null,
+    document.body
   );
 }
