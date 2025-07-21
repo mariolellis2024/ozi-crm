@@ -256,6 +256,142 @@ export function Turmas() {
     }
   }
 
+  async function checkConflictsDetailed(newTurmaData: any, editingId?: string): Promise<string | null> {
+    try {
+      // Normalize dates for consistent comparison
+      const normalizeDate = (dateStr: string) => {
+        const date = new Date(dateStr + 'T00:00:00.000Z');
+        return date;
+      };
+
+      const newStartDate = normalizeDate(newTurmaData.start_date);
+      const newEndDate = normalizeDate(newTurmaData.end_date);
+      const newPeriod = newTurmaData.period;
+      const newSalaId = newTurmaData.sala_id;
+      const newDaysOfWeek = newTurmaData.days_of_week || [];
+
+      // Helper functions
+      const getDayName = (dayNum: number): string => {
+        const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+        return days[dayNum] || `Dia ${dayNum}`;
+      };
+
+      const getPeriodName = (period: string): string => {
+        switch (period) {
+          case 'manha': return 'Manhã';
+          case 'tarde': return 'Tarde';
+          case 'noite': return 'Noite';
+          default: return period;
+        }
+      };
+
+      const formatDateBR = (date: Date): string => {
+        return date.toLocaleDateString('pt-BR');
+      };
+
+      // Get existing turmas
+      let query = supabase
+        .from('turmas')
+        .select(`
+          *,
+          curso:cursos(nome),
+          sala:salas(nome),
+          professores:turma_professores(
+            professor_id,
+            hours,
+            professor:professores(nome)
+          )
+        `);
+
+      if (editingId) {
+        query = query.neq('id', editingId);
+      }
+
+      const { data: existingTurmas, error } = await query;
+      if (error) throw error;
+
+      // Check for room conflicts
+      if (newSalaId) {
+        for (const turma of existingTurmas) {
+          if (turma.sala_id === newSalaId && turma.period === newPeriod) {
+            const existingStartDate = normalizeDate(turma.start_date);
+            const existingEndDate = normalizeDate(turma.end_date);
+
+            // Check date overlap
+            if (newStartDate <= existingEndDate && newEndDate >= existingStartDate) {
+              const existingDaysOfWeek = turma.days_of_week || [];
+              
+              // Check days of week overlap
+              let conflictingDays: number[] = [];
+              if (newDaysOfWeek.length === 0 || existingDaysOfWeek.length === 0) {
+                // If either has no specific days, assume conflict
+                conflictingDays = newDaysOfWeek.length > 0 ? newDaysOfWeek : existingDaysOfWeek;
+              } else {
+                // Find common days
+                conflictingDays = newDaysOfWeek.filter(day => existingDaysOfWeek.includes(day));
+              }
+
+              if (conflictingDays.length > 0 || (newDaysOfWeek.length === 0 && existingDaysOfWeek.length === 0)) {
+                const daysText = conflictingDays.length > 0 
+                  ? conflictingDays.map(getDayName).join(', ')
+                  : 'todos os dias';
+                
+                return `❌ CONFLITO DE SALA: A sala "${turma.sala?.nome}" já está ocupada pela turma "${turma.name}" no período da ${getPeriodName(turma.period)} nos dias: ${daysText} (${formatDateBR(existingStartDate)} - ${formatDateBR(existingEndDate)}).`;
+              }
+            }
+          }
+        }
+      }
+
+      // Check for professor conflicts
+      if (newTurmaData.professores && newTurmaData.professores.length > 0) {
+        for (const newProf of newTurmaData.professores) {
+          if (!newProf.professor_id) continue;
+
+          for (const turma of existingTurmas) {
+            if (turma.period === newPeriod) {
+              const existingStartDate = normalizeDate(turma.start_date);
+              const existingEndDate = normalizeDate(turma.end_date);
+
+              // Check date overlap
+              if (newStartDate <= existingEndDate && newEndDate >= existingStartDate) {
+                // Check if this professor is assigned to this turma
+                const professorConflict = turma.professores?.find(
+                  (tp: any) => tp.professor_id === newProf.professor_id
+                );
+
+                if (professorConflict) {
+                  const existingDaysOfWeek = turma.days_of_week || [];
+                  
+                  // Check days of week overlap
+                  let conflictingDays: number[] = [];
+                  if (newDaysOfWeek.length === 0 || existingDaysOfWeek.length === 0) {
+                    conflictingDays = newDaysOfWeek.length > 0 ? newDaysOfWeek : existingDaysOfWeek;
+                  } else {
+                    conflictingDays = newDaysOfWeek.filter(day => existingDaysOfWeek.includes(day));
+                  }
+
+                  if (conflictingDays.length > 0 || (newDaysOfWeek.length === 0 && existingDaysOfWeek.length === 0)) {
+                    const daysText = conflictingDays.length > 0 
+                      ? conflictingDays.map(getDayName).join(', ')
+                      : 'todos os dias';
+                    
+                    return `👨‍🏫 CONFLITO DE PROFESSOR: O professor "${professorConflict.professor?.nome}" já tem compromisso na turma "${turma.name}" (${turma.sala?.nome}) no período da ${getPeriodName(turma.period)} nos dias: ${daysText} (${formatDateBR(existingStartDate)} - ${formatDateBR(existingEndDate)}).`;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return null; // No conflicts found
+    } catch (error) {
+      console.error('Erro ao verificar conflitos:', error);
+      throw error;
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
