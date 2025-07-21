@@ -566,7 +566,6 @@ export function ModalTurma({
         </div>
       </div>
     ) : null,
-    ) : null,
     document.body
   );
 }
