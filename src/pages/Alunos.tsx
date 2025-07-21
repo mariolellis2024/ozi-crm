@@ -52,6 +52,7 @@ interface Aluno {
 interface Curso {
   id: string;
   nome: string;
+  preco: number;
 }
 
 /**
@@ -257,7 +258,8 @@ export function Alunos() {
         nome: '',
         email: '',
         whatsapp: '',
-        empresa: ''
+        empresa: '',
+        available_periods: []
       });
       setEditingId(null);
       loadData();
@@ -813,6 +815,7 @@ export function Alunos() {
                           <div className="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-700/30">
                             Sem interesse registrado
                           </div>
+                        </div>
                       )}
                     </div>
                   );
