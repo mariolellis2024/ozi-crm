@@ -742,13 +742,108 @@ export function Turmas() {
                     <span>Ver Alunos Matriculados ({turma.alunos_enrolled?.length || 0})</span>
                   </button>
                 )}
-                <div className="mt-4 pt-4 border-t border-gray-700">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400 text-sm">Faturamento Potencial</span>
-                    <span className="text-teal-accent font-semibold">
-                      {formatCurrency(turma.potencial_faturamento)}
-                    </span>
-                  </div>
+
+                {/* Resumo Financeiro Completo */}
+                <div className="mt-4 pt-4 border-t border-gray-700 space-y-3">
+                  <h4 className="text-white font-medium text-sm flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-teal-accent" />
+                    Resumo Financeiro
+                  </h4>
+                  
+                  {(() => {
+                    const alunosMatriculados = turma.alunos_enrolled?.length || 0;
+                    const precoUnitario = turma.curso?.preco || 0;
+                    const faturamentoPotencial = turma.potencial_faturamento;
+                    const faturamentoRealizado = alunosMatriculados * precoUnitario;
+                    
+                    // Calcular custos com professores
+                    const custoProfessores = turma.professores?.reduce((total, tp) => {
+                      return total + (tp.hours * tp.professor.valor_hora);
+                    }, 0) || 0;
+                    
+                    // Calcular impostos
+                    const impostos = (faturamentoRealizado * turma.imposto) / 100;
+                    
+                    // Resultado final
+                    const resultadoFinal = faturamentoRealizado - custoProfessores - impostos;
+                    const margemLucro = faturamentoRealizado > 0 ? (resultadoFinal / faturamentoRealizado) * 100 : 0;
+                    
+                    return (
+                      <div className="space-y-2 text-xs">
+                        {/* Faturamento */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Potencial Total:</span>
+                          <span className="text-gray-300 font-medium">
+                            {formatCurrency(faturamentoPotencial)}
+                          </span>
+                        </div>
+                        
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Realizado ({alunosMatriculados} alunos):</span>
+                          <span className="text-emerald-400 font-semibold">
+                            {formatCurrency(faturamentoRealizado)}
+                          </span>
+                        </div>
+                        
+                        {/* Custos */}
+                        <div className="pt-2 border-t border-gray-700/50">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400">Professores:</span>
+                            <span className="text-red-400 font-medium">
+                              -{formatCurrency(custoProfessores)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400">Impostos ({turma.imposto}%):</span>
+                            <span className="text-red-400 font-medium">
+                              -{formatCurrency(impostos)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Resultado Final */}
+                        <div className="pt-2 border-t border-gray-600">
+                          <div className="flex justify-between items-center">
+                            <span className="text-white font-medium">Resultado Final:</span>
+                            <span className={`font-bold ${
+                              resultadoFinal >= 0 ? 'text-emerald-400' : 'text-red-400'
+                            }`}>
+                              {formatCurrency(resultadoFinal)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-gray-400">Margem de Lucro:</span>
+                            <span className={`font-medium ${
+                              margemLucro >= 0 ? 'text-emerald-400' : 'text-red-400'
+                            }`}>
+                              {margemLucro.toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Indicadores visuais */}
+                        {alunosMatriculados === 0 && (
+                          <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-yellow-400 text-xs">
+                            ⚠️ Nenhum aluno matriculado ainda
+                          </div>
+                        )}
+                        
+                        {resultadoFinal < 0 && alunosMatriculados > 0 && (
+                          <div className="mt-2 p-2 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-xs">
+                            📉 Turma com resultado negativo
+                          </div>
+                        )}
+                        
+                        {resultadoFinal > 0 && margemLucro > 20 && (
+                          <div className="mt-2 p-2 bg-emerald-500/10 border border-emerald-500/30 rounded text-emerald-400 text-xs">
+                            📈 Excelente margem de lucro!
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             );
