@@ -267,7 +267,7 @@ export function Cursos() {
         <div className="space-y-8 scale-in-delay-1">
           {sortedCategories.map((categoryName) => (
             <div key={categoryName}>
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-gray-700 pb-2">
+              <h2 className="text-2xl font-bold text-white mb-4">
                 {categoryName}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
