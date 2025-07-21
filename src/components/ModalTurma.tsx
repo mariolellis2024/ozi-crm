@@ -195,11 +195,6 @@ export function ModalTurma({
       return;
     }
 
-    if (!formData.days_of_week || formData.days_of_week.length === 0) {
-      alert('Selecione pelo menos um dia da semana para a turma');
-      return;
-    }
-
     onSubmit(e);
   }
 
