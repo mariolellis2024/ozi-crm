@@ -335,7 +335,8 @@ export function Turmas() {
 
       if (error) throw error;
 
-      const suggestionMap: { [cursoId: string]: Suggestion } = {};
+      // Create a map for course-period combinations
+      const suggestionMap: { [key: string]: Suggestion } = {};
 
       interests.forEach((interest: any) => {
         const curso = cursosData.find(c => c.id === interest.curso_id);
@@ -343,41 +344,36 @@ export function Turmas() {
         
         const studentPeriods = interest.aluno?.available_periods || [];
 
-        if (!suggestionMap[curso.id]) {
-          suggestionMap[curso.id] = {
-            curso,
-            interestedCount: 0,
-            potentialRevenue: 0,
-            mostDemandedPeriod: undefined
-          };
-        }
-
-        suggestionMap[curso.id].interestedCount++;
-        suggestionMap[curso.id].potentialRevenue += curso.preco;
+        // Count interest for each period the student is available
+        studentPeriods.forEach((period: Period) => {
+          const key = `${curso.id}-${period}`;
+          
+          if (!suggestionMap[key]) {
+            suggestionMap[key] = {
+              curso,
+              period,
+              interestedCount: 0,
+              potentialRevenue: 0
+            };
+          }
+          
+          suggestionMap[key].interestedCount++;
+          suggestionMap[key].potentialRevenue += curso.preco;
+        });
       });
 
-      // Calculate most demanded period for each course
-      const periodDemand: { [cursoId: string]: { manha: number; tarde: number; noite: number } } = {};
-      
-      interests.forEach((interest: any) => {
-        const curso = cursosData.find(c => c.id === interest.curso_id);
-        if (!curso) return;
-        
-        if (!periodDemand[curso.id]) {
-          periodDemand[curso.id] = { manha: 0, tarde: 0, noite: 0 };
-        }
-        
-        const studentPeriods = interest.aluno?.available_periods || [];
-        
-        if (studentPeriods.length === 0) {
-          // Student available for all periods
-          periodDemand[curso.id].manha++;
-          periodDemand[curso.id].tarde++;
-          periodDemand[curso.id].noite++;
-        } else {
-          // Count specific periods
-          studentPeriods.forEach((period: Period) => {
-            periodDemand[curso.id][period]++;
+      // Filter suggestions with at least 2 interested students and sort by potential revenue
+      const filteredSuggestions = Object.values(suggestionMap)
+        .filter(s => s.interestedCount >= 2)
+        .sort((a, b) => b.potentialRevenue - a.potentialRevenue)
+        .slice(0, 6); // Show top 6 suggestions
+
+      setSuggestions(filteredSuggestions);
+    } catch (error) {
+      console.error('Error generating suggestions:', error);
+    }
+  }
+
           });
         }
       });
