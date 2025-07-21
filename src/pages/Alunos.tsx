@@ -558,9 +558,35 @@ export function Alunos() {
               <div>
                 <p className="text-gray-400 text-sm">Faturamento Potencial em Aberto</p>
                 <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalOpenRevenue)}</p>
-                <p className="text-gray-400 text-sm mt-1">
-                  Valor total dos cursos com alunos interessados
-                </p>
+                <div className="mt-2 space-y-1">
+                  <p className="text-gray-400 text-sm">
+                    Valor total dos cursos com alunos interessados
+                  </p>
+                  {(searchTerm || filterInterestStatus !== 'all' || selectedCourseId) && (
+                    <div className="pt-2 border-t border-gray-700">
+                      <p className="text-teal-accent text-sm font-medium">
+                        Filtrado: {formatCurrency((() => {
+                          let filteredRevenue = 0;
+                          filteredAlunos.forEach(aluno => {
+                            aluno.curso_interests?.forEach(interest => {
+                              if (interest.status === 'interested') {
+                                const curso = cursos.find(c => c.id === interest.curso_id);
+                                if (curso) {
+                                  filteredRevenue += curso.preco;
+                                }
+                              }
+                            });
+                          });
+                          return filteredRevenue;
+                        })())}
+                      </p>
+                      <p className="text-gray-500 text-xs">
+                        {filteredAlunos.length} aluno{filteredAlunos.length !== 1 ? 's' : ''} 
+                        {searchTerm || filterInterestStatus !== 'all' || selectedCourseId ? ' encontrado' : ''}{filteredAlunos.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="bg-teal-accent p-3 rounded-xl">
                 <TrendingUp className="h-6 w-6 text-dark" />
