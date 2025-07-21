@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Pencil, Trash2, Calendar, Users, MapPin, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon, Search, Filter, BookOpen, Check, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Calendar, Users, MapPin, Clock, Lightbulb, ChevronDown, ChevronUp, Sun, Sunset, Moon, Search, Filter, BookOpen, Check, X, RefreshCw, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
@@ -147,6 +147,7 @@ export function Turmas() {
     cursoNome: '',
     cursoPreco: 0
   });
+  const [isProcessingCompletion, setIsProcessingCompletion] = useState(false);
 
   /**
    * Determina o status de uma turma baseado nas datas
@@ -997,6 +998,14 @@ export function Turmas() {
                     }`}>
                       {getStatusLabel(getTurmaStatus(turma.start_date, turma.end_date))}
                     </span>
+                    {/* Indicador para turmas finalizadas com alunos ainda matriculados */}
+                    {getTurmaStatus(turma.start_date, turma.end_date) === 'finalizada' && 
+                     turma.alunos_enrolled && turma.alunos_enrolled.length > 0 && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Processamento Pendente
+                      </span>
+                    )}
                     {turma.curso?.categoria?.nome && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
                         {turma.curso.categoria.nome}
