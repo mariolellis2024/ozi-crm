@@ -846,8 +846,6 @@ export function Turmas() {
                     <h3 className="font-semibold text-white">
                       {suggestion.curso.nome} - {getPeriodLabel(suggestion.period)}
                     </h3>
-                      {suggestion.curso.nome}
-                    </h3>
                     <span className="bg-orange-500/20 text-orange-300 px-2 py-1 rounded-lg text-xs font-medium">
                       #{index + 1}
                     </span>
