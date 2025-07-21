@@ -811,6 +811,29 @@ export function Turmas() {
   }
 
   /**
+   * Processa automaticamente a conclusão de alunos em turmas finalizadas
+   */
+  async function handleMarkStudentsCompleted() {
+    setIsProcessingCompletion(true);
+    try {
+      // Chama a função SQL que processa as conclusões
+      const { data, error } = await supabase.rpc('mark_students_as_completed');
+      
+      if (error) throw error;
+      
+      toast.success('Conclusões processadas com sucesso!');
+      
+      // Recarrega os dados para refletir as mudanças
+      await loadData();
+    } catch (error) {
+      console.error('Erro ao processar conclusões:', error);
+      toast.error('Erro ao processar conclusões automáticas');
+    } finally {
+      setIsProcessingCompletion(false);
+    }
+  }
+
+  /**
    * Filtra turmas baseado nos critérios de busca e filtros
    */
   const filteredTurmas = turmas.filter(turma => {
