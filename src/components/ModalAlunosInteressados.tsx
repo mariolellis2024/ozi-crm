@@ -133,6 +133,18 @@ export function ModalAlunosInteressados({
       return;
     }
 
+    // Verificar conflitos de horário
+    try {
+      const hasConflict = await checkStudentScheduleConflict(alunoId, turmaId);
+      if (hasConflict) {
+        toast.error('Conflito de horário! O aluno já está matriculado em outra turma no mesmo período e com datas sobrepostas.');
+        return;
+      }
+    } catch (error) {
+      toast.error('Erro ao verificar conflitos de horário');
+      return;
+    }
+
     setEnrollingStudents(prev => new Set(prev).add(alunoId));
     
     try {
@@ -165,6 +177,66 @@ export function ModalAlunosInteressados({
         newSet.delete(alunoId);
         return newSet;
       });
+    }
+  }
+
+  async function checkStudentScheduleConflict(alunoId: string, newTurmaId: string): Promise<boolean> {
+    try {
+      // Buscar informações da nova turma
+      const { data: newTurma, error: newTurmaError } = await supabase
+        .from('turmas')
+        .select('period, start_date, end_date')
+        .eq('id', newTurmaId)
+        .single();
+
+      if (newTurmaError) throw newTurmaError;
+
+      // Buscar todas as turmas em que o aluno já está matriculado
+      const { data: enrolledTurmas, error: enrolledError } = await supabase
+        .from('aluno_curso_interests')
+        .select(`
+          turma:turmas(
+            id,
+            period,
+            start_date,
+            end_date
+          )
+        `)
+        .eq('aluno_id', alunoId)
+        .eq('status', 'enrolled')
+        .not('turma_id', 'is', null);
+
+      if (enrolledError) throw enrolledError;
+
+      // Verificar conflitos
+      const newStartDate = new Date(newTurma.start_date + 'T00:00:00');
+      const newEndDate = new Date(newTurma.end_date + 'T00:00:00');
+
+      for (const enrollment of enrolledTurmas) {
+        if (!enrollment.turma) continue;
+
+        const existingTurma = enrollment.turma;
+        
+        // Verificar se é o mesmo período
+        if (existingTurma.period === newTurma.period) {
+          // Verificar sobreposição de datas
+          const existingStartDate = new Date(existingTurma.start_date + 'T00:00:00');
+          const existingEndDate = new Date(existingTurma.end_date + 'T00:00:00');
+
+          const hasDateOverlap = (
+            (newStartDate <= existingEndDate && newEndDate >= existingStartDate)
+          );
+
+          if (hasDateOverlap) {
+            return true; // Conflito encontrado
+          }
+        }
+      }
+
+      return false; // Sem conflitos
+    } catch (error) {
+      console.error('Erro ao verificar conflitos de horário:', error);
+      throw error;
     }
   }
 
