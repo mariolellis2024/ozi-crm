@@ -95,7 +95,7 @@ interface Suggestion {
   curso: Curso;
   interestedCount: number;
   potentialRevenue: number;
-  mostDemandedPeriod?: Period;
+  period: Period;
 }
 
 /**
@@ -367,39 +367,6 @@ export function Turmas() {
         .filter(s => s.interestedCount >= 2)
         .sort((a, b) => b.potentialRevenue - a.potentialRevenue)
         .slice(0, 6); // Show top 6 suggestions
-
-      setSuggestions(filteredSuggestions);
-    } catch (error) {
-      console.error('Error generating suggestions:', error);
-    }
-  }
-
-          });
-        }
-      });
-      
-      // Determine most demanded period for each suggestion
-      Object.values(suggestionMap).forEach(suggestion => {
-        const demand = periodDemand[suggestion.curso.id];
-        if (demand) {
-          let maxDemand = 0;
-          let mostDemanded: Period = 'manha';
-          
-          (['manha', 'tarde', 'noite'] as Period[]).forEach(period => {
-            if (demand[period] > maxDemand) {
-              maxDemand = demand[period];
-              mostDemanded = period;
-            }
-          });
-          
-          suggestion.mostDemandedPeriod = mostDemanded;
-        }
-      });
-
-      // Filter suggestions with at least 2 interested students and sort by potential revenue
-      const filteredSuggestions = Object.values(suggestionMap)
-        .filter(s => s.interestedCount >= 2)
-        .sort((a, b) => b.potentialRevenue - a.potentialRevenue);
 
       setSuggestions(filteredSuggestions);
     } catch (error) {
@@ -870,16 +837,26 @@ export function Turmas() {
               Baseado no interesse dos alunos cadastrados, considere criar turmas para:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {suggestions.slice(0, 6).map((suggestion, index) => (
+              {suggestions.map((suggestion, index) => (
                 <div
-                  key={suggestion.curso.id}
+                  key={`${suggestion.curso.id}-${suggestion.period}`}
                   className="bg-gradient-to-br from-orange-900/30 to-amber-900/30 border border-orange-500/30 rounded-xl p-4 hover:border-orange-400/50 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold text-white">{suggestion.curso.nome}</h3>
+                    <h3 className="font-semibold text-white">
+                      {suggestion.curso.nome} - {getPeriodLabel(suggestion.period)}
+                    </h3>
+                      {suggestion.curso.nome}
+                    </h3>
                     <span className="bg-orange-500/20 text-orange-300 px-2 py-1 rounded-lg text-xs font-medium">
                       #{index + 1}
                     </span>
+                  </div>
+                  <div className="mb-3">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-orange-500/20 text-orange-300 rounded text-xs">
+                      {getPeriodIcon(suggestion.period)}
+                      <span>{getPeriodLabel(suggestion.period)}</span>
+                    </div>
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -892,21 +869,15 @@ export function Turmas() {
                         {formatCurrency(suggestion.potentialRevenue)}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Carga horária:</span>
-                      <span className="text-white">{suggestion.curso.carga_horaria}h</span>
-                    </div>
-                    {suggestion.mostDemandedPeriod && (
-                      <div>
-                        <span className="text-gray-400 text-xs">Horário de maior demanda:</span>
-                        <div className="mt-1">
-                          <div className="flex items-center gap-1 px-2 py-1 bg-orange-500/20 text-orange-300 rounded text-xs">
-                            {getPeriodIcon(suggestion.mostDemandedPeriod)}
-                            <span>{getPeriodLabel(suggestion.mostDemandedPeriod)}</span>
-                          </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Período sugerido:</span>
+                      <div className="mt-1">
+                        <div className="flex items-center gap-1 px-2 py-1 bg-orange-500/20 text-orange-300 rounded text-xs">
+                          {getPeriodIcon(suggestion.period)}
+                          <span>{getPeriodLabel(suggestion.period)}</span>
                         </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               ))}
