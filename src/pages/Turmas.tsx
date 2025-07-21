@@ -445,7 +445,6 @@ export function Turmas() {
                 (tp: any) => tp.professor_id === newProf.professor_id
               );
 
-                if (professorConflict) {
               if (professorConflict) {
                 const existingDaysOfWeek = turma.days_of_week || [];
                 
