@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Pencil, Trash2, BookOpen, Clock, Check, ArrowUpDown, Filter, TrendingUp, Sun, Sunset, Moon, X, Users } from 'lucide-react';
@@ -373,6 +374,7 @@ export function Alunos() {
    * Abre modal para gerenciar cursos do aluno
    */
   function handleOpenCourseModal(aluno: Aluno) {
+    console.log('Opening course modal for:', aluno.nome); // Debug log
     setCourseModal({
       isOpen: true,
       aluno: aluno
@@ -383,6 +385,7 @@ export function Alunos() {
    * Fecha modal de gerenciamento de cursos
    */
   function handleCloseCourseModal() {
+    console.log('Closing course modal'); // Debug log
     setCourseModal({
       isOpen: false,
       aluno: null
@@ -683,7 +686,7 @@ export function Alunos() {
         />
 
         {/* Modal de Gerenciamento de Cursos */}
-        {courseModal.isOpen && courseModal.aluno && (
+        {courseModal.isOpen && courseModal.aluno && createPortal(
           <div 
             className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4"
             onClick={handleCloseCourseModal}
@@ -793,7 +796,8 @@ export function Alunos() {
                 })}
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>
