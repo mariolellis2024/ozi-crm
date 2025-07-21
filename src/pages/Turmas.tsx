@@ -504,16 +504,16 @@ export function Turmas() {
       };
 
       // Check for conflicts
-      const hasConflict = await checkConflicts(turmaData, editingId || undefined);
-      if (hasConflict) {
-        // Se há conflito, busca a mensagem detalhada
-        const conflictMessage = await checkConflictsDetailed(turmaData, editingId || undefined);
-        toast.error(conflictMessage);
-        return;
-      } else {
+      // Verifica conflitos diretamente com mensagem detalhada
+      const conflictMessage = await checkConflictsDetailed(turmaData, editingId || undefined);
+      
+      if (conflictMessage) {
+        // Se há uma mensagem de conflito, exibe e interrompe
         toast.error(conflictMessage);
         return;
       }
+      
+      // Se chegou aqui, não há conflitos - prossegue com a criação/atualização
 
       let turmaId: string;
 
