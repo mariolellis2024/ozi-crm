@@ -218,6 +218,7 @@ export function Professores() {
         <div className="flex justify-between items-center mb-8 fade-in-delay-1">
           <div className="slide-in-left">
             <h1 className="text-3xl font-bold text-white">Professores</h1>
+              placeholder="0,00"
             <p className="text-gray-400 mt-2">Gerencie o corpo docente e suas especialidades</p>
           </div>
           <button

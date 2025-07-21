@@ -17,8 +17,10 @@
  * formatCurrency(999.99) // "R$ 999,99"
  */
 export function formatCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', {
+  return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency: 'BRL'
-  });
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value);
 }
