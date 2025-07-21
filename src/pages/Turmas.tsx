@@ -95,7 +95,7 @@ interface Suggestion {
   curso: Curso;
   interestedCount: number;
   potentialRevenue: number;
-  mostDemandedPeriod?: Period;
+  topPeriods?: Array<{ period: Period; count: number }>;
 }
 
 /**
@@ -386,17 +386,14 @@ export function Turmas() {
       Object.values(suggestionMap).forEach(suggestion => {
         const demand = periodDemand[suggestion.curso.id];
         if (demand) {
-          let maxDemand = 0;
-          let mostDemanded: Period = 'manha';
+          // Get top 2 periods with highest demand
+          const periodCounts = (['manha', 'tarde', 'noite'] as Period[])
+            .map(period => ({ period, count: demand[period] }))
+            .filter(item => item.count > 0)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 2);
           
-          (['manha', 'tarde', 'noite'] as Period[]).forEach(period => {
-            if (demand[period] > maxDemand) {
-              maxDemand = demand[period];
-              mostDemanded = period;
-            }
-          });
-          
-          suggestion.mostDemandedPeriod = mostDemanded;
+          suggestion.topPeriods = periodCounts;
         }
       });
 
