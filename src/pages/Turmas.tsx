@@ -365,7 +365,7 @@ export function Turmas() {
         
         if (!periodDemand[curso.id]) {
           periodDemand[curso.id] = { manha: 0, tarde: 0, noite: 0 };
-        }
+      // Sort by potential revenue (highest first) and take top 6, with minimum of 1 interested student
         
         const studentPeriods = interest.aluno?.available_periods || [];
         
@@ -402,8 +402,14 @@ export function Turmas() {
 
       // Filter suggestions with at least 2 interested students and sort by potential revenue
       const filteredSuggestions = Object.values(suggestionMap)
-        .filter(s => s.interestedCount >= 2)
+        .filter(s => s.interestedCount >= 1)
         .sort((a, b) => b.potentialRevenue - a.potentialRevenue);
+      console.log('Generated suggestions:', filteredSuggestions.map(s => ({
+        curso: s.curso.nome,
+        period: s.period,
+        interested: s.interestedCount,
+        revenue: s.potentialRevenue
+      })));
 
       setSuggestions(filteredSuggestions);
     } catch (error) {
@@ -874,7 +880,7 @@ export function Turmas() {
               Baseado no interesse dos alunos cadastrados, considere criar turmas para:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {suggestions.slice(0, 6).map((suggestion, index) => (
+              {suggestions.map((suggestion, index) => (
                 <div
                   key={suggestion.curso.id}
                   className="bg-gradient-to-br from-orange-900/30 to-amber-900/30 border border-orange-500/30 rounded-xl p-4 hover:border-orange-400/50 transition-colors"
