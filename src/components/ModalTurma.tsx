@@ -77,6 +77,20 @@ export function ModalTurma({
   const cargaHorariaCurso = selectedCurso?.carga_horaria || 0;
   const horasValidas = totalHorasProfessores === cargaHorariaCurso;
 
+  // Validação da data de início
+  const isStartDateValid = () => {
+    if (!formData.start_date || !formData.days_of_week || formData.days_of_week.length === 0) {
+      return true; // Não validar se não há dados suficientes
+    }
+    
+    const startDate = new Date(formData.start_date + 'T00:00:00');
+    const startDayOfWeek = startDate.getDay() === 0 ? 7 : startDate.getDay(); // Converter domingo de 0 para 7
+    
+    return formData.days_of_week.includes(startDayOfWeek);
+  };
+
+  const startDateValid = isStartDateValid();
+
   // Função para calcular a data de término automaticamente
   function calculateEndDate(startDate: string, daysOfWeek: number[], totalHours: number): string {
     if (!startDate || !daysOfWeek.length || !totalHours) return '';
@@ -336,9 +350,22 @@ export function ModalTurma({
                 id="start_date"
                 value={formData.start_date}
                 onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                className={`w-full bg-dark-lighter border rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${
+                  !startDateValid && formData.start_date && formData.days_of_week.length > 0
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-700 focus:ring-teal-accent'
+                }`}
                 required
               />
+              {!startDateValid && formData.start_date && formData.days_of_week.length > 0 && (
+                <p className="text-red-400 text-xs mt-1">
+                  A data de início deve ser em um dos dias selecionados: {
+                    formData.days_of_week.map(dayValue => 
+                      DAYS_OF_WEEK.find(d => d.value === dayValue)?.short
+                    ).join(', ')
+                  }
+                </p>
+              )}
             </div>
 
             <div>
@@ -521,11 +548,17 @@ export function ModalTurma({
           <button
             type="submit"
             className={`w-full font-medium rounded-lg px-4 py-2 transition-colors ${
-              (horasValidas || cargaHorariaCurso === 0) && (formData.days_of_week || []).length > 0
+              (horasValidas || cargaHorariaCurso === 0) && 
+              (formData.days_of_week || []).length > 0 && 
+              startDateValid
                 ? 'bg-teal-accent text-dark hover:bg-teal-accent/90'
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             }`}
-            disabled={(!horasValidas && cargaHorariaCurso > 0) || (formData.days_of_week || []).length === 0}
+            disabled={
+              (!horasValidas && cargaHorariaCurso > 0) || 
+              (formData.days_of_week || []).length === 0 || 
+              !startDateValid
+            }
           >
             {editingId ? 'Atualizar' : 'Criar Turma'}
           </button>
