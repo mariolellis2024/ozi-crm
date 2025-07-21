@@ -679,8 +679,8 @@ export function Turmas() {
       end_date: turma.end_date,
       imposto: turma.imposto.toString(),
       professores: turma.professores?.map(tp => ({
-        professor_id: prof.id,
-        hours: prof.hours
+        professor_id: tp.professor.id,
+        hours: tp.hours
       })) || [],
       days_of_week: turma.days_of_week || []
     });
