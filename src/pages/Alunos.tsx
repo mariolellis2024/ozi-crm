@@ -735,7 +735,7 @@ export function Alunos() {
                             }}
                             className={`p-2 rounded-md transition-colors ${
                               interest?.status === 'interested'
-                                ? 'bg-teal-accent/20 text-teal-accent'
+                                ? 'bg-blue-500 text-white'
                                 : 'bg-dark text-gray-400 hover:text-white'
                             }`}
                             title="Interessado"
@@ -751,7 +751,7 @@ export function Alunos() {
                             }}
                             className={`p-2 rounded-md transition-colors ${
                               interest?.status === 'enrolled'
-                                ? 'bg-yellow-500/20 text-yellow-500'
+                                ? 'bg-yellow-500 text-white'
                                 : 'bg-dark text-gray-400 hover:text-white'
                             }`}
                             title="Cursando"
@@ -767,7 +767,7 @@ export function Alunos() {
                             }}
                             className={`p-2 rounded-md transition-colors ${
                               interest?.status === 'completed'
-                                ? 'bg-emerald-500/20 text-emerald-500'
+                                ? 'bg-emerald-500 text-white'
                                 : 'bg-dark text-gray-400 hover:text-white'
                             }`}
                             title="Concluído"
@@ -792,12 +792,27 @@ export function Alunos() {
                       </div>
                       {interest && (
                         <div className="mt-2 text-xs text-gray-400">
-                          Status: {
+                          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
+                            interest.status === 'interested' ? 'bg-blue-500/20 text-blue-400' :
+                            interest.status === 'enrolled' ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-emerald-500/20 text-emerald-400'
+                          }`}>
+                          {interest.status === 'interested' && <BookOpen className="h-3 w-3" />}
+                          {interest.status === 'enrolled' && <Clock className="h-3 w-3" />}
+                          {interest.status === 'completed' && <Check className="h-3 w-3" />}
+                          {
                             interest.status === 'interested' ? 'Interessado' :
                             interest.status === 'enrolled' ? 'Cursando' :
                             'Concluído'
                           }
+                          </div>
                         </div>
+                      )}
+                      {!interest && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          <div className="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-700/30">
+                            Sem interesse registrado
+                          </div>
                       )}
                     </div>
                   );
