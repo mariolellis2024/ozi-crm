@@ -669,6 +669,11 @@ export function Turmas() {
    * Prepara o formulário para edição de uma turma existente
    */
   function handleEdit(turma: Turma) {
+    if (!turma) {
+      console.error('Turma is undefined in handleEdit');
+      return;
+    }
+
     setFormData({
       name: turma.name,
       curso_id: turma.curso_id,
@@ -679,7 +684,7 @@ export function Turmas() {
       end_date: turma.end_date,
       imposto: turma.imposto.toString(),
       professores: turma.professores?.map(tp => ({
-        professor_id: tp.professor.id,
+        professor_id: tp.professor?.id || '',
         hours: tp.hours
       })) || [],
       days_of_week: turma.days_of_week || []
