@@ -787,11 +787,22 @@ export function Turmas() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-sm">Total de Vagas</p>
+                <p className="text-2xl font-bold text-white mt-1">{totalVagas}</p>
+              </div>
+              <div className="bg-blue-500 p-3 rounded-xl">
+                <BookOpen className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-dark-card rounded-2xl p-6 hover-lift">
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="text-gray-400 text-sm">Ocupação Média</p>
                 <p className="text-2xl font-bold text-white mt-1">{ocupacaoMedia.toFixed(1)}%</p>
               </div>
-              <div className="bg-green-500 p-3 rounded-xl">
-                <Users className="h-6 w-6 text-white" />
+              <div className="bg-emerald-500 p-3 rounded-xl">
+                <UserCheck className="h-6 w-6 text-white" />
               </div>
             </div>
           </div>
