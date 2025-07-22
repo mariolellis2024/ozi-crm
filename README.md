@@ -94,6 +94,18 @@ npm run preview
 npm run lint
 ```
 
+### Testes
+```bash
+# Executar testes
+npm run test
+
+# Executar testes com interface visual
+npm run test:ui
+
+# Executar testes com coverage
+npm run test:coverage
+```
+
 ## 📁 Estrutura de Pastas
 
 ```
@@ -107,6 +119,11 @@ pepper-heads-crm/
 │   │   ├── Login.tsx      # Página de login
 │   │   ├── Modal*.tsx     # Modais específicos
 │   │   └── ...
+│   ├── hooks/             # Custom hooks
+│   │   ├── useSupabaseQuery.ts # Hook para queries otimizadas
+│   │   ├── useTurmas.ts   # Hook para gerenciar turmas
+│   │   ├── useAlunos.ts   # Hook para gerenciar alunos
+│   │   └── ...
 │   ├── pages/             # Páginas principais
 │   │   ├── Alunos.tsx     # Gestão de alunos
 │   │   ├── Cursos.tsx     # Gestão de cursos
@@ -115,8 +132,14 @@ pepper-heads-crm/
 │   │   └── Salas.tsx      # Gestão de salas
 │   ├── lib/               # Configurações e utilitários
 │   │   └── supabase.ts    # Cliente Supabase
+│   │   └── queryClient.ts # Configuração React Query
 │   ├── utils/             # Funções utilitárias
 │   │   └── format.ts      # Formatação de dados
+│   │   └── errorHandling.ts # Tratamento de erros
+│   ├── __tests__/         # Testes automatizados
+│   │   ├── utils/         # Testes de utilitários
+│   │   ├── hooks/         # Testes de hooks
+│   │   └── components/    # Testes de componentes
 │   ├── App.tsx            # Componente raiz
 │   ├── main.tsx           # Ponto de entrada
 │   └── index.css          # Estilos globais
@@ -139,6 +162,9 @@ pepper-heads-crm/
 | `npm run build` | Gera build de produção |
 | `npm run preview` | Preview da build local |
 | `npm run lint` | Executa linting do código |
+| `npm run test` | Executa testes automatizados |
+| `npm run test:ui` | Interface visual para testes |
+| `npm run test:coverage` | Relatório de cobertura de testes |
 | `npm run create-students` | Cria dados fictícios de alunos |
 
 ## 🔐 Autenticação
@@ -158,6 +184,14 @@ O sistema utiliza autenticação por email/senha via Supabase Auth:
 - **Responsividade**: Mobile-first approach
 
 ## 📊 Funcionalidades Principais
+
+### ⚡ Otimizações Implementadas
+- **TanStack Query**: Cache inteligente e sincronização automática de dados
+- **Real-time Updates**: Atualizações automáticas via Supabase subscriptions
+- **Validação Robusta**: Formulários com validação em tempo real usando Zod
+- **Custom Hooks**: Lógica reutilizável e modular
+- **Tratamento de Erros**: Mensagens de erro amigáveis e específicas
+- **Testes Automatizados**: Cobertura de testes para funções críticas
 
 ### Gestão de Alunos
 - Cadastro com períodos de disponibilidade
@@ -204,6 +238,11 @@ O sistema utiliza autenticação por email/senha via Supabase Auth:
 - [ ] Notificações push
 - [ ] App mobile
 - [ ] API REST pública
+- [x] Cache otimizado com TanStack Query
+- [x] Validação de formulários com Zod
+- [x] Testes automatizados
+- [x] Real-time subscriptions
+- [x] Custom hooks para lógica reutilizável
 
 ## 🤝 Contribuindo
 

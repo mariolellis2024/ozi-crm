@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import React, { useState } from 'react';
 import { Plus, Pencil, Trash2, Users, Calendar, Clock, TrendingUp, BookOpen, UserCheck, AlertCircle, MapPin } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalTurma } from '../components/ModalTurma';
 import { ModalAlunosInteressados } from '../components/ModalAlunosInteressados';
 import { ModalAlunosMatriculados } from '../components/ModalAlunosMatriculados';
 import { CalendarOcupacaoSalas } from '../components/CalendarOcupacaoSalas';
+import { useTurmas } from '../hooks/useTurmas';
+import { useSuggestions } from '../hooks/useSuggestions';
+import { useSupabaseQuery } from '../hooks/useSupabaseQuery';
+import { useTurmasRealtime } from '../hooks/useRealtimeSubscription';
+import { supabase } from '../lib/supabase';
 
 type Period = 'manha' | 'tarde' | 'noite';
 
@@ -76,10 +79,42 @@ interface Professor {
 }
 
 export function Turmas() {
-  const [turmas, setTurmas] = useState<Turma[]>([]);
-  const [cursos, setCursos] = useState<Curso[]>([]);
-  const [salas, setSalas] = useState<Sala[]>([]);
-  const [professores, setProfessores] = useState<Professor[]>([]);
+  // Usar hooks otimizados
+  const {
+    turmas,
+    isLoading: turmasLoading,
+    createTurma,
+    updateTurma,
+    deleteTurma,
+    isCreating,
+    isUpdating,
+    isDeleting
+  } = useTurmas();
+
+  const { data: suggestions = [], isLoading: suggestionsLoading } = useSuggestions();
+
+  // Queries para dados auxiliares
+  const { data: cursos = [] } = useSupabaseQuery(
+    ['cursos'],
+    () => supabase.from('cursos').select('*').order('nome'),
+    { staleTime: 5 * 60 * 1000 }
+  );
+
+  const { data: salas = [] } = useSupabaseQuery(
+    ['salas'],
+    () => supabase.from('salas').select('*').order('nome'),
+    { staleTime: 5 * 60 * 1000 }
+  );
+
+  const { data: professores = [] } = useSupabaseQuery(
+    ['professores'],
+    () => supabase.from('professores').select('*').order('nome'),
+    { staleTime: 5 * 60 * 1000 }
+  );
+
+  // Subscription em tempo real
+  useTurmasRealtime();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [alunosInteressadosModal, setAlunosInteressadosModal] = useState({
     isOpen: false,
@@ -114,145 +149,7 @@ export function Turmas() {
     turmaId: '',
     turmaNome: ''
   });
-  const [suggestions, setSuggestions] = useState<Array<{
-    cursoId: string;
-    cursoNome: string;
-    melhorPeriodo: Period;
-    totalInteressados: number;
-  }>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  async function loadData() {
-    try {
-      const [turmasResult, cursosResult, salasResult, professoresResult] = await Promise.all([
-        supabase
-          .from('turmas')
-          .select(`
-            *,
-            curso:cursos(*),
-            sala:salas(*),
-            professores:turma_professores(
-              id,
-              professor_id,
-              hours,
-              professor:professores(id, nome, valor_hora)
-            )
-          `)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('cursos')
-          .select('*')
-          .order('nome'),
-        supabase
-          .from('salas')
-          .select('*')
-          .order('nome'),
-        supabase
-          .from('professores')
-          .select('*')
-          .order('nome')
-      ]);
-
-      if (turmasResult.error) throw turmasResult.error;
-      if (cursosResult.error) throw cursosResult.error;
-      if (salasResult.error) throw salasResult.error;
-      if (professoresResult.error) throw professoresResult.error;
-
-      // Get enrolled students count for each turma
-      const turmasWithEnrolledCount = await Promise.all(
-        turmasResult.data.map(async (turma) => {
-          const { data: enrolledStudents } = await supabase
-            .from('aluno_curso_interests')
-            .select(`
-              aluno:alunos(id, nome)
-            `)
-            .eq('turma_id', turma.id)
-            .eq('status', 'enrolled');
-
-          return {
-            ...turma,
-            alunos_enrolled: enrolledStudents?.map(item => item.aluno) || []
-          };
-        })
-      );
-
-      setTurmas(turmasWithEnrolledCount);
-      setCursos(cursosResult.data);
-      setSalas(salasResult.data);
-      setProfessores(professoresResult.data);
-
-      // Generate suggestions
-      await generateSuggestions();
-    } catch (error) {
-      console.error('Erro detalhado ao carregar dados:', error);
-      toast.error(`Erro ao carregar dados: ${error.message || 'Erro desconhecido'}`);
-    }
-  }
-
-  async function generateSuggestions() {
-    try {
-      const { data: interessesAlunos, error } = await supabase
-        .from('aluno_curso_interests')
-        .select(`
-          curso_id,
-          status,
-          aluno:alunos(available_periods)
-        `)
-        .eq('status', 'interested');
-
-      if (error) throw error;
-
-      // Group by course and period
-      const sugestoes = interessesAlunos.reduce((acc: any, interesse) => {
-        const cursoId = interesse.curso_id;
-        const periodos = interesse.aluno?.available_periods || ['manha', 'tarde', 'noite'];
-        
-        if (!acc[cursoId]) {
-          acc[cursoId] = { manha: 0, tarde: 0, noite: 0 };
-        }
-        
-        periodos.forEach((periodo: Period) => {
-          acc[cursoId][periodo]++;
-        });
-        
-        return acc;
-      }, {});
-
-      // Filter courses with sufficient demand (>= 3 interested students)
-      const cursosComDemanda = Object.entries(sugestoes)
-        .filter(([cursoId, demanda]: [string, any]) => {
-          const maxDemanda = Math.max(...Object.values(demanda));
-          return maxDemanda >= 3;
-        })
-        .map(([cursoId, demanda]: [string, any]) => {
-          const curso = cursos.find(c => c.id === cursoId);
-          if (!curso) return null;
-          
-          const melhorPeriodo = Object.entries(demanda)
-            .reduce((a: [string, number], b: [string, number]) => a[1] > b[1] ? a : b)[0] as Period;
-          const totalInteressados = Math.max(...Object.values(demanda));
-          
-          return {
-            cursoId,
-            cursoNome: curso.nome,
-            melhorPeriodo,
-            totalInteressados,
-            faturamentoPotencial: totalInteressados * curso.preco,
-            precoUnitario: curso.preco
-          };
-        })
-        .filter(item => item !== null) // Remove items where curso is undefined
-        .sort((a, b) => b.faturamentoPotencial - a.faturamentoPotencial); // Sort by potential revenue
-
-      setSuggestions(cursosComDemanda);
-    } catch (error) {
-      console.error('Erro detalhado ao gerar sugestões:', error);
-    }
-  }
 
   async function checkConflicts(turmaData: any, editingId?: string): Promise<boolean> {
     try {
@@ -487,7 +384,6 @@ export function Turmas() {
     try {
       const curso = cursos.find(c => c.id === formData.curso_id);
       if (!curso) {
-        toast.error('Curso não encontrado');
         return;
       }
 
@@ -511,81 +407,24 @@ export function Turmas() {
       
       if (conflictMessage) {
         // Se há uma mensagem de conflito, exibe e interrompe
-        toast.error(conflictMessage);
         return;
       }
       
       // Se chegou aqui, não há conflitos - prossegue com a criação/atualização
-
-      let turmaId: string;
+      const turmaDataWithProfessores = {
+        ...turmaData,
+        professores: formData.professores
+      };
 
       if (editingId) {
-        const { error } = await supabase
-          .from('turmas')
-          .update(turmaData)
-          .eq('id', editingId);
-        
-        if (error) throw error;
-        turmaId = editingId;
-        toast.success('Turma atualizada com sucesso!');
+        updateTurma({ id: editingId, formData: turmaDataWithProfessores });
       } else {
-        const { data, error } = await supabase
-          .from('turmas')
-          .insert([turmaData])
-          .select()
-          .single();
-        
-        if (error) throw error;
-        turmaId = data.id;
-        toast.success('Turma criada com sucesso!');
+        createTurma(turmaDataWithProfessores);
       }
 
-      // Handle professor assignments
-      if (formData.professores.length > 0) {
-        // Remove existing assignments if editing
-        if (editingId) {
-          await supabase
-            .from('turma_professores')
-            .delete()
-            .eq('turma_id', editingId);
-        }
-
-        // Add new assignments - filter out empty professor_ids
-        const assignments = formData.professores
-          .filter(prof => prof.professor_id && prof.professor_id.trim() !== '')
-          .map(prof => ({
-          turma_id: turmaId,
-          professor_id: prof.professor_id,
-          hours: prof.hours
-        }));
-
-        if (assignments.length > 0) {
-          const { error: assignmentError } = await supabase
-            .from('turma_professores')
-            .insert(assignments);
-
-          if (assignmentError) throw assignmentError;
-        }
-      }
-
-      setIsModalOpen(false);
-      setFormData({
-        name: '',
-        curso_id: '',
-        sala_id: '',
-        cadeiras: '',
-        period: 'manha',
-        start_date: '',
-        end_date: '',
-        imposto: '',
-        professores: [],
-        days_of_week: []
-      });
-      setEditingId(null);
-      loadData();
+      handleCloseModal();
     } catch (error: any) {
       console.error('Erro detalhado ao salvar turma:', error);
-      toast.error(`Erro ao salvar turma: ${error.message || 'Erro desconhecido'}`);
     }
   }
 
@@ -601,21 +440,8 @@ export function Turmas() {
   }
 
   async function handleConfirmDelete() {
-    try {
-      const { error } = await supabase
-        .from('turmas')
-        .delete()
-        .eq('id', confirmModal.turmaId);
-      
-      if (error) throw error;
-      toast.success('Turma excluída com sucesso!');
-      loadData();
-    } catch (error: any) {
-      console.error('Erro detalhado ao excluir turma:', error);
-      toast.error(`Erro ao excluir turma: ${error.message || 'Erro desconhecido'}`);
-    } finally {
-      setConfirmModal({ isOpen: false, turmaId: '', turmaNome: '' });
-    }
+    deleteTurma(confirmModal.turmaId);
+    setConfirmModal({ isOpen: false, turmaId: '', turmaNome: '' });
   }
 
   function handleCancelDelete() {
@@ -706,11 +532,11 @@ export function Turmas() {
   }
 
   function handleStudentEnrolled() {
-    loadData(); // Reload data to update enrolled count
+    // Os dados serão atualizados automaticamente via React Query
   }
 
   function handleStudentUnenrolled() {
-    loadData(); // Reload data to update enrolled count
+    // Os dados serão atualizados automaticamente via React Query
   }
 
   function getPeriodIcon(period: Period) {
@@ -739,6 +565,15 @@ export function Turmas() {
   const totalVagas = turmas.reduce((total, turma) => total + turma.cadeiras, 0);
   const totalMatriculados = turmas.reduce((total, turma) => total + (turma.alunos_enrolled?.length || 0), 0);
   const ocupacaoMedia = totalVagas > 0 ? (totalMatriculados / totalVagas) * 100 : 0;
+
+  // Loading state
+  if (turmasLoading) {
+    return (
+      <div className="min-h-screen bg-dark flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-teal-accent border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 fade-in">
