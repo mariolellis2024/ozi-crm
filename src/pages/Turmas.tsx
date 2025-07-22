@@ -240,8 +240,7 @@ export function Turmas() {
           const maxDemanda = Math.max(...Object.values(demanda));
           console.log(`Curso ${cursoId}: max demanda = ${maxDemanda}`);
           return maxDemanda >= 3; // Reduced threshold for testing
-        }
-        )
+        })
         .map(([cursoId, demanda]: [string, any]) => {
           const curso = cursos.find(c => c.id === cursoId);
           const melhorPeriodo = Object.entries(demanda)
@@ -849,27 +848,6 @@ export function Turmas() {
               </button>
             </div>
             
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-6 w-6 text-yellow-400" />
-                <h2 className="text-xl font-semibold text-white">Sugestões de Novas Turmas</h2>
-                <span className="bg-yellow-400/20 text-yellow-400 px-2 py-1 rounded-full text-sm font-medium">
-                  {suggestions.length}
-                </span>
-              </div>
-              <button
-                onClick={() => setShowSuggestions(!showSuggestions)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  showSuggestions 
-                    ? 'bg-yellow-400/20 text-yellow-400 hover:bg-yellow-400/30' 
-                    : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
-                }`}
-              >
-                <span>{showSuggestions ? 'Ocultar' : 'Ver Sugestões'}</span>
-                <AlertCircle className={`h-4 w-4 transition-transform ${showSuggestions ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-            
             {showSuggestions && (
               <div className="bg-dark-card rounded-2xl p-6 hover-lift">
                 {suggestions.length > 0 ? (
@@ -914,9 +892,6 @@ export function Turmas() {
                     </p>
                   </div>
                 )}
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
           </div>
