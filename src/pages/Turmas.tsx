@@ -798,15 +798,72 @@ export function Turmas() {
           <div className="bg-dark-card rounded-2xl p-6 hover-lift">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Ocupação Média</p>
-                <p className="text-2xl font-bold text-white mt-1">{ocupacaoMedia.toFixed(1)}%</p>
+        {suggestions.length > 0 && (
+          <div className="mb-8 scale-in-delay-1">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-6 w-6 text-yellow-400" />
+                <h2 className="text-xl font-semibold text-white">Sugestões de Novas Turmas</h2>
+                <span className="bg-yellow-400/20 text-yellow-400 px-2 py-1 rounded-full text-sm font-medium">
+                  {suggestions.length}
+                </span>
               </div>
-              <div className="bg-green-500 p-3 rounded-xl">
-                <UserCheck className="h-6 w-6 text-white" />
-              </div>
+              <button
+                onClick={() => setShowSuggestions(!showSuggestions)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  showSuggestions 
+                    ? 'bg-yellow-400/20 text-yellow-400 hover:bg-yellow-400/30' 
+                    : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
+                }`}
+              >
+                <span>{showSuggestions ? 'Ocultar' : 'Ver Sugestões'}</span>
+                <AlertCircle className={`h-4 w-4 transition-transform ${showSuggestions ? 'rotate-180' : ''}`} />
+              </button>
             </div>
+            
+            {showSuggestions && (
+              <div className="bg-dark-card rounded-2xl p-6 hover-lift">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {suggestions.map((sugestao, index) => (
+                    <div key={index} className="bg-dark-lighter rounded-lg p-4 border border-yellow-400/30">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-white">{sugestao.cursoNome}</h3>
+                        <span className="text-yellow-400 text-sm">
+                          {getPeriodIcon(sugestao.melhorPeriodo)} {getPeriodLabel(sugestao.melhorPeriodo)}
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        <p className="text-gray-400">
+                          {sugestao.totalInteressados} alunos interessados
+                        </p>
+                        <p className="text-emerald-400 font-semibold">
+                          Potencial: {formatCurrency(sugestao.faturamentoPotencial)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const curso = cursos.find(c => c.id === sugestao.cursoId);
+                          if (curso) {
+                            setFormData({
+                              ...formData,
+                              name: curso.nome,
+                              curso_id: curso.id,
+                              period: sugestao.melhorPeriodo
+                            });
+                            setIsModalOpen(true);
+                          }
+                        }}
+                        className="mt-2 w-full px-3 py-1 bg-yellow-400 text-dark rounded-lg hover:bg-yellow-500 transition-colors text-sm font-medium"
+                      >
+                        Criar Turma
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
         {/* Sugestões de Turmas */}
         {suggestions.length > 0 && (
