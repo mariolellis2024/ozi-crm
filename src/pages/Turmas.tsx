@@ -234,11 +234,18 @@ export function Turmas() {
           
           return {
             cursoId,
-            cursoNome: curso?.nome || 'Curso não encontrado',
+            curso,
             melhorPeriodo,
             totalInteressados: Math.max(...Object.values(demanda))
           };
-        });
+        })
+        .filter(item => item.curso) // Remove items where curso is undefined
+        .map(item => ({
+          cursoId: item.cursoId,
+          cursoNome: item.curso!.nome,
+          melhorPeriodo: item.melhorPeriodo,
+          totalInteressados: item.totalInteressados
+        }));
 
       setSuggestions(cursosComDemanda);
     } catch (error) {
