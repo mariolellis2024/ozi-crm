@@ -195,6 +195,12 @@ export function Turmas() {
 
   async function generateSuggestions() {
     try {
+      // Ensure cursos is loaded before generating suggestions
+      if (cursos.length === 0) {
+        setSuggestions([]);
+        return;
+      }
+
       const { data: interessesAlunos, error } = await supabase
         .from('aluno_curso_interests')
         .select(`
@@ -205,6 +211,10 @@ export function Turmas() {
         .eq('status', 'interested');
 
       if (error) throw error;
+
+      // Debug log to see what data we're getting
+      console.log('Interesses alunos:', interessesAlunos);
+      console.log('Cursos disponíveis:', cursos);
 
       // Group by course and period
       const sugestoes = interessesAlunos.reduce((acc: any, interesse) => {
@@ -222,10 +232,15 @@ export function Turmas() {
         return acc;
       }, {});
 
+      console.log('Sugestões agrupadas:', sugestoes);
+
       // Filter courses with sufficient demand (>= 5 interested students)
       const cursosComDemanda = Object.entries(sugestoes)
-        .filter(([cursoId, demanda]: [string, any]) => 
-          Math.max(...Object.values(demanda)) >= 5
+        .filter(([cursoId, demanda]: [string, any]) => {
+          const maxDemanda = Math.max(...Object.values(demanda));
+          console.log(`Curso ${cursoId}: max demanda = ${maxDemanda}`);
+          return maxDemanda >= 3; // Reduced threshold for testing
+        }
         )
         .map(([cursoId, demanda]: [string, any]) => {
           const curso = cursos.find(c => c.id === cursoId);
@@ -247,6 +262,7 @@ export function Turmas() {
           totalInteressados: item.totalInteressados
         }));
 
+      console.log('Sugestões finais:', cursosComDemanda);
       setSuggestions(cursosComDemanda);
     } catch (error) {
       console.error('Erro detalhado ao gerar sugestões:', error);
@@ -808,15 +824,17 @@ export function Turmas() {
         </div>
 
         {/* Sugestões de Turmas */}
-        {suggestions.length > 0 && (
+        {(suggestions.length > 0 || true) && ( // Temporarily show always for debugging
           <div className="mb-8 scale-in-delay-1">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <AlertCircle className="h-6 w-6 text-yellow-400" />
                 <h2 className="text-xl font-semibold text-white">Sugestões de Novas Turmas</h2>
-                <span className="bg-yellow-400/20 text-yellow-400 px-2 py-1 rounded-full text-sm font-medium">
-                  {suggestions.length}
-                </span>
+                {suggestions.length > 0 && (
+                  <span className="bg-yellow-400/20 text-yellow-400 px-2 py-1 rounded-full text-sm font-medium">
+                    {suggestions.length}
+                  </span>
+                )}
               </div>
               <button
                 onClick={() => setShowSuggestions(!showSuggestions)}
@@ -854,35 +872,48 @@ export function Turmas() {
             
             {showSuggestions && (
               <div className="bg-dark-card rounded-2xl p-6 hover-lift">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {suggestions.map((sugestao, index) => (
-                    <div key={index} className="bg-dark-lighter rounded-lg p-4 border border-yellow-400/30">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-white">{sugestao.cursoNome}</h3>
-                        <span className="text-yellow-400 text-sm">
-                          {getPeriodIcon(sugestao.melhorPeriodo)} {getPeriodLabel(sugestao.melhorPeriodo)}
-                        </span>
+                {suggestions.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {suggestions.map((sugestao, index) => (
+                      <div key={index} className="bg-dark-lighter rounded-lg p-4 border border-yellow-400/30">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold text-white">{sugestao.cursoNome}</h3>
+                          <span className="text-yellow-400 text-sm">
+                            {getPeriodIcon(sugestao.melhorPeriodo)} {getPeriodLabel(sugestao.melhorPeriodo)}
+                          </span>
+                        </div>
+                        <p className="text-gray-400 text-sm">
+                          {sugestao.totalInteressados} alunos interessados
+                        </p>
+                        <button
+                          onClick={() => {
+                            const curso = cursos.find(c => c.id === sugestao.cursoId);
+                            if (curso) {
+                              setFormData({
+                                ...formData,
+                                name: curso.nome,
+                                curso_id: curso.id,
+                                period: sugestao.melhorPeriodo
+                              });
+                              setIsModalOpen(true);
+                            }
+                          }}
+                          className="mt-2 w-full px-3 py-1 bg-yellow-400 text-dark rounded-lg hover:bg-yellow-500 transition-colors text-sm font-medium"
+                        >
+                          Criar Turma
+                        </button>
                       </div>
-                      <p className="text-gray-400 text-sm">
-                        {sugestao.totalInteressados} alunos interessados
-                      </p>
-                      <button
-                        onClick={() => {
-                          const curso = cursos.find(c => c.id === sugestao.cursoId);
-                          if (curso) {
-                            setFormData({
-                              ...formData,
-                              name: curso.nome,
-                              curso_id: curso.id,
-                              period: sugestao.melhorPeriodo
-                            });
-                            setIsModalOpen(true);
-                          }
-                        }}
-                        className="mt-2 w-full px-3 py-1 bg-yellow-400 text-dark rounded-lg hover:bg-yellow-500 transition-colors text-sm font-medium"
-                      >
-                        Criar Turma
-                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-500" />
+                    <p>Nenhuma sugestão disponível no momento</p>
+                    <p className="text-sm mt-1">
+                      Sugestões aparecem quando há pelo menos 3 alunos interessados no mesmo curso
+                    </p>
+                  </div>
+                )}
                     </div>
                   ))}
                 </div>
