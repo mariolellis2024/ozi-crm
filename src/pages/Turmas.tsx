@@ -832,28 +832,6 @@ export function Turmas() {
             </div>
             
             {showSuggestions && (
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-6 w-6 text-yellow-400" />
-                <h2 className="text-xl font-semibold text-white">Sugestões de Novas Turmas</h2>
-                <span className="bg-yellow-400/20 text-yellow-400 px-2 py-1 rounded-full text-sm font-medium">
-                  {suggestions.length}
-                </span>
-              </div>
-              <button
-                onClick={() => setShowSuggestions(!showSuggestions)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  showSuggestions 
-                    ? 'bg-yellow-400/20 text-yellow-400 hover:bg-yellow-400/30' 
-                    : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
-                }`}
-              >
-                <span>{showSuggestions ? 'Ocultar' : 'Ver Sugestões'}</span>
-                <AlertCircle className={`h-4 w-4 transition-transform ${showSuggestions ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-            
-            {showSuggestions && (
               <div className="bg-dark-card rounded-2xl p-6 hover-lift">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {suggestions.map((sugestao, index) => (
@@ -888,7 +866,6 @@ export function Turmas() {
                   ))}
                 </div>
               </div>
-            )}
             )}
           </div>
         )}
