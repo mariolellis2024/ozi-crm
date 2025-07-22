@@ -195,12 +195,6 @@ export function Turmas() {
 
   async function generateSuggestions() {
     try {
-      // Ensure cursos is loaded before generating suggestions
-      if (cursos.length === 0) {
-        setSuggestions([]);
-        return;
-      }
-
       const { data: interessesAlunos, error } = await supabase
         .from('aluno_curso_interests')
         .select(`
@@ -211,10 +205,6 @@ export function Turmas() {
         .eq('status', 'interested');
 
       if (error) throw error;
-
-      // Debug log to see what data we're getting
-      console.log('Interesses alunos:', interessesAlunos);
-      console.log('Cursos disponíveis:', cursos);
 
       // Group by course and period
       const sugestoes = interessesAlunos.reduce((acc: any, interesse) => {
@@ -232,36 +222,32 @@ export function Turmas() {
         return acc;
       }, {});
 
-      console.log('Sugestões agrupadas:', sugestoes);
-
-      // Filter courses with sufficient demand (>= 5 interested students)
+      // Filter courses with sufficient demand (>= 3 interested students)
       const cursosComDemanda = Object.entries(sugestoes)
         .filter(([cursoId, demanda]: [string, any]) => {
           const maxDemanda = Math.max(...Object.values(demanda));
-          console.log(`Curso ${cursoId}: max demanda = ${maxDemanda}`);
-          return maxDemanda >= 3; // Reduced threshold for testing
+          return maxDemanda >= 3;
         })
         .map(([cursoId, demanda]: [string, any]) => {
           const curso = cursos.find(c => c.id === cursoId);
+          if (!curso) return null;
+          
           const melhorPeriodo = Object.entries(demanda)
             .reduce((a: [string, number], b: [string, number]) => a[1] > b[1] ? a : b)[0] as Period;
+          const totalInteressados = Math.max(...Object.values(demanda));
           
           return {
             cursoId,
-            curso,
+            cursoNome: curso.nome,
             melhorPeriodo,
-            totalInteressados: Math.max(...Object.values(demanda))
+            totalInteressados,
+            faturamentoPotencial: totalInteressados * curso.preco,
+            precoUnitario: curso.preco
           };
         })
-        .filter(item => item.curso) // Remove items where curso is undefined
-        .map(item => ({
-          cursoId: item.cursoId,
-          cursoNome: item.curso!.nome,
-          melhorPeriodo: item.melhorPeriodo,
-          totalInteressados: item.totalInteressados
-        }));
+        .filter(item => item !== null) // Remove items where curso is undefined
+        .sort((a, b) => b.faturamentoPotencial - a.faturamentoPotencial); // Sort by potential revenue
 
-      console.log('Sugestões finais:', cursosComDemanda);
       setSuggestions(cursosComDemanda);
     } catch (error) {
       console.error('Erro detalhado ao gerar sugestões:', error);
@@ -823,17 +809,15 @@ export function Turmas() {
         </div>
 
         {/* Sugestões de Turmas */}
-        {(suggestions.length > 0 || true) && ( // Temporarily show always for debugging
+        {suggestions.length > 0 && (
           <div className="mb-8 scale-in-delay-1">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <AlertCircle className="h-6 w-6 text-yellow-400" />
                 <h2 className="text-xl font-semibold text-white">Sugestões de Novas Turmas</h2>
-                {suggestions.length > 0 && (
-                  <span className="bg-yellow-400/20 text-yellow-400 px-2 py-1 rounded-full text-sm font-medium">
-                    {suggestions.length}
-                  </span>
-                )}
+                <span className="bg-yellow-400/20 text-yellow-400 px-2 py-1 rounded-full text-sm font-medium">
+                  {suggestions.length}
+                </span>
               </div>
               <button
                 onClick={() => setShowSuggestions(!showSuggestions)}
@@ -850,7 +834,7 @@ export function Turmas() {
             
             {showSuggestions && (
               <div className="bg-dark-card rounded-2xl p-6 hover-lift">
-                {suggestions.length > 0 ? (
+                <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {suggestions.map((sugestao, index) => (
                       <div key={index} className="bg-dark-lighter rounded-lg p-4 border border-yellow-400/30">
@@ -860,9 +844,14 @@ export function Turmas() {
                             {getPeriodIcon(sugestao.melhorPeriodo)} {getPeriodLabel(sugestao.melhorPeriodo)}
                           </span>
                         </div>
-                        <p className="text-gray-400 text-sm">
-                          {sugestao.totalInteressados} alunos interessados
-                        </p>
+                        <div className="space-y-1 text-sm">
+                          <p className="text-gray-400">
+                            {sugestao.totalInteressados} alunos interessados
+                          </p>
+                          <p className="text-emerald-400 font-semibold">
+                            Potencial: {formatCurrency(sugestao.faturamentoPotencial)}
+                          </p>
+                        </div>
                         <button
                           onClick={() => {
                             const curso = cursos.find(c => c.id === sugestao.cursoId);
@@ -883,15 +872,7 @@ export function Turmas() {
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-400">
-                    <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                    <p>Nenhuma sugestão disponível no momento</p>
-                    <p className="text-sm mt-1">
-                      Sugestões aparecem quando há pelo menos 3 alunos interessados no mesmo curso
-                    </p>
-                  </div>
-                )}
+                </div>
               </div>
             )}
           </div>
