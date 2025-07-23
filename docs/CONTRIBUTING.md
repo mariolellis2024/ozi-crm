@@ -289,10 +289,83 @@ describe('Button', () => {
 npm test
 
 # Executar testes em modo watch
-npm test -- --watch
+npm test
 
 # Executar testes com coverage
-npm test -- --coverage
+npm test:coverage
+
+# Executar testes com interface visual
+npm run test:ui
+
+# Executar testes uma vez (CI)
+npm run test:run
+```
+
+### Estrutura de Testes
+
+Os testes estão organizados da seguinte forma:
+
+```
+src/
+├── components/
+│   ├── Button.tsx
+│   └── __tests__/
+│       └── Button.test.tsx
+├── pages/
+│   ├── Alunos.tsx
+│   └── __tests__/
+│       └── Alunos.test.tsx
+├── utils/
+│   ├── format.ts
+│   └── __tests__/
+│       └── format.test.tsx
+└── test/
+    └── setup.ts              # Configuração global dos testes
+```
+
+### Tipos de Testes
+
+1. **Testes Unitários**: Para funções utilitárias e componentes isolados
+   - Exemplo: `src/utils/__tests__/format.test.ts`
+   - Focam em testar uma única função ou componente
+
+2. **Testes de Componente**: Para componentes React
+   - Exemplo: `src/components/__tests__/LoadingButton.test.tsx`
+   - Testam renderização, props e interações básicas
+
+3. **Testes de Integração**: Para páginas e fluxos completos
+   - Exemplo: `src/pages/__tests__/Alunos.test.tsx`
+   - Testam múltiplos componentes trabalhando juntos
+
+### Convenções de Teste
+
+- Use `describe()` para agrupar testes relacionados
+- Use `it()` ou `test()` para casos de teste individuais
+- Sempre limpe mocks com `vi.clearAllMocks()` no `beforeEach`
+- Use `screen.getByText()`, `screen.getByRole()` para queries
+- Mock dependências externas (Supabase, React Router, etc.)
+
+### Exemplo de Teste
+
+```typescript
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { MyComponent } from '../MyComponent';
+
+describe('MyComponent', () => {
+  it('should render correctly', () => {
+    render(<MyComponent title="Test" />);
+    expect(screen.getByText('Test')).toBeInTheDocument();
+  });
+
+  it('should handle click events', () => {
+    const handleClick = vi.fn();
+    render(<MyComponent onClick={handleClick} />);
+    
+    fireEvent.click(screen.getByRole('button'));
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+});
 ```
 
 ## 📋 Processo de Pull Request
