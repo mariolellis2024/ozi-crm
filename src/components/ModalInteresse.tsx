@@ -137,23 +137,16 @@ export function ModalInteresse({ isOpen, onClose, interestId, onSave }: ModalInt
       const [alunosResult, cursosResult, usersResult] = await Promise.all([
         supabase.from('alunos').select('id, nome').order('nome'),
         supabase.from('cursos').select('id, nome, preco').order('nome'),
-        supabase.auth.admin.listUsers(),
+        supabase.from('users').select('id, email').order('email'), // Assuming 'users' table exists
       ]);
 
       if (alunosResult.error) throw alunosResult.error;
       if (cursosResult.error) throw cursosResult.error;
-      if (usersResult.error) {
-        console.warn('Erro ao carregar usuários:', usersResult.error);
-        setAlunos(alunosResult.data);
-        setCursos(cursosResult.data);
-        setUsers([]);
-        return;
-      }
+      if (usersResult.error) throw usersResult.error;
 
       setAlunos(alunosResult.data);
       setCursos(cursosResult.data);
-      // Para simplificar, vamos deixar a lista de usuários vazia por enquanto
-      setUsers([]);
+      setUsers(usersResult.data);
     } catch (error: any) {
       console.error('Erro ao carregar dados para dropdowns:', error);
       toast.error('Erro ao carregar dados de seleção.');
