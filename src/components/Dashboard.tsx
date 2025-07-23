@@ -44,10 +44,10 @@ export function Dashboard({ user }: DashboardProps) {
   async function loadData() {
     try {
       const [turmasResult, cursosResult, professoresResult, alunosResult] = await Promise.all([
-        supabase.from('turmas').select('*'),
-        supabase.from('cursos').select('*'),
-        supabase.from('professores').select('*'),
-        supabase.from('alunos').select('*')
+        supabase.from('turmas').select('id, curso_id, cadeiras, potencial_faturamento'),
+        supabase.from('cursos').select('id, nome, preco'),
+        supabase.from('professores').select('id, nome'),
+        supabase.from('alunos').select('id, nome')
       ]);
 
       if (turmasResult.error) throw turmasResult.error;

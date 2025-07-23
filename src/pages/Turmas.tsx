@@ -131,29 +131,28 @@ export function Turmas() {
       const [turmasResult, cursosResult, salasResult, professoresResult] = await Promise.all([
         supabase
           .from('turmas')
-          .select(`
-            *,
-            curso:cursos(*),
-            sala:salas(*),
+          .select(`id, name, curso_id, sala_id, cadeiras, potencial_faturamento, period, start_date, end_date, imposto, days_of_week, created_at,
+            curso:cursos(id, nome, preco, carga_horaria),
+            sala:salas(id, nome, cadeiras),
             professores:turma_professores(
               id,
               professor_id,
               hours,
-              professor:professores(id, nome, valor_hora)
+              professor:professores(id, nome, valor_hora) // Only select necessary professor fields
             )
           `)
           .order('created_at', { ascending: false }),
         supabase
           .from('cursos')
-          .select('*')
+          .select('id, nome, preco, carga_horaria') // Only select necessary course fields
           .order('nome'),
         supabase
           .from('salas')
-          .select('*')
+          .select('id, nome, cadeiras') // Only select necessary room fields
           .order('nome'),
         supabase
           .from('professores')
-          .select('*')
+          .select('id, nome, valor_hora') // Only select necessary professor fields
           .order('nome')
       ]);
 
@@ -383,10 +382,9 @@ export function Turmas() {
 
     let query = supabase
       .from('turmas')
-      .select(`
-        *,
-        curso:cursos(nome),
-        sala:salas(nome),
+      .select(`id, name, period, start_date, end_date, days_of_week, sala_id,
+        curso:cursos(nome), // Only select necessary course fields
+        sala:salas(nome), // Only select necessary room fields
         professores:turma_professores(
           professor_id,
           hours,

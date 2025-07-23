@@ -30,8 +30,8 @@ export function ModalCategorias({ isOpen, onClose, onCategoriesUpdated }: ModalC
   async function loadCategorias() {
     try {
       const { data, error } = await supabase
-        .from('categorias')
-        .select('*')
+        .from('categorias') // Used for display and editing, needs all fields
+        .select('id, nome')
         .order('nome');
       
       if (error) throw error;
