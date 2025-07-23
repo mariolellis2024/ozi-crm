@@ -125,7 +125,7 @@ export function PerformanceDashboard({ isOpen, onClose }: PerformanceDashboardPr
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5 text-red-400" />
-                  Consultas Lentas {'(>1s)'}
+                  Consultas Lentas (&gt;1s)
                 </h3>
                 <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
                   <div className="space-y-2">
