@@ -66,7 +66,7 @@ export function FunilVendas() {
   async function loadInterests() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: interestsData, error: interestsError } = await supabase
         .from('aluno_curso_interests')
         .select(`
           id,
@@ -81,13 +81,28 @@ export function FunilVendas() {
           assigned_to,
           created_at,
           aluno:alunos(id, nome, email, whatsapp, empresa),
-          curso:cursos(id, nome, preco),
-          assigned_user:users(id, email)
+          curso:cursos(id, nome, preco)
         `)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
-      setInterests(data as Interest[]);
+      const { data, error } = await supabase.auth.admin.listUsers();
+      
+      if (usersError) {
+        console.warn('Erro ao carregar usuários:', usersError);
+        // Se não conseguir carregar usuários, ainda assim exibe os interesses
+        setInterests(interestsData as Interest[]);
+        return;
+      }
+
+      setUsers(data.users.map(user => ({ id: user.id, email: user.email || 'Sem email' })));
+      const interestsWithUsers = interestsData.map(interest => ({
+        ...interest,
+        assigned_user: interest.assigned_to 
+          ? usersData.users.find(user => user.id === interest.assigned_to)
+          : undefined
+      }));
+
+      setInterests(interestsWithUsers as Interest[]);
     } catch (error: any) {
       console.error('Erro ao carregar interesses:', error);
       toast.error(`Erro ao carregar funil: ${error.message || 'Erro desconhecido'}`);
