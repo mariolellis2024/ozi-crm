@@ -7,6 +7,7 @@ import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalAluno } from '../components/ModalAluno';
 import { useSearchParams } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 /**
  * Tipos para ordenação e filtros
@@ -24,6 +25,11 @@ const PERIODS: { value: Period; label: string; icon: typeof Sun }[] = [
   { value: 'tarde', label: 'Tarde', icon: Sunset },
   { value: 'noite', label: 'Noite', icon: Moon }
 ];
+
+/**
+ * Configuração da paginação
+ */
+const ITEMS_PER_PAGE = 20;
 
 /**
  * Interface para interesse de aluno em curso
@@ -66,12 +72,16 @@ interface Curso {
  * - Cálculo de faturamento potencial
  * - Controle de status (interessado/matriculado/concluído)
  * - Busca e ordenação
+ * - Paginação para melhor performance
  */
 export function Alunos() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [totalOpenRevenue, setTotalOpenRevenue] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('created_at');
@@ -95,6 +105,11 @@ export function Alunos() {
     isOpen: false,
     aluno: null as Aluno | null
   });
+
+  /**
+   * Calcula o número total de páginas
+   */
+  const totalPages = Math.ceil(totalStudents / ITEMS_PER_PAGE);
 
   /**
    * Alterna a seleção de um período de disponibilidade
@@ -162,8 +177,26 @@ export function Alunos() {
    * Carrega dados iniciais da página
    */
   useEffect(() => {
-    loadData();
+    loadData(1);
   }, []);
+
+  /**
+   * Recarrega dados quando filtros mudam, resetando para a primeira página
+   */
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      loadData(1);
+    }
+  }, [searchTerm, filterInterestStatus, selectedCourseId, sortField, sortDirection]);
+
+  /**
+   * Carrega dados quando a página atual muda
+   */
+  useEffect(() => {
+    loadData(currentPage);
+  }, [currentPage]);
 
   // Handle URL parameters on component mount
   useEffect(() => {
@@ -178,6 +211,7 @@ export function Alunos() {
       setFilterInterestStatus(statusParam as CursoInterest['status']);
     }
   }, [searchParams]);
+
   // Update modal data when alunos data changes
   useEffect(() => {
     if (courseModal.isOpen && courseModal.aluno) {
@@ -190,32 +224,53 @@ export function Alunos() {
       }
     }
   }, [alunos, courseModal.isOpen, courseModal.aluno]);
+
   /**
-   * Carrega alunos e cursos do banco de dados
+   * Carrega alunos e cursos do banco de dados com paginação
    * Calcula faturamento potencial automaticamente
+   * 
+   * @param page - Número da página a ser carregada
    */
-  async function loadData() {
+  async function loadData(page: number = 1) {
+    setLoading(true);
     try {
-      const [alunosResult, cursosResult] = await Promise.all([
-        monitoredQuery('load-alunos-with-interests', () =>
-          supabase
-          .from('alunos')
-          .select(`
+      // Construir query base para alunos
+      let alunosQuery = supabase
+        .from('alunos')
+        .select(`
+          id,
+          nome,
+          email,
+          whatsapp,
+          empresa,
+          available_periods,
+          created_at,
+          curso_interests:aluno_curso_interests(
             id,
-            nome,
-            email,
-            whatsapp,
-            empresa,
-            available_periods,
-            created_at,
-            curso_interests:aluno_curso_interests(
-              id,
-              curso_id,
-              status
-            )
-          `)
-          .order('created_at', { ascending: false })
-        ),
+            curso_id,
+            status
+          )
+        `, { count: 'exact' });
+
+      // Aplicar filtros de busca
+      if (searchTerm) {
+        alunosQuery = alunosQuery.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
+      }
+
+      // Aplicar ordenação
+      if (sortField === 'created_at') {
+        alunosQuery = alunosQuery.order('created_at', { ascending: sortDirection === 'asc' });
+      } else {
+        alunosQuery = alunosQuery.order('nome', { ascending: sortDirection === 'asc' });
+      }
+
+      // Aplicar paginação
+      const from = (page - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+      alunosQuery = alunosQuery.range(from, to);
+
+      const [alunosResult, cursosResult] = await Promise.all([
+        monitoredQuery('load-alunos-with-interests-paginated', () => alunosQuery),
         monitoredQuery('load-cursos-for-pricing', () =>
           supabase
           .from('cursos')
@@ -232,12 +287,71 @@ export function Alunos() {
         curso_interests: aluno.curso_interests || []
       }));
 
-      setAlunos(sortAlunos(alunosData, sortField, sortDirection));
+      // Aplicar filtros de interesse no frontend (pois são complexos para o Supabase)
+      const filteredAlunosData = applyInterestFilters(alunosData);
+
+      setAlunos(filteredAlunosData);
       setCursos(cursosResult.data);
-      setTotalOpenRevenue(calculateOpenRevenue(alunosData, cursosResult.data));
+      setTotalStudents(alunosResult.count || 0);
+
+      // Calcular faturamento potencial de todos os alunos (não apenas da página atual)
+      await calculateTotalOpenRevenue(cursosResult.data);
     } catch (error) {
       toast.error('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
     }
+  }
+
+  /**
+   * Calcula o faturamento potencial total (de todos os alunos, não apenas da página atual)
+   */
+  async function calculateTotalOpenRevenue(cursosData: Curso[]) {
+    try {
+      const { data: allInterests, error } = await supabase
+        .from('aluno_curso_interests')
+        .select('curso_id, status')
+        .eq('status', 'interested');
+
+      if (error) throw error;
+
+      let total = 0;
+      allInterests.forEach(interest => {
+        const curso = cursosData.find(c => c.id === interest.curso_id);
+        if (curso) {
+          total += curso.preco;
+        }
+      });
+
+      setTotalOpenRevenue(total);
+    } catch (error) {
+      console.error('Erro ao calcular faturamento potencial:', error);
+    }
+  }
+
+  /**
+   * Aplica filtros de interesse nos dados dos alunos
+   */
+  function applyInterestFilters(alunosData: Aluno[]): Aluno[] {
+    if (filterInterestStatus === 'all') {
+      return alunosData;
+    }
+
+    return alunosData.filter(aluno => {
+      if (filterInterestStatus === 'no_interest') {
+        return !aluno.curso_interests || aluno.curso_interests.length === 0;
+      } else {
+        if (selectedCourseId) {
+          return aluno.curso_interests?.some(interest => 
+            interest.curso_id === selectedCourseId && interest.status === filterInterestStatus
+          ) || false;
+        } else {
+          return aluno.curso_interests?.some(interest => 
+            interest.status === filterInterestStatus
+          ) || false;
+        }
+      }
+    });
   }
 
   /**
@@ -265,7 +379,45 @@ export function Alunos() {
     const newDirection = field === sortField && sortDirection === 'desc' ? 'asc' : 'desc';
     setSortField(field);
     setSortDirection(newDirection);
-    setAlunos(sortAlunos(alunos, field, newDirection));
+    setCurrentPage(1); // Reset para primeira página ao ordenar
+  }
+
+  /**
+   * Navega para uma página específica
+   */
+  function goToPage(page: number) {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  }
+
+  /**
+   * Gera array de números de página para exibição
+   */
+  function getPageNumbers(): number[] {
+    const delta = 2; // Número de páginas para mostrar antes e depois da atual
+    const range = [];
+    const rangeWithDots = [];
+
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+      range.push(i);
+    }
+
+    if (currentPage - delta > 2) {
+      rangeWithDots.push(1, -1); // -1 representa "..."
+    } else {
+      rangeWithDots.push(1);
+    }
+
+    rangeWithDots.push(...range);
+
+    if (currentPage + delta < totalPages - 1) {
+      rangeWithDots.push(-1, totalPages); // -1 representa "..."
+    } else if (totalPages > 1) {
+      rangeWithDots.push(totalPages);
+    }
+
+    return rangeWithDots;
   }
 
   /**
@@ -304,7 +456,7 @@ export function Alunos() {
         available_periods: []
       });
       setEditingId(null);
-      loadData();
+      loadData(currentPage);
     } catch (error) {
       toast.error('Erro ao salvar aluno');
     }
@@ -356,7 +508,7 @@ export function Alunos() {
       }
 
       toast.success('Status atualizado com sucesso!');
-      await loadData();
+      await loadData(currentPage);
       
       // Update the modal state with fresh data
       if (courseModal.aluno) {
@@ -389,7 +541,7 @@ export function Alunos() {
       
       if (result.error) throw result.error;
       toast.success('Interesse removido com sucesso!');
-      await loadData();
+      await loadData(currentPage);
       
       // Update the modal state with fresh data
       if (courseModal.aluno) {
@@ -435,7 +587,7 @@ export function Alunos() {
       
       if (result.error) throw result.error;
       toast.success('Aluno excluído com sucesso!');
-      loadData();
+      loadData(currentPage);
     } catch (error) {
       toast.error('Erro ao excluir aluno');
     } finally {
@@ -517,39 +669,6 @@ export function Alunos() {
   }
 
   /**
-   * Filtra alunos baseado nos critérios de busca e filtros
-   */
-  const filteredAlunos = alunos.filter(aluno => {
-    // Filter by search term
-    const matchesSearch = aluno.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      aluno.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      aluno.whatsapp.includes(searchTerm);
-    
-    // Filter by interest status
-    let matchesInterestStatus = true;
-    if (filterInterestStatus !== 'all') {
-      if (filterInterestStatus === 'no_interest') {
-        // Filter students with no interests at all
-        matchesInterestStatus = !aluno.curso_interests || aluno.curso_interests.length === 0;
-      } else {
-        if (selectedCourseId) {
-          // Filter by specific course and status
-          matchesInterestStatus = aluno.curso_interests?.some(interest => 
-            interest.curso_id === selectedCourseId && interest.status === filterInterestStatus
-          ) || false;
-        } else {
-          // Filter by status across all courses
-          matchesInterestStatus = aluno.curso_interests?.some(interest => 
-            interest.status === filterInterestStatus
-          ) || false;
-        }
-      }
-    }
-    
-    return matchesSearch && matchesInterestStatus;
-  });
-
-  /**
    * Opções de filtro por status de interesse
    */
   const filterOptions: Array<{ value: CursoInterest['status'] | 'all' | 'no_interest'; label: string; icon: any }> = [
@@ -587,30 +706,6 @@ export function Alunos() {
                   <p className="text-gray-400 text-sm">
                     Valor total dos cursos com alunos interessados
                   </p>
-                  {(searchTerm || filterInterestStatus !== 'all' || selectedCourseId) && (
-                    <div className="pt-2 border-t border-gray-700">
-                      <p className="text-teal-accent text-sm font-medium">
-                        Filtrado: {formatCurrency((() => {
-                          let filteredRevenue = 0;
-                          filteredAlunos.forEach(aluno => {
-                            aluno.curso_interests?.forEach(interest => {
-                              if (interest.status === 'interested') {
-                                const curso = cursos.find(c => c.id === interest.curso_id);
-                                if (curso) {
-                                  filteredRevenue += curso.preco;
-                                }
-                              }
-                            });
-                          });
-                          return filteredRevenue;
-                        })())}
-                      </p>
-                      <p className="text-gray-500 text-xs">
-                        {filteredAlunos.length} aluno{filteredAlunos.length !== 1 ? 's' : ''} 
-                        {searchTerm || filterInterestStatus !== 'all' || selectedCourseId ? ' encontrado' : ''}{filteredAlunos.length !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
               <div className="bg-teal-accent p-3 rounded-xl">
@@ -626,7 +721,10 @@ export function Alunos() {
               type="text"
               placeholder="Buscar alunos..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1); // Reset para primeira página ao buscar
+              }}
               className="w-full max-w-md bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
             />
           </div>
@@ -640,6 +738,7 @@ export function Alunos() {
               onChange={(e) => {
                 const newCourseId = e.target.value || null;
                 setSelectedCourseId(newCourseId);
+                setCurrentPage(1); // Reset para primeira página ao filtrar
                 
                 // Update URL params
                 const newParams = new URLSearchParams(searchParams);
@@ -677,6 +776,7 @@ export function Alunos() {
                   key={option.value}
                   onClick={() => {
                     setFilterInterestStatus(option.value);
+                    setCurrentPage(1); // Reset para primeira página ao filtrar
                     
                     // Update URL params
                     const newParams = new URLSearchParams(searchParams);
@@ -713,15 +813,20 @@ export function Alunos() {
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-teal-accent" />
               <span className="text-white font-medium">
-                {filteredAlunos.length} aluno{filteredAlunos.length !== 1 ? 's' : ''} 
-                {searchTerm || filterInterestStatus !== 'all' || selectedCourseId ? ' encontrado' : ' cadastrado'}{filteredAlunos.length !== 1 ? 's' : ''}
+                {totalStudents} aluno{totalStudents !== 1 ? 's' : ''} 
+                {searchTerm || filterInterestStatus !== 'all' || selectedCourseId ? ' encontrado' : ' cadastrado'}{totalStudents !== 1 ? 's' : ''}
               </span>
             </div>
-            {(searchTerm || filterInterestStatus !== 'all' || selectedCourseId) && alunos.length !== filteredAlunos.length && (
-              <span className="text-gray-400 text-sm">
-                de {alunos.length} total
-              </span>
-            )}
+            <div className="flex items-center gap-4">
+              {totalPages > 1 && (
+                <span className="text-gray-400 text-sm">
+                  Página {currentPage} de {totalPages}
+                </span>
+              )}
+              {loading && (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-teal-accent border-t-transparent"></div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -746,7 +851,7 @@ export function Alunos() {
                 </tr>
               </thead>
               <tbody>
-                {filteredAlunos.map((aluno) => (
+                {alunos.map((aluno) => (
                   <tr key={aluno.id} className="border-b border-gray-700/50">
                     <td className="p-4">
                       <span className="text-white font-medium">{aluno.nome}</span>
@@ -800,10 +905,20 @@ export function Alunos() {
                     </td>
                   </tr>
                 ))}
-                {filteredAlunos.length === 0 && (
+                {alunos.length === 0 && !loading && (
                   <tr>
                     <td colSpan={5} className="text-center py-8 text-gray-400">
                       Nenhum aluno encontrado
+                    </td>
+                  </tr>
+                )}
+                {loading && (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8">
+                      <div className="flex items-center justify-center gap-2 text-gray-400">
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-teal-accent border-t-transparent"></div>
+                        <span>Carregando alunos...</span>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -811,6 +926,69 @@ export function Alunos() {
             </table>
           </div>
         </div>
+
+        {/* Controles de Paginação */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between bg-dark-card rounded-2xl p-4">
+            <div className="flex items-center gap-2 text-gray-400 text-sm">
+              <span>
+                Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, totalStudents)} de {totalStudents} alunos
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Botão Anterior */}
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
+                  currentPage === 1
+                    ? 'text-gray-500 cursor-not-allowed'
+                    : 'text-gray-400 hover:text-white hover:bg-dark-lighter'
+                }`}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span>Anterior</span>
+              </button>
+
+              {/* Números das páginas */}
+              <div className="flex items-center gap-1">
+                {getPageNumbers().map((pageNum, index) => (
+                  <React.Fragment key={index}>
+                    {pageNum === -1 ? (
+                      <span className="px-3 py-2 text-gray-500">...</span>
+                    ) : (
+                      <button
+                        onClick={() => goToPage(pageNum)}
+                        className={`px-3 py-2 rounded-lg transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-teal-accent text-dark font-medium'
+                            : 'text-gray-400 hover:text-white hover:bg-dark-lighter'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Botão Próximo */}
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
+                  currentPage === totalPages
+                    ? 'text-gray-500 cursor-not-allowed'
+                    : 'text-gray-400 hover:text-white hover:bg-dark-lighter'
+                }`}
+              >
+                <span>Próximo</span>
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         <ModalAluno
           isOpen={isModalOpen}
