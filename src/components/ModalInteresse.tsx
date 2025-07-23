@@ -152,7 +152,8 @@ export function ModalInteresse({ isOpen, onClose, interestId, onSave }: ModalInt
 
       setAlunos(alunosResult.data);
       setCursos(cursosResult.data);
-      setUsers(usersResult.data.users.map(user => ({ id: user.id, email: user.email || 'Sem email' })));
+      // Para simplificar, vamos deixar a lista de usuários vazia por enquanto
+      setUsers([]);
     } catch (error: any) {
       console.error('Erro ao carregar dados para dropdowns:', error);
       toast.error('Erro ao carregar dados de seleção.');
