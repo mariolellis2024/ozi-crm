@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { GraduationCap, User, LogOut, BookOpen, Home, ChevronLeft, ChevronRight, DoorClosed, Activity, Columns } from 'lucide-react';
+import { GraduationCap, User, LogOut, BookOpen, Home, ChevronLeft, ChevronRight, DoorClosed, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PerformanceDashboard } from './PerformanceDashboard';
@@ -75,7 +75,6 @@ export function Layout({ children }: LayoutProps) {
     { icon: BookOpen, label: 'Cursos', path: '/cursos' },
     { icon: GraduationCap, label: 'Professores', path: '/professores' },
     { icon: DoorClosed, label: 'Salas', path: '/salas' },
-    { icon: Columns, label: 'Funil de Vendas', path: '/funil-vendas' },
   ];
 
   return (
