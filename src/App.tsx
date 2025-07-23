@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { supabase } from './lib/supabase';
-import { queryClient } from './lib/queryClient';
 import type { User } from '@supabase/supabase-js';
 import { Login } from './components/Login';
 import { Professores } from './pages/Professores';
@@ -56,63 +53,60 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <OrganicBackground />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <Turmas />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/professores"
-            element={
-              <PrivateRoute>
-                <Professores />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/alunos"
-            element={
-              <PrivateRoute>
-                <Alunos />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/cursos"
-            element={
-              <PrivateRoute>
-                <Cursos />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/turmas"
-            element={
-              <PrivateRoute>
-                <Turmas />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/salas"
-            element={
-              <PrivateRoute>
-                <Salas />
-              </PrivateRoute>
-            }
-          />
-        </Routes>
-        <Toaster position="top-right" />
-        <ReactQueryDevtools initialIsOpen={false} />
-      </BrowserRouter>
-    </QueryClientProvider>
+    <BrowserRouter>
+      <OrganicBackground />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <Turmas />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/professores"
+          element={
+            <PrivateRoute>
+              <Professores />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/alunos"
+          element={
+            <PrivateRoute>
+              <Alunos />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cursos"
+          element={
+            <PrivateRoute>
+              <Cursos />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/turmas"
+          element={
+            <PrivateRoute>
+              <Turmas />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/salas"
+          element={
+            <PrivateRoute>
+              <Salas />
+            </PrivateRoute>
+          }
+        />
+      </Routes>
+      <Toaster position="top-right" />
+    </BrowserRouter>
   );
 }
