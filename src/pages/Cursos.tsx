@@ -53,8 +53,12 @@ export function Cursos() {
       const [cursosResult, interestsResult] = await Promise.all([
         supabase
           .from('cursos')
-          .select(`id, nome, carga_horaria, preco, categoria_id,
-            *,
+          .select(`
+            id,
+            nome,
+            carga_horaria,
+            preco,
+            categoria_id,
             categoria:categorias(nome)
           `)
           .order('created_at', { ascending: false }),
@@ -108,7 +112,7 @@ export function Cursos() {
   async function loadCursosForUpdate() {
     try {
       const { data, error } = await supabase
-        .from('cursos') // Used for editing, needs all form fields
+        .from('cursos')
         .select('id, nome, carga_horaria, preco, categoria_id')
         .order('created_at', { ascending: false });
       

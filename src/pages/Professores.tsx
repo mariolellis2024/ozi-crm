@@ -40,7 +40,7 @@ export function Professores() {
     try {
       const [professoresResult, turmasResult] = await Promise.all([
         supabase
-          .from('professores') // Used for editing, needs all form fields
+          .from('professores')
           .select('id, nome, email, whatsapp, valor_hora')
           .order('created_at', { ascending: false }),
         supabase

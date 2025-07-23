@@ -50,7 +50,7 @@ export function ModalCurso({
   async function loadCategorias() {
     try {
       const { data, error } = await supabase
-        .from('categorias') // Used for display and editing, needs all fields
+        .from('categorias')
         .select('id, nome')
         .order('nome');
       

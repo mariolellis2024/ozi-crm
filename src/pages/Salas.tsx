@@ -37,7 +37,7 @@ export function Salas() {
   async function loadSalas() {
     try {
       const { data, error } = await supabase
-        .from('salas') // Used for display and editing, needs all fields
+        .from('salas')
         .select('id, nome, cadeiras')
         .order('created_at', { ascending: false });
       
