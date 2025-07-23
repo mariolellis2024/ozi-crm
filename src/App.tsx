@@ -8,6 +8,7 @@ import { Alunos } from './pages/Alunos';
 import { Cursos } from './pages/Cursos';
 import { Turmas } from './pages/Turmas';
 import { Salas } from './pages/Salas';
+import { FunilVendas } from './pages/FunilVendas';
 import { Layout } from './components/Layout';
 import { Toaster } from 'react-hot-toast';
 import { OrganicBackground } from './components/OrganicBackground';
@@ -102,6 +103,14 @@ export default function App() {
           element={
             <PrivateRoute>
               <Salas />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/funil-vendas"
+          element={
+            <PrivateRoute>
+              <FunilVendas />
             </PrivateRoute>
           }
         />
