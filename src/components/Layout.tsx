@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { GraduationCap, User, LogOut, BookOpen, Home, ChevronLeft, ChevronRight, DoorClosed } from 'lucide-react';
+import { GraduationCap, User, LogOut, BookOpen, Home, ChevronLeft, ChevronRight, DoorClosed, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { PerformanceDashboard } from './PerformanceDashboard';
 
 /**
  * Props do componente Layout
@@ -25,6 +26,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false);
   
   /**
    * Gerencia o logout do usuário
@@ -100,6 +102,20 @@ export function Layout({ children }: LayoutProps) {
           ))}
         </nav>
         <div className="absolute bottom-0 w-full p-6 scale-in-delay-2">
+          {/* Botão de Performance (apenas em desenvolvimento) */}
+          {import.meta.env.DEV && (
+            <button
+              onClick={() => setShowPerformanceDashboard(true)}
+              className="w-full flex items-center text-gray-400 hover:text-white transition-all duration-200 hover:translate-x-1 mb-4"
+              title="Dashboard de Performance"
+            >
+              <Activity className="h-5 w-5 flex-shrink-0" />
+              <span className="opacity-100 ml-4">
+                Performance
+              </span>
+            </button>
+          )}
+          
           <button
             onClick={handleSignOut}
             className="w-full flex items-center text-gray-400 hover:text-white transition-all duration-200 hover:translate-x-1"
@@ -114,6 +130,11 @@ export function Layout({ children }: LayoutProps) {
       <main className="ml-64 w-full fade-in-delay-1">
         {children}
       </main>
+      
+      <PerformanceDashboard 
+        isOpen={showPerformanceDashboard}
+        onClose={() => setShowPerformanceDashboard(false)}
+      />
     </div>
   );
 }

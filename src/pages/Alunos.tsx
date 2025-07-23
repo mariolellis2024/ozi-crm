@@ -12,6 +12,7 @@ import { useSearchParams } from 'react-router-dom';
  * Tipos para ordenação e filtros
  */
 type SortField = 'created_at' | 'nome';
+import { monitoredQuery } from '../utils/performance';
 type SortDirection = 'asc' | 'desc';
 type Period = 'manha' | 'tarde' | 'noite';
 
@@ -196,21 +197,31 @@ export function Alunos() {
   async function loadData() {
     try {
       const [alunosResult, cursosResult] = await Promise.all([
-        supabase
+        monitoredQuery('load-alunos-with-interests', () =>
+          supabase
           .from('alunos')
           .select(`
-            *,
+            id,
+            nome,
+            email,
+            whatsapp,
+            empresa,
+            available_periods,
+            created_at,
             curso_interests:aluno_curso_interests(
               id,
               curso_id,
               status
             )
           `)
-          .order('created_at', { ascending: false }),
-        supabase
+          .order('created_at', { ascending: false })
+        ),
+        monitoredQuery('load-cursos-for-pricing', () =>
+          supabase
           .from('cursos')
-          .select('*')
+          .select('id, nome, preco')
           .order('nome')
+        )
       ]);
 
       if (alunosResult.error) throw alunosResult.error;
@@ -264,19 +275,23 @@ export function Alunos() {
     e.preventDefault();
     try {
       if (editingId) {
-        const { error } = await supabase
-          .from('alunos')
-          .update(formData)
-          .eq('id', editingId);
+        const result = await monitoredQuery('update-aluno', () =>
+          supabase
+            .from('alunos')
+            .update(formData)
+            .eq('id', editingId)
+        );
         
-        if (error) throw error;
+        if (result.error) throw result.error;
         toast.success('Aluno atualizado com sucesso!');
       } else {
-        const { error } = await supabase
-          .from('alunos')
-          .insert([formData]);
+        const result = await monitoredQuery('create-aluno', () =>
+          supabase
+            .from('alunos')
+            .insert([formData])
+        );
         
-        if (error) throw error;
+        if (result.error) throw result.error;
         toast.success('Aluno adicionado com sucesso!');
       }
 
@@ -305,33 +320,39 @@ export function Alunos() {
   async function handleStatusChange(alunoId: string, cursoId: string, status: CursoInterest['status']) {
     try {
       // Check if interest already exists
-      const { data: existingInterest } = await supabase
-        .from('aluno_curso_interests')
-        .select('id')
-        .eq('aluno_id', alunoId)
-        .eq('curso_id', cursoId)
-        .maybeSingle();
-
-      if (existingInterest) {
-        // Update existing interest
-        const { error } = await supabase
+      const existingInterestResult = await monitoredQuery('check-existing-interest', () =>
+        supabase
           .from('aluno_curso_interests')
-          .update({ status })
+          .select('id')
           .eq('aluno_id', alunoId)
-          .eq('curso_id', cursoId);
+          .eq('curso_id', cursoId)
+          .maybeSingle()
+      );
+
+      if (existingInterestResult.data) {
+        // Update existing interest
+        const result = await monitoredQuery('update-interest-status', () =>
+          supabase
+            .from('aluno_curso_interests')
+            .update({ status })
+            .eq('aluno_id', alunoId)
+            .eq('curso_id', cursoId)
+        );
         
-        if (error) throw error;
+        if (result.error) throw result.error;
       } else {
         // Create new interest
-        const { error } = await supabase
-          .from('aluno_curso_interests')
-          .insert([{
-            aluno_id: alunoId,
-            curso_id: cursoId,
-            status
-          }]);
+        const result = await monitoredQuery('create-interest', () =>
+          supabase
+            .from('aluno_curso_interests')
+            .insert([{
+              aluno_id: alunoId,
+              curso_id: cursoId,
+              status
+            }])
+        );
         
-        if (error) throw error;
+        if (result.error) throw result.error;
       }
 
       toast.success('Status atualizado com sucesso!');
@@ -358,13 +379,15 @@ export function Alunos() {
    */
   async function handleRemoveInterest(alunoId: string, cursoId: string) {
     try {
-      const { error } = await supabase
-        .from('aluno_curso_interests')
-        .delete()
-        .eq('aluno_id', alunoId)
-        .eq('curso_id', cursoId);
+      const result = await monitoredQuery('remove-interest', () =>
+        supabase
+          .from('aluno_curso_interests')
+          .delete()
+          .eq('aluno_id', alunoId)
+          .eq('curso_id', cursoId)
+      );
       
-      if (error) throw error;
+      if (result.error) throw result.error;
       toast.success('Interesse removido com sucesso!');
       await loadData();
       
@@ -403,12 +426,14 @@ export function Alunos() {
    */
   async function handleConfirmDelete() {
     try {
-      const { error } = await supabase
-        .from('alunos')
-        .delete()
-        .eq('id', confirmModal.alunoId);
+      const result = await monitoredQuery('delete-aluno', () =>
+        supabase
+          .from('alunos')
+          .delete()
+          .eq('id', confirmModal.alunoId)
+      );
       
-      if (error) throw error;
+      if (result.error) throw result.error;
       toast.success('Aluno excluído com sucesso!');
       loadData();
     } catch (error) {
