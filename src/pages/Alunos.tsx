@@ -221,10 +221,18 @@ export function Alunos() {
           query = query.or(`aluno.nome.ilike.%${searchTerm}%,aluno.email.ilike.%${searchTerm}%,aluno.whatsapp.ilike.%${searchTerm}%`);
         }
 
-        // Get count of unique students
+        // Get all matching interests to count unique students
         let countQuery = supabase
           .from('aluno_curso_interests')
-          .select('aluno_id')
+          .select(`
+            aluno_id,
+            aluno:alunos!inner(
+              id,
+              nome,
+              email,
+              whatsapp
+            )
+          `)
           .eq('status', statusFilter);
 
         if (cursoFilter) {
@@ -268,11 +276,9 @@ export function Alunos() {
           error: null
         };
 
-        // Count unique students from the interests
+        // Count unique students from all matching interests (not just the paginated ones)
         const uniqueStudentIds = new Set();
         interestsCountResult.data?.forEach((interest: any) => {
-          // Ensure interest.aluno is not null/undefined before accessing id
-          // The select statement now ensures aluno is present if it matches the filter
           uniqueStudentIds.add(interest.aluno_id);
         });
         
