@@ -1,39 +1,22 @@
-<!doctype html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/webp" href="/favicon.webp" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Preconnect para melhorar performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <!-- Preload da fonte principal para carregamento mais rápido -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    
-    <!-- Fallback para caso o JavaScript esteja desabilitado -->
-    <noscript>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    </noscript>
-    
-    <!-- Font display optimization -->
-    <style>
-      /* Fallback font stack otimizada */
-      body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-        font-display: swap;
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        dark: {
+          DEFAULT: '#1A1D21',
+          lighter: '#22262B',
+          card: '#2A2F35'
+        },
+        teal: {
+          accent: '#2CD3C7'
+        }
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif']
       }
-      
-      /* Prevenção de FOIT (Flash of Invisible Text) */
-      @font-face {
-        font-family: 'Inter';
-        font-display: swap;
-      }
-    </style>
-    <title>Pepper Heads</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+    },
+  },
+  plugins: [],
+};
