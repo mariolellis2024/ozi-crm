@@ -1,97 +1,61 @@
-import { createPortal } from 'react-dom';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Pencil, Trash2, BookOpen, Clock, Check, ArrowUpDown, Filter, TrendingUp, Sun, Sunset, Moon, X, Users, CheckSquare, Square, Edit3 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Users, TrendingUp, Filter, CheckSquare, Square, Edit3 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalAluno } from '../components/ModalAluno';
+import { ModalCursosInteresse } from '../components/ModalCursosInteresse';
 import { ModalBulkEdit } from '../components/ModalBulkEdit';
 import { useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-/**
- * Tipos para ordenação e filtros
- */
-type SortField = 'created_at' | 'nome';
-import { monitoredQuery } from '../utils/performance';
-type SortDirection = 'asc' | 'desc';
 type Period = 'manha' | 'tarde' | 'noite';
+type InterestStatus = 'interested' | 'enrolled' | 'completed';
 
-/**
- * Configuração dos períodos disponíveis
- */
-const PERIODS: { value: Period; label: string; icon: typeof Sun }[] = [
-  { value: 'manha', label: 'Manhã', icon: Sun },
-  { value: 'tarde', label: 'Tarde', icon: Sunset },
-  { value: 'noite', label: 'Noite', icon: Moon }
-];
-
-/**
- * Configuração da paginação
- */
-const ITEMS_PER_PAGE = 20;
-
-/**
- * Interface para interesse de aluno em curso
- */
-interface CursoInterest {
-  id?: string;
-  curso_id: string;
-  status: 'interested' | 'enrolled' | 'completed';
-}
-
-/**
- * Interface principal do aluno com relacionamentos
- */
 interface Aluno {
   id: string;
   nome: string;
-  email: string;
+  email?: string;
   whatsapp: string;
   empresa?: string;
   available_periods?: Period[];
-  curso_interests?: CursoInterest[];
   created_at: string;
+  curso_interests?: Array<{
+    id: string;
+    curso_id: string;
+    status: InterestStatus;
+    curso?: {
+      id: string;
+      nome: string;
+      preco: number;
+    };
+  }>;
 }
 
-/**
- * Interface para dados de curso
- */
 interface Curso {
   id: string;
   nome: string;
   preco: number;
 }
 
-/**
- * Componente principal da página de Alunos
- * 
- * Funcionalidades:
- * - Listagem de alunos com filtros avançados
- * - Gestão de interesses em cursos
- * - Cálculo de faturamento potencial
- * - Controle de status (interessado/matriculado/concluído)
- * - Busca e ordenação
- * - Paginação para melhor performance
- */
+const ITEMS_PER_PAGE = 20;
+
 export function Alunos() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
-  const [totalOpenRevenue, setTotalOpenRevenue] = useState<number>(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalStudents, setTotalStudents] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
-  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<SortField>('created_at');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [filterInterestStatus, setFilterInterestStatus] = useState<CursoInterest['status'] | 'all' | 'no_interest'>('all');
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | InterestStatus | 'none'>('all');
+  const [cursoFilter, setCursoFilter] = useState<string>('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [cursosInteresseModal, setCursosInteresseModal] = useState({
+    isOpen: false,
+    alunoId: '',
+    alunoNome: ''
+  });
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -105,19 +69,242 @@ export function Alunos() {
     alunoId: '',
     alunoNome: ''
   });
-  const [courseModal, setCourseModal] = useState({
-    isOpen: false,
-    aluno: null as Aluno | null
-  });
 
-  /**
-   * Calcula o número total de páginas
-   */
-  const totalPages = Math.ceil(totalStudents / ITEMS_PER_PAGE);
+  // Bulk selection states
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
+  const [bulkEditModal, setBulkEditModal] = useState(false);
 
-  /**
-   * Alterna a seleção de um período de disponibilidade
-   */
+  useEffect(() => {
+    // Initialize filters from URL params
+    const curso = searchParams.get('curso');
+    const status = searchParams.get('status') as InterestStatus;
+    
+    if (curso) setCursoFilter(curso);
+    if (status) setStatusFilter(status);
+    
+    loadData();
+  }, [searchParams]);
+
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      setCurrentPage(1); // Reset to first page when search changes
+      loadAlunos();
+    }, 300);
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm, statusFilter, cursoFilter, currentPage]);
+
+  async function loadData() {
+    await Promise.all([loadAlunos(), loadCursos()]);
+  }
+
+  async function loadAlunos() {
+    setLoading(true);
+    try {
+      const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+      
+      let alunosResult;
+      let countResult;
+
+      if (statusFilter === 'none') {
+        // Students with no interests at all
+        const { data: alunosWithInterests } = await supabase
+          .from('aluno_curso_interests')
+          .select('aluno_id');
+
+        const alunosWithInterestsIds = alunosWithInterests?.map(item => item.aluno_id) || [];
+
+        let query = supabase
+          .from('alunos')
+          .select(`
+            id,
+            nome,
+            email,
+            whatsapp,
+            empresa,
+            available_periods,
+            created_at
+          `)
+          .not('id', 'in', `(${alunosWithInterestsIds.join(',') || 'null'})`);
+
+        if (searchTerm) {
+          query = query.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
+        }
+
+        // Get count
+        let countQuery = supabase
+          .from('alunos')
+          .select('id', { count: 'exact', head: true })
+          .not('id', 'in', `(${alunosWithInterestsIds.join(',') || 'null'})`);
+
+        if (searchTerm) {
+          countQuery = countQuery.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
+        }
+
+        [alunosResult, countResult] = await Promise.all([
+          query.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false }),
+          countQuery
+        ]);
+
+        // Add empty curso_interests array for consistency
+        if (alunosResult.data) {
+          alunosResult.data = alunosResult.data.map(aluno => ({
+            ...aluno,
+            curso_interests: []
+          }));
+        }
+
+      } else if (statusFilter === 'all') {
+        // All students with their interests
+        let query = supabase
+          .from('alunos')
+          .select(`
+            id,
+            nome,
+            email,
+            whatsapp,
+            empresa,
+            available_periods,
+            created_at,
+            curso_interests:aluno_curso_interests(
+              id,
+              curso_id,
+              status,
+              curso:cursos(id, nome, preco)
+            )
+          `);
+
+        if (searchTerm) {
+          query = query.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
+        }
+
+        // Get count
+        let countQuery = supabase
+          .from('alunos')
+          .select('id', { count: 'exact', head: true });
+
+        if (searchTerm) {
+          countQuery = countQuery.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
+        }
+
+        [alunosResult, countResult] = await Promise.all([
+          query.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false }),
+          countQuery
+        ]);
+
+      } else {
+        // Students with specific interest status
+        let baseQuery = `
+          aluno:alunos!inner(
+            id,
+            nome,
+            email,
+            whatsapp,
+            empresa,
+            available_periods,
+            created_at
+          ),
+          curso:cursos(id, nome, preco)
+        `;
+
+        let query = supabase
+          .from('aluno_curso_interests')
+          .select(baseQuery)
+          .eq('status', statusFilter);
+
+        if (cursoFilter) {
+          query = query.eq('curso_id', cursoFilter);
+        }
+
+        if (searchTerm) {
+          query = query.or(`aluno.nome.ilike.%${searchTerm}%,aluno.email.ilike.%${searchTerm}%,aluno.whatsapp.ilike.%${searchTerm}%`);
+        }
+
+        // Get count of unique students
+        let countQuery = supabase
+          .from('aluno_curso_interests')
+          .select('aluno_id', { count: 'exact', head: true })
+          .eq('status', statusFilter);
+
+        if (cursoFilter) {
+          countQuery = countQuery.eq('curso_id', cursoFilter);
+        }
+
+        const [interestsResult, interestsCountResult] = await Promise.all([
+          query.range(offset, offset + ITEMS_PER_PAGE - 1).order('aluno.created_at', { ascending: false }),
+          countQuery
+        ]);
+
+        if (interestsResult.error) throw interestsResult.error;
+        if (interestsCountResult.error) throw interestsCountResult.error;
+
+        // Group interests by student to avoid duplicates
+        const studentsMap = new Map();
+        
+        interestsResult.data?.forEach(interest => {
+          const aluno = interest.aluno;
+          if (!studentsMap.has(aluno.id)) {
+            studentsMap.set(aluno.id, {
+              ...aluno,
+              curso_interests: []
+            });
+          }
+          
+          studentsMap.get(aluno.id).curso_interests.push({
+            id: interest.id,
+            curso_id: interest.curso_id,
+            status: statusFilter,
+            curso: interest.curso
+          });
+        });
+
+        alunosResult = {
+          data: Array.from(studentsMap.values()),
+          error: null
+        };
+
+        countResult = interestsCountResult;
+      }
+
+      if (alunosResult.error) throw alunosResult.error;
+      if (countResult.error) throw countResult.error;
+
+      setAlunos(alunosResult.data || []);
+      setTotalCount(countResult.count || 0);
+    } catch (error) {
+      console.error('Erro ao carregar alunos:', error);
+      toast.error('Erro ao carregar alunos');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadCursos() {
+    try {
+      const { data, error } = await supabase
+        .from('cursos')
+        .select('id, nome, preco')
+        .order('nome');
+      
+      if (error) throw error;
+      setCursos(data);
+    } catch (error) {
+      toast.error('Erro ao carregar cursos');
+    }
+  }
+
+  function handleStatusFilter(status: 'all' | InterestStatus | 'none') {
+    setStatusFilter(status);
+    setCursoFilter(''); // Reset course filter when changing status
+    setCurrentPage(1); // Reset to first page
+  }
+
+  function handleCursoFilter(cursoId: string) {
+    setCursoFilter(cursoId);
+    setCurrentPage(1); // Reset to first page
+  }
+
   function togglePeriod(period: Period) {
     const currentPeriods = formData.available_periods;
     const isSelected = currentPeriods.includes(period);
@@ -135,731 +322,35 @@ export function Alunos() {
     }
   }
 
-  /**
-   * Fecha o modal e limpa o formulário
-   */
-  function handleCloseModal() {
-    setIsModalOpen(false);
-    setFormData({
-      nome: '',
-      email: '',
-      whatsapp: '',
-      empresa: '',
-      available_periods: []
-    });
-    setEditingId(null);
-  }
-
-  /**
-   * Calcula o faturamento potencial baseado em alunos interessados
-   * 
-   * Considera apenas alunos com status 'interested'
-   * 
-   * @param alunosData - Lista de alunos
-   * @param cursosData - Lista de cursos com preços
-   * @returns Valor total do faturamento potencial
-   */
-  function calculateOpenRevenue(alunosData: Aluno[], cursosData: Curso[]): number {
-    let total = 0;
-    
-    alunosData.forEach(aluno => {
-      aluno.curso_interests?.forEach(interest => {
-        // Only count students who are interested (not enrolled or completed)
-        if (interest.status === 'interested') {
-          const curso = cursosData.find(c => c.id === interest.curso_id);
-          if (curso) {
-            total += curso.preco;
-          }
-        }
-      });
-    });
-    
-    return total;
-  }
-
-  /**
-   * Carrega dados iniciais da página
-   */
-  useEffect(() => {
-    loadData(1);
-  }, []);
-
-  /**
-   * Recarrega dados quando filtros mudam, resetando para a primeira página
-   */
-  useEffect(() => {
-    if (currentPage !== 1) {
-      setCurrentPage(1);
-    } else {
-      loadData(1);
-    }
-  }, [searchTerm, filterInterestStatus, selectedCourseId, sortField, sortDirection]);
-
-  /**
-   * Carrega dados quando a página atual muda
-   */
-  useEffect(() => {
-    loadData(currentPage);
-  }, [currentPage]);
-
-  // Handle URL parameters on component mount
-  useEffect(() => {
-    const cursoParam = searchParams.get('curso');
-    const statusParam = searchParams.get('status');
-    
-    if (cursoParam) {
-      setSelectedCourseId(cursoParam);
-    }
-    
-    if (statusParam && (statusParam === 'interested' || statusParam === 'enrolled' || statusParam === 'completed')) {
-      setFilterInterestStatus(statusParam as CursoInterest['status']);
-    }
-  }, [searchParams]);
-
-  // Update modal data when alunos data changes
-  useEffect(() => {
-    if (courseModal.isOpen && courseModal.aluno) {
-      const updatedAluno = alunos.find(a => a.id === courseModal.aluno!.id);
-      if (updatedAluno && JSON.stringify(updatedAluno.curso_interests) !== JSON.stringify(courseModal.aluno.curso_interests)) {
-        setCourseModal({
-          ...courseModal,
-          aluno: updatedAluno
-        });
-      }
-    }
-  }, [alunos, courseModal.isOpen, courseModal.aluno]);
-
-  /**
-   * Carrega alunos e cursos do banco de dados com paginação
-   * Calcula faturamento potencial automaticamente
-   * 
-   * @param page - Número da página a ser carregada
-   */
-  async function loadData(page: number = 1) {
-    setLoading(true);
-    try {
-      // Buscar cursos primeiro
-      const cursosResult = await monitoredQuery('load-cursos-for-pricing', () =>
-        supabase
-        .from('cursos')
-        .select('id, nome, preco')
-        .order('nome')
-      );
-
-      if (cursosResult.error) throw cursosResult.error;
-      setCursos(cursosResult.data);
-
-      // Construir query para alunos com filtros aplicados no backend
-      let alunosQuery;
-      
-      if (filterInterestStatus === 'no_interest') {
-        // Para alunos sem interesse, buscar alunos que não têm registros em aluno_curso_interests
-        alunosQuery = supabase
-          .from('alunos')
-          .select(`
-            id,
-            nome,
-            email,
-            whatsapp,
-            empresa,
-            available_periods,
-            created_at
-          `, { count: 'exact' })
-          .not('id', 'in', `(
-            SELECT DISTINCT aluno_id 
-            FROM aluno_curso_interests 
-            WHERE aluno_id IS NOT NULL
-          )`);
-      } else if (filterInterestStatus !== 'all') {
-        // Para filtros específicos de status, usar join com aluno_curso_interests
-        let interestQuery = supabase
-          .from('aluno_curso_interests')
-          .select(`
-            aluno_id,
-            aluno:alunos!inner(
-              id,
-              nome,
-              email,
-              whatsapp,
-              empresa,
-              available_periods,
-              created_at
-            )
-          `, { count: 'exact' })
-          .eq('status', filterInterestStatus);
-
-        // Aplicar filtro por curso se selecionado
-        if (selectedCourseId) {
-          interestQuery = interestQuery.eq('curso_id', selectedCourseId);
-        }
-
-        const interestResult = await monitoredQuery('load-alunos-by-interest-status', () => interestQuery);
-        if (interestResult.error) throw interestResult.error;
-
-        // Extrair alunos únicos dos resultados
-        const uniqueAlunos = new Map();
-        interestResult.data.forEach(item => {
-          if (item.aluno && !uniqueAlunos.has(item.aluno.id)) {
-            uniqueAlunos.set(item.aluno.id, item.aluno);
-          }
-        });
-
-        const alunosData = Array.from(uniqueAlunos.values());
-        
-        // Aplicar filtros de busca no frontend (para esta query específica)
-        let filteredAlunos = alunosData;
-        if (searchTerm) {
-          filteredAlunos = alunosData.filter(aluno =>
-            aluno.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            aluno.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            aluno.whatsapp.includes(searchTerm)
-          );
-        }
-
-        // Aplicar ordenação
-        filteredAlunos.sort((a, b) => {
-          if (sortField === 'created_at') {
-            return sortDirection === 'desc' 
-              ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-              : new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-          } else {
-            return sortDirection === 'desc'
-              ? b.nome.localeCompare(a.nome)
-              : a.nome.localeCompare(b.nome);
-          }
-        });
-
-        // Aplicar paginação manual
-        const from = (page - 1) * ITEMS_PER_PAGE;
-        const to = from + ITEMS_PER_PAGE;
-        const paginatedAlunos = filteredAlunos.slice(from, to);
-
-        // Buscar interesses para os alunos da página atual
-        const alunosIds = paginatedAlunos.map(a => a.id);
-        const interessesResult = await supabase
-          .from('aluno_curso_interests')
-          .select('id, curso_id, status, aluno_id')
-          .in('aluno_id', alunosIds);
-
-        // Adicionar interesses aos alunos
-        const alunosComInteresses = paginatedAlunos.map(aluno => ({
-          ...aluno,
-          curso_interests: interessesResult.data?.filter(i => i.aluno_id === aluno.id) || []
-        }));
-
-        setAlunos(alunosComInteresses);
-        setTotalStudents(filteredAlunos.length);
-        await calculateTotalOpenRevenue(cursosResult.data);
-        return;
-      } else {
-        // Para "todos", buscar todos os alunos
-        alunosQuery = supabase
-          .from('alunos')
-          .select(`
-            id,
-            nome,
-            email,
-            whatsapp,
-            empresa,
-            available_periods,
-            created_at,
-            curso_interests:aluno_curso_interests(
-              id,
-              curso_id,
-              status
-            )
-          `, { count: 'exact' });
-      }
-
-      // Aplicar filtros de busca
-      if (searchTerm) {
-        alunosQuery = alunosQuery.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
-      }
-
-      // Aplicar ordenação
-      if (sortField === 'created_at') {
-        alunosQuery = alunosQuery.order('created_at', { ascending: sortDirection === 'asc' });
-      } else {
-        alunosQuery = alunosQuery.order('nome', { ascending: sortDirection === 'asc' });
-      }
-
-      // Aplicar paginação
-      const from = (page - 1) * ITEMS_PER_PAGE;
-      const to = from + ITEMS_PER_PAGE - 1;
-      alunosQuery = alunosQuery.range(from, to);
-
-      const alunosResult = await monitoredQuery('load-alunos-with-interests-paginated', () => alunosQuery);
-      if (alunosResult.error) throw alunosResult.error;
-
-      const alunosData = alunosResult.data.map(aluno => ({
-        ...aluno,
-        curso_interests: aluno.curso_interests || []
-      }));
-
-      setAlunos(alunosData);
-      setTotalStudents(alunosResult.count || 0);
-
-      // Calcular faturamento potencial de todos os alunos (não apenas da página atual)
-      await calculateTotalOpenRevenue(cursosResult.data);
-    } catch (error) {
-      toast.error('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  /**
-   * Calcula o faturamento potencial total (de todos os alunos, não apenas da página atual)
-   */
-  async function calculateTotalOpenRevenue(cursosData: Curso[]) {
-    try {
-      let query = supabase
-        .from('aluno_curso_interests')
-        .select('curso_id, status')
-        .eq('status', 'interested');
-
-      // Aplicar filtro por curso se selecionado
-      if (selectedCourseId && filterInterestStatus === 'interested') {
-        query = query.eq('curso_id', selectedCourseId);
-      }
-
-      const { data: allInterests, error } = await query;
-      if (error) throw error;
-
-      let total = 0;
-      allInterests.forEach(interest => {
-        const curso = cursosData.find(c => c.id === interest.curso_id);
-        if (curso) {
-          total += curso.preco;
-        }
-      });
-
-      setTotalOpenRevenue(total);
-    } catch (error) {
-      console.error('Erro ao calcular faturamento potencial:', error);
-    }
-  }
-
-  /**
-   * Aplica filtros de interesse nos dados dos alunos
-   * DEPRECATED: Agora os filtros são aplicados no backend
-   */
-  function applyInterestFilters(alunosData: Aluno[]): Aluno[] {
-    // Esta função não é mais usada, mas mantida para compatibilidade
-    return alunosData;
-  }
-
-  /**
-   * Ordena lista de alunos por campo e direção especificados
-   * DEPRECATED: Agora a ordenação é feita no backend
-   */
-  function sortAlunos(alunosToSort: Aluno[], field: SortField, direction: SortDirection): Aluno[] {
-    // Esta função não é mais usada, mas mantida para compatibilidade
-    return alunosToSort;
-  }
-
-  /**
-   * Gerencia mudança de ordenação
-   * Alterna direção se o mesmo campo for clicado novamente
-   */
-  function handleSort(field: SortField) {
-    const newDirection = field === sortField && sortDirection === 'desc' ? 'asc' : 'desc';
-    setSortField(field);
-    setSortDirection(newDirection);
-    setCurrentPage(1); // Reset para primeira página ao ordenar
-  }
-
-  /**
-   * Navega para uma página específica
-   */
-  function goToPage(page: number) {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  }
-
-  /**
-   * Gera array de números de página para exibição
-   */
-  function getPageNumbers(): number[] {
-    const delta = 2; // Número de páginas para mostrar antes e depois da atual
-    const range = [];
-    const rangeWithDots = [];
-
-    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
-      range.push(i);
-    }
-
-    if (currentPage - delta > 2) {
-      rangeWithDots.push(1, -1); // -1 representa "..."
-    } else {
-      rangeWithDots.push(1);
-    }
-
-    rangeWithDots.push(...range);
-
-    if (currentPage + delta < totalPages - 1) {
-      rangeWithDots.push(-1, totalPages); // -1 representa "..."
-    } else if (totalPages > 1) {
-      rangeWithDots.push(totalPages);
-    }
-
-    return rangeWithDots;
-  }
-        monitoredQuery('load-cursos-for-pricing', () =>
-          supabase
-          .from('cursos')
-          .select('id, nome, preco')
-          .order('nome')
-        )
-      ]);
-
-      if (alunosResult.error) throw alunosResult.error;
-      if (cursosResult.error) throw cursosResult.error;
-
-      const alunosData = alunosResult.data.map(aluno => ({
-        ...aluno,
-        curso_interests: aluno.curso_interests || []
-      }));
-
-      // Aplicar filtros de interesse no frontend (pois são complexos para o Supabase)
-      const filteredAlunosData = applyInterestFilters(alunosData);
-
-      setAlunos(filteredAlunosData);
-      setCursos(cursosResult.data);
-      setTotalStudents(alunosResult.count || 0);
-
-      // Calcular faturamento potencial de todos os alunos (não apenas da página atual)
-      await calculateTotalOpenRevenue(cursosResult.data);
-    } catch (error) {
-      toast.error('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  /**
-   * Calcula o faturamento potencial total (de todos os alunos, não apenas da página atual)
-   */
-  async function calculateTotalOpenRevenue(cursosData: Curso[]) {
-    try {
-      const { data: allInterests, error } = await supabase
-        .from('aluno_curso_interests')
-        .select('curso_id, status')
-        .eq('status', 'interested');
-
-      if (error) throw error;
-
-      let total = 0;
-      allInterests.forEach(interest => {
-        const curso = cursosData.find(c => c.id === interest.curso_id);
-        if (curso) {
-          total += curso.preco;
-        }
-      });
-
-      setTotalOpenRevenue(total);
-    } catch (error) {
-      console.error('Erro ao calcular faturamento potencial:', error);
-    }
-  }
-
-  /**
-   * Aplica filtros de interesse nos dados dos alunos
-   */
-  function applyInterestFilters(alunosData: Aluno[]): Aluno[] {
-    if (filterInterestStatus === 'all') {
-      return alunosData;
-    }
-
-    return alunosData.filter(aluno => {
-      if (filterInterestStatus === 'no_interest') {
-        return !aluno.curso_interests || aluno.curso_interests.length === 0;
-      } else {
-        if (selectedCourseId) {
-          return aluno.curso_interests?.some(interest => 
-            interest.curso_id === selectedCourseId && interest.status === filterInterestStatus
-          ) || false;
-        } else {
-          return aluno.curso_interests?.some(interest => 
-            interest.status === filterInterestStatus
-          ) || false;
-        }
-      }
-    });
-  }
-
-  /**
-   * Ordena lista de alunos por campo e direção especificados
-   */
-  function sortAlunos(alunosToSort: Aluno[], field: SortField, direction: SortDirection): Aluno[] {
-    return [...alunosToSort].sort((a, b) => {
-      if (field === 'created_at') {
-        return direction === 'desc' 
-          ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          : new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      } else {
-        return direction === 'desc'
-          ? b.nome.localeCompare(a.nome)
-          : a.nome.localeCompare(b.nome);
-      }
-    });
-  }
-
-  /**
-   * Gerencia mudança de ordenação
-   * Alterna direção se o mesmo campo for clicado novamente
-   */
-  function handleSort(field: SortField) {
-    const newDirection = field === sortField && sortDirection === 'desc' ? 'asc' : 'desc';
-    setSortField(field);
-    setSortDirection(newDirection);
-    setCurrentPage(1); // Reset para primeira página ao ordenar
-  }
-
-  /**
-   * Navega para uma página específica
-   */
-  function goToPage(page: number) {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  }
-
-  /**
-   * Gera array de números de página para exibição
-   */
-  function getPageNumbers(): number[] {
-    const delta = 2; // Número de páginas para mostrar antes e depois da atual
-    const range = [];
-    const rangeWithDots = [];
-
-    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
-      range.push(i);
-    }
-
-    if (currentPage - delta > 2) {
-      rangeWithDots.push(1, -1); // -1 representa "..."
-    } else {
-      rangeWithDots.push(1);
-    }
-
-    rangeWithDots.push(...range);
-
-    if (currentPage + delta < totalPages - 1) {
-      rangeWithDots.push(-1, totalPages); // -1 representa "..."
-    } else if (totalPages > 1) {
-      rangeWithDots.push(totalPages);
-    }
-
-    return rangeWithDots;
-  }
-
-  /**
-   * Alterna o modo de seleção múltipla
-   */
-  function toggleSelectionMode() {
-    setIsSelectionMode(!isSelectionMode);
-    setSelectedStudents(new Set());
-  }
-
-  /**
-   * Alterna a seleção de um aluno específico
-   */
-  function toggleStudentSelection(studentId: string) {
-    const newSelection = new Set(selectedStudents);
-    if (newSelection.has(studentId)) {
-      newSelection.delete(studentId);
-    } else {
-      newSelection.add(studentId);
-    }
-    setSelectedStudents(newSelection);
-  }
-
-  /**
-   * Seleciona todos os alunos visíveis na página atual
-   */
-  function selectAllStudents() {
-    const allStudentIds = new Set(alunos.map(aluno => aluno.id));
-    setSelectedStudents(allStudentIds);
-  }
-
-  /**
-   * Desmarca todos os alunos selecionados
-   */
-  function clearSelection() {
-    setSelectedStudents(new Set());
-  }
-
-  /**
-   * Abre o modal de edição em lote
-   */
-  function handleBulkEdit() {
-    if (selectedStudents.size === 0) {
-      toast.error('Selecione pelo menos um aluno para editar');
-      return;
-    }
-    setIsBulkEditModalOpen(true);
-  }
-
-  /**
-   * Fecha o modal de edição em lote
-   */
-  function handleCloseBulkEdit() {
-    setIsBulkEditModalOpen(false);
-  }
-
-  /**
-   * Callback executado após operação em lote bem-sucedida
-   */
-  function handleBulkEditSuccess() {
-    setSelectedStudents(new Set());
-    setIsSelectionMode(false);
-    loadData(currentPage);
-  }
-
-  /**
-   * Submete formulário de criação/edição de aluno
-   */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
       if (editingId) {
-        const result = await monitoredQuery('update-aluno', () =>
-          supabase
-            .from('alunos')
-            .update(formData)
-            .eq('id', editingId)
-        );
+        const { error } = await supabase
+          .from('alunos')
+          .update(formData)
+          .eq('id', editingId);
         
-        if (result.error) throw result.error;
+        if (error) throw error;
         toast.success('Aluno atualizado com sucesso!');
       } else {
-        const result = await monitoredQuery('create-aluno', () =>
-          supabase
-            .from('alunos')
-            .insert([formData])
-        );
+        const { error } = await supabase
+          .from('alunos')
+          .insert([formData]);
         
-        if (result.error) throw result.error;
+        if (error) throw error;
         toast.success('Aluno adicionado com sucesso!');
       }
 
       setIsModalOpen(false);
-      setFormData({
-        nome: '',
-        email: '',
-        whatsapp: '',
-        empresa: '',
-        available_periods: []
-      });
+      setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [] });
       setEditingId(null);
-      loadData(currentPage);
+      loadAlunos();
     } catch (error) {
       toast.error('Erro ao salvar aluno');
     }
   }
 
-  /**
-   * Atualiza o status de interesse de um aluno em um curso
-   * 
-   * @param alunoId - ID do aluno
-   * @param cursoId - ID do curso
-   * @param status - Novo status do interesse
-   */
-  async function handleStatusChange(alunoId: string, cursoId: string, status: CursoInterest['status']) {
-    try {
-      // Check if interest already exists
-      const existingInterestResult = await monitoredQuery('check-existing-interest', () =>
-        supabase
-          .from('aluno_curso_interests')
-          .select('id')
-          .eq('aluno_id', alunoId)
-          .eq('curso_id', cursoId)
-          .maybeSingle()
-      );
-
-      if (existingInterestResult.data) {
-        // Update existing interest
-        const result = await monitoredQuery('update-interest-status', () =>
-          supabase
-            .from('aluno_curso_interests')
-            .update({ status })
-            .eq('aluno_id', alunoId)
-            .eq('curso_id', cursoId)
-        );
-        
-        if (result.error) throw result.error;
-      } else {
-        // Create new interest
-        const result = await monitoredQuery('create-interest', () =>
-          supabase
-            .from('aluno_curso_interests')
-            .insert([{
-              aluno_id: alunoId,
-              curso_id: cursoId,
-              status
-            }])
-        );
-        
-        if (result.error) throw result.error;
-      }
-
-      toast.success('Status atualizado com sucesso!');
-      await loadData(currentPage);
-      
-      // Update the modal state with fresh data
-      if (courseModal.aluno) {
-        const updatedAluno = alunos.find(a => a.id === courseModal.aluno!.id);
-        if (updatedAluno) {
-          setCourseModal({
-            ...courseModal,
-            aluno: updatedAluno
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast.error('Erro ao atualizar status');
-    }
-  }
-
-  /**
-   * Remove completamente o interesse de um aluno em um curso
-   */
-  async function handleRemoveInterest(alunoId: string, cursoId: string) {
-    try {
-      const result = await monitoredQuery('remove-interest', () =>
-        supabase
-          .from('aluno_curso_interests')
-          .delete()
-          .eq('aluno_id', alunoId)
-          .eq('curso_id', cursoId)
-      );
-      
-      if (result.error) throw result.error;
-      toast.success('Interesse removido com sucesso!');
-      await loadData(currentPage);
-      
-      // Update the modal state with fresh data
-      if (courseModal.aluno) {
-        const updatedAluno = alunos.find(a => a.id === courseModal.aluno!.id);
-        if (updatedAluno) {
-          setCourseModal({
-            ...courseModal,
-            aluno: updatedAluno
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error removing interest:', error);
-      toast.error('Erro ao remover interesse');
-    }
-  }
-
-  /**
-   * Inicia processo de exclusão de aluno
-   */
   async function handleDelete(id: string) {
     const aluno = alunos.find(a => a.id === id);
     if (!aluno) return;
@@ -871,21 +362,16 @@ export function Alunos() {
     });
   }
 
-  /**
-   * Confirma e executa exclusão do aluno
-   */
   async function handleConfirmDelete() {
     try {
-      const result = await monitoredQuery('delete-aluno', () =>
-        supabase
-          .from('alunos')
-          .delete()
-          .eq('id', confirmModal.alunoId)
-      );
+      const { error } = await supabase
+        .from('alunos')
+        .delete()
+        .eq('id', confirmModal.alunoId);
       
-      if (result.error) throw result.error;
+      if (error) throw error;
       toast.success('Aluno excluído com sucesso!');
-      loadData(currentPage);
+      loadAlunos();
     } catch (error) {
       toast.error('Erro ao excluir aluno');
     } finally {
@@ -893,38 +379,10 @@ export function Alunos() {
     }
   }
 
-  /**
-   * Cancela exclusão do aluno
-   */
   function handleCancelDelete() {
     setConfirmModal({ isOpen: false, alunoId: '', alunoNome: '' });
   }
 
-  /**
-   * Abre modal para gerenciar cursos do aluno
-   */
-  function handleOpenCourseModal(aluno: Aluno) {
-    console.log('Opening course modal for:', aluno.nome); // Debug log
-    setCourseModal({
-      isOpen: true,
-      aluno: aluno
-    });
-  }
-
-  /**
-   * Fecha modal de gerenciamento de cursos
-   */
-  function handleCloseCourseModal() {
-    console.log('Closing course modal'); // Debug log
-    setCourseModal({
-      isOpen: false,
-      aluno: null
-    });
-  }
-
-  /**
-   * Prepara formulário para edição de aluno existente
-   */
   function handleEdit(aluno: Aluno) {
     setFormData({
       nome: aluno.nome,
@@ -937,45 +395,107 @@ export function Alunos() {
     setIsModalOpen(true);
   }
 
-  /**
-   * Retorna ícone correspondente ao período
-   */
-  function getPeriodIcon(period: Period) {
-    const periodConfig = PERIODS.find(p => p.value === period);
-    const Icon = periodConfig?.icon || Sun;
-    return <Icon className="h-4 w-4" />;
+  function handleCloseModal() {
+    setIsModalOpen(false);
+    setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [] });
+    setEditingId(null);
   }
 
-  /**
-   * Retorna label em português do período
-   */
-  function getPeriodLabel(period: Period) {
-    return PERIODS.find(p => p.value === period)?.label || '';
-  }
-
-  /**
-   * Formata data para exibição
-   */
-  function formatDate(dateString: string) {
-    return new Date(dateString).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+  function handleOpenCursosInteresse(alunoId: string, alunoNome: string) {
+    setCursosInteresseModal({
+      isOpen: true,
+      alunoId,
+      alunoNome
     });
   }
 
-  /**
-   * Opções de filtro por status de interesse
-   */
-  const filterOptions: Array<{ value: CursoInterest['status'] | 'all' | 'no_interest'; label: string; icon: any }> = [
-    { value: 'all' as const, label: 'Todos', icon: Filter },
-    { value: 'interested' as const, label: 'Interessados', icon: BookOpen },
-    { value: 'enrolled' as const, label: 'Cursando', icon: Clock },
-    { value: 'completed' as const, label: 'Concluídos', icon: Check },
-    { value: 'no_interest' as const, label: 'Sem Interesse', icon: X }
-  ];
+  function handleCloseCursosInteresse() {
+    setCursosInteresseModal({
+      isOpen: false,
+      alunoId: '',
+      alunoNome: ''
+    });
+    loadAlunos(); // Reload to update interests
+  }
+
+  function getPeriodIcon(period: Period) {
+    switch (period) {
+      case 'manha': return '🌅';
+      case 'tarde': return '☀️';
+      case 'noite': return '🌙';
+      default: return '⏰';
+    }
+  }
+
+  function getPeriodLabel(period: Period) {
+    switch (period) {
+      case 'manha': return 'Manhã';
+      case 'tarde': return 'Tarde';
+      case 'noite': return 'Noite';
+      default: return period;
+    }
+  }
+
+  function getStatusLabel(status: InterestStatus) {
+    switch (status) {
+      case 'interested': return 'Interessado';
+      case 'enrolled': return 'Cursando';
+      case 'completed': return 'Concluído';
+      default: return status;
+    }
+  }
+
+  function getStatusColor(status: InterestStatus) {
+    switch (status) {
+      case 'interested': return 'text-blue-400';
+      case 'enrolled': return 'text-green-400';
+      case 'completed': return 'text-purple-400';
+      default: return 'text-gray-400';
+    }
+  }
+
+  // Bulk selection functions
+  function toggleSelectionMode() {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedStudents(new Set());
+  }
+
+  function toggleStudentSelection(studentId: string) {
+    const newSelection = new Set(selectedStudents);
+    if (newSelection.has(studentId)) {
+      newSelection.delete(studentId);
+    } else {
+      newSelection.add(studentId);
+    }
+    setSelectedStudents(newSelection);
+  }
+
+  function selectAllStudents() {
+    const allIds = new Set(alunos.map(aluno => aluno.id));
+    setSelectedStudents(allIds);
+  }
+
+  function clearSelection() {
+    setSelectedStudents(new Set());
+  }
+
+  function handleBulkEditSuccess() {
+    loadAlunos();
+    setSelectedStudents(new Set());
+    setIsSelectionMode(false);
+  }
+
+  // Calculate potential revenue from filtered students
+  const faturamentoPotencial = alunos.reduce((total, aluno) => {
+    if (aluno.curso_interests) {
+      return total + aluno.curso_interests
+        .filter(interest => interest.status === 'interested')
+        .reduce((subtotal, interest) => subtotal + (interest.curso?.preco || 0), 0);
+    }
+    return total;
+  }, 0);
+
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   return (
     <div className="p-8 fade-in">
@@ -986,16 +506,34 @@ export function Alunos() {
             <p className="text-gray-400 mt-2">Gerencie seus alunos e acompanhe o progresso nos cursos</p>
           </div>
           <div className="flex items-center gap-3 slide-in-right">
+            {isSelectionMode && selectedStudents.size > 0 && (
+              <button
+                onClick={() => setBulkEditModal(true)}
+                className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors hover-glow"
+              >
+                <Edit3 className="h-5 w-5 mr-2" />
+                Editar Selecionados ({selectedStudents.size})
+              </button>
+            )}
             <button
               onClick={toggleSelectionMode}
               className={`flex items-center px-4 py-2 rounded-lg transition-colors hover-glow ${
                 isSelectionMode 
-                  ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                  : 'bg-gray-600 text-gray-300 hover:bg-gray-700'
+                  ? 'bg-red-500 text-white hover:bg-red-600' 
+                  : 'bg-purple-600 text-white hover:bg-purple-700'
               }`}
             >
-              {isSelectionMode ? <CheckSquare className="h-5 w-5 mr-2" /> : <Square className="h-5 w-5 mr-2" />}
-              {isSelectionMode ? 'Cancelar Seleção' : 'Selecionar Múltiplos'}
+              {isSelectionMode ? (
+                <>
+                  <Square className="h-5 w-5 mr-2" />
+                  Cancelar Seleção
+                </>
+              ) : (
+                <>
+                  <CheckSquare className="h-5 w-5 mr-2" />
+                  Selecionar Múltiplos
+                </>
+              )}
             </button>
             <button
               onClick={() => setIsModalOpen(true)}
@@ -1007,61 +545,55 @@ export function Alunos() {
           </div>
         </div>
 
-        <div className="mb-6 scale-in">
-          <div className="bg-dark-card rounded-2xl p-6 hover-lift">
+        {/* Bulk selection controls */}
+        {isSelectionMode && (
+          <div className="mb-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Faturamento Potencial em Aberto</p>
-                <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalOpenRevenue)}</p>
-                <div className="mt-2 space-y-1">
-                  <p className="text-gray-400 text-sm">
-                    Valor total dos cursos com alunos interessados
-                  </p>
+              <div className="flex items-center gap-4">
+                <span className="text-purple-400 font-medium">
+                  {selectedStudents.size} aluno{selectedStudents.size !== 1 ? 's' : ''} selecionado{selectedStudents.size !== 1 ? 's' : ''}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={selectAllStudents}
+                    className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded hover:bg-purple-500/30 transition-colors text-sm"
+                  >
+                    Selecionar Todos
+                  </button>
+                  <button
+                    onClick={clearSelection}
+                    className="px-3 py-1 bg-gray-500/20 text-gray-400 rounded hover:bg-gray-500/30 transition-colors text-sm"
+                  >
+                    Limpar Seleção
+                  </button>
                 </div>
-              </div>
-              <div className="bg-teal-accent p-3 rounded-xl">
-                <TrendingUp className="h-6 w-6 text-dark" />
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="mb-6 space-y-4 scale-in-delay-1">
-          <div>
+        {/* Filters */}
+        <div className="mb-6 space-y-4 scale-in">
+          <div className="flex items-center gap-4">
+            <Search className="h-5 w-5 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar alunos..."
               value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1); // Reset para primeira página ao buscar
-              }}
-              className="w-full max-w-md bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">
               Filtrar por curso
             </label>
             <select
-              value={selectedCourseId || ''}
-              onChange={(e) => {
-                const newCourseId = e.target.value || null;
-                setSelectedCourseId(newCourseId);
-                setCurrentPage(1); // Reset para primeira página ao filtrar
-                
-                // Update URL params
-                const newParams = new URLSearchParams(searchParams);
-                if (newCourseId) {
-                  newParams.set('curso', newCourseId);
-                } else {
-                  newParams.delete('curso');
-                }
-                setSearchParams(newParams);
-              }}
-              disabled={filterInterestStatus === 'no_interest'}
-              className="w-full max-w-md bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+              value={cursoFilter}
+              onChange={(e) => handleCursoFilter(e.target.value)}
+              disabled={statusFilter === 'none'}
+              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">Todos os cursos</option>
               {cursos.map(curso => (
@@ -1070,11 +602,6 @@ export function Alunos() {
                 </option>
               ))}
             </select>
-            {filterInterestStatus === 'no_interest' && (
-              <p className="text-xs text-gray-500 mt-1">
-                Filtro por curso desabilitado para alunos sem interesse
-              </p>
-            )}
           </div>
 
           <div>
@@ -1082,282 +609,278 @@ export function Alunos() {
               Filtrar por status de interesse
             </label>
             <div className="flex flex-wrap gap-2">
-              {filterOptions.map(option => (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    setFilterInterestStatus(option.value);
-                    setCurrentPage(1); // Reset para primeira página ao filtrar
-                    
-                    // Update URL params
-                    const newParams = new URLSearchParams(searchParams);
-                    if (option.value !== 'all') {
-                      newParams.set('status', option.value);
-                    } else {
-                      newParams.delete('status');
-                    }
-                    
-                    // Clear course filter when selecting "no_interest"
-                    if (option.value === 'no_interest') {
-                      setSelectedCourseId(null);
-                      newParams.delete('curso');
-                    }
-                    
-                    setSearchParams(newParams);
-                  }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    filterInterestStatus === option.value
-                      ? 'bg-teal-accent text-dark'
-                      : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
-                  }`}
-                >
-                  <option.icon className="h-4 w-4" />
-                  <span>{option.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-4 scale-in-delay-1">
-          <div className="flex items-center justify-between bg-dark-lighter rounded-lg px-4 py-3 border border-gray-700">
-            <div className="flex items-center gap-3">
-              <Users className="h-5 w-5 text-teal-accent" />
-              <span className="text-white font-medium">
-                {totalStudents} aluno{totalStudents !== 1 ? 's' : ''} 
-                {searchTerm || filterInterestStatus !== 'all' || selectedCourseId ? ' encontrado' : ' cadastrado'}{totalStudents !== 1 ? 's' : ''}
-              </span>
-              {isSelectionMode && (
-                <span className="text-blue-400 font-medium">
-                  • {selectedStudents.size} selecionado{selectedStudents.size !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-4">
-              {isSelectionMode && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={selectAllStudents}
-                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                  >
-                    Selecionar Todos
-                  </button>
-                  <span className="text-gray-500">|</span>
-                  <button
-                    onClick={clearSelection}
-                    className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
-                  >
-                    Limpar Seleção
-                  </button>
-                  {selectedStudents.size > 0 && (
-                    <>
-                      <span className="text-gray-500">|</span>
-                      <button
-                        onClick={handleBulkEdit}
-                        className="flex items-center gap-1 text-sm bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors"
-                      >
-                        <Edit3 className="h-3 w-3" />
-                        Editar Selecionados
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
-              {totalPages > 1 && (
-                <span className="text-gray-400 text-sm">
-                  Página {currentPage} de {totalPages}
-                </span>
-              )}
-              {loading && (
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-teal-accent border-t-transparent"></div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-dark-card rounded-2xl overflow-hidden scale-in-delay-2">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-700">
-                  {isSelectionMode && (
-                    <th className="text-left p-4 w-12">
-                      <button
-                        onClick={selectedStudents.size === alunos.length ? clearSelection : selectAllStudents}
-                        className="text-gray-400 hover:text-white transition-colors"
-                      >
-                        {selectedStudents.size === alunos.length && alunos.length > 0 ? (
-                          <CheckSquare className="h-4 w-4" />
-                        ) : (
-                          <Square className="h-4 w-4" />
-                        )}
-                      </button>
-                    </th>
-                  )}
-                  <th className="text-left p-4">
-                    <button
-                      onClick={() => handleSort('nome')}
-                      className="flex items-center text-gray-400 font-medium hover:text-white transition-colors"
-                    >
-                      Nome
-                      <ArrowUpDown className={`ml-2 h-4 w-4 ${sortField === 'nome' ? 'text-teal-accent' : ''}`} />
-                    </button>
-                  </th>
-                  <th className="text-left p-4 text-gray-400 font-medium">Contato</th>
-                  <th className="text-left p-4 text-gray-400 font-medium">Horários Disponíveis</th>
-                  <th className="text-left p-4 text-gray-400 font-medium">Cursos</th>
-                  <th className="text-right p-4 text-gray-400 font-medium">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {alunos.map((aluno) => (
-                  <tr key={aluno.id} className="border-b border-gray-700/50">
-                    {isSelectionMode && (
-                      <td className="p-4">
-                        <button
-                          onClick={() => toggleStudentSelection(aluno.id)}
-                          className="text-gray-400 hover:text-white transition-colors"
-                        >
-                          {selectedStudents.has(aluno.id) ? (
-                            <CheckSquare className="h-4 w-4 text-blue-400" />
-                          ) : (
-                            <Square className="h-4 w-4" />
-                          )}
-                        </button>
-                      </td>
-                    )}
-                    <td className="p-4">
-                      <span className="text-white font-medium">{aluno.nome}</span>
-                    </td>
-                    <td className="p-4">
-                      <div className="space-y-1">
-                        <div className="text-gray-400">{aluno.email}</div>
-                        <div className="text-gray-400">{aluno.whatsapp}</div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex flex-wrap gap-1">
-                        {(aluno.available_periods || []).map(period => (
-                          <div
-                            key={period}
-                            className="flex items-center gap-1 px-2 py-1 bg-teal-accent/20 text-teal-accent rounded-lg text-xs"
-                          >
-                            {getPeriodIcon(period)}
-                            <span>{getPeriodLabel(period)}</span>
-                          </div>
-                        ))}
-                        {(!aluno.available_periods || aluno.available_periods.length === 0) && (
-                          <span className="text-gray-400 text-sm">Não informado</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <button
-                        onClick={() => handleOpenCourseModal(aluno)}
-                        className="flex items-center gap-2 px-4 py-2 bg-teal-accent/20 text-teal-accent rounded-lg hover:bg-teal-accent/30 transition-colors"
-                      >
-                        <BookOpen className="h-4 w-4" />
-                        <span>Gerenciar Cursos</span>
-                      </button>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex justify-end space-x-2">
-                        <button
-                          onClick={() => handleEdit(aluno)}
-                          className="p-2 text-gray-400 hover:text-white transition-colors"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(aluno.id)}
-                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {alunos.length === 0 && !loading && (
-                  <tr>
-                    <td colSpan={isSelectionMode ? 6 : 5} className="text-center py-8 text-gray-400">
-                      Nenhum aluno encontrado
-                    </td>
-                  </tr>
-                )}
-                {loading && (
-                  <tr>
-                    <td colSpan={isSelectionMode ? 6 : 5} className="text-center py-8">
-                      <div className="flex items-center justify-center gap-2 text-gray-400">
-                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-teal-accent border-t-transparent"></div>
-                        <span>Carregando alunos...</span>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Controles de Paginação */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-between bg-dark-card rounded-2xl p-4">
-            <div className="flex items-center gap-2 text-gray-400 text-sm">
-              <span>
-                Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, totalStudents)} de {totalStudents} alunos
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {/* Botão Anterior */}
               <button
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                  currentPage === 1
-                    ? 'text-gray-500 cursor-not-allowed'
-                    : 'text-gray-400 hover:text-white hover:bg-dark-lighter'
+                onClick={() => handleStatusFilter('all')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  statusFilter === 'all' 
+                    ? 'bg-teal-accent text-dark' 
+                    : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
                 }`}
               >
-                <ChevronLeft className="h-4 w-4" />
-                <span>Anterior</span>
+                <Filter className="h-4 w-4" />
+                Todos
               </button>
+              <button
+                onClick={() => handleStatusFilter('interested')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  statusFilter === 'interested' 
+                    ? 'bg-teal-accent text-dark' 
+                    : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
+                }`}
+              >
+                <Users className="h-4 w-4" />
+                Interessados
+              </button>
+              <button
+                onClick={() => handleStatusFilter('enrolled')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  statusFilter === 'enrolled' 
+                    ? 'bg-teal-accent text-dark' 
+                    : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
+                }`}
+              >
+                <TrendingUp className="h-4 w-4" />
+                Cursando
+              </button>
+              <button
+                onClick={() => handleStatusFilter('completed')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  statusFilter === 'completed' 
+                    ? 'bg-teal-accent text-dark' 
+                    : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
+                }`}
+              >
+                <TrendingUp className="h-4 w-4" />
+                Concluídos
+              </button>
+              <button
+                onClick={() => handleStatusFilter('none')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  statusFilter === 'none' 
+                    ? 'bg-teal-accent text-dark' 
+                    : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
+                }`}
+              >
+                <Users className="h-4 w-4" />
+                Sem Interesse
+              </button>
+            </div>
+          </div>
+        </div>
 
-              {/* Números das páginas */}
-              <div className="flex items-center gap-1">
-                {getPageNumbers().map((pageNum, index) => (
-                  <React.Fragment key={index}>
-                    {pageNum === -1 ? (
-                      <span className="px-3 py-2 text-gray-500">...</span>
-                    ) : (
-                      <button
-                        onClick={() => goToPage(pageNum)}
-                        className={`px-3 py-2 rounded-lg transition-colors ${
-                          currentPage === pageNum
-                            ? 'bg-teal-accent text-dark font-medium'
-                            : 'text-gray-400 hover:text-white hover:bg-dark-lighter'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
+        {/* Summary */}
+        <div className="mb-6 flex items-center justify-between bg-dark-card rounded-lg p-4 scale-in-delay-1">
+          <div className="flex items-center gap-2 text-teal-accent">
+            <Users className="h-5 w-5" />
+            <span className="font-semibold">
+              {totalCount} aluno{totalCount !== 1 ? 's' : ''} encontrado{totalCount !== 1 ? 's' : ''}
+            </span>
+          </div>
+          {faturamentoPotencial > 0 && (
+            <div className="text-emerald-400 font-semibold">
+              Faturamento Potencial em Aberto: {formatCurrency(faturamentoPotencial)}
+            </div>
+          )}
+          {totalPages > 1 && (
+            <div className="text-gray-400 text-sm">
+              Página {currentPage} de {totalPages}
+            </div>
+          )}
+        </div>
+
+        {/* Students Table */}
+        <div className="bg-dark-card rounded-2xl overflow-hidden scale-in-delay-2">
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-accent border-t-transparent mx-auto mb-4"></div>
+              <p className="text-gray-400">Carregando alunos...</p>
+            </div>
+          ) : alunos.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-dark-lighter">
+                  <tr>
+                    {isSelectionMode && (
+                      <th className="px-6 py-4 text-left">
+                        <input
+                          type="checkbox"
+                          checked={selectedStudents.size === alunos.length && alunos.length > 0}
+                          onChange={selectedStudents.size === alunos.length ? clearSelection : selectAllStudents}
+                          className="w-4 h-4 text-purple-600 bg-dark border-gray-600 rounded focus:ring-purple-500"
+                        />
+                      </th>
                     )}
-                  </React.Fragment>
-                ))}
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-400 uppercase tracking-wider">
+                      Aluno
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-400 uppercase tracking-wider">
+                      Contato
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-400 uppercase tracking-wider">
+                      Horários
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-400 uppercase tracking-wider">
+                      Interesses
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-400 uppercase tracking-wider">
+                      Ações
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {alunos.map((aluno) => (
+                    <tr key={aluno.id} className="hover:bg-dark-lighter/50 transition-colors">
+                      {isSelectionMode && (
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedStudents.has(aluno.id)}
+                            onChange={() => toggleStudentSelection(aluno.id)}
+                            className="w-4 h-4 text-purple-600 bg-dark border-gray-600 rounded focus:ring-purple-500"
+                          />
+                        </td>
+                      )}
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-white font-medium">{aluno.nome}</div>
+                          {aluno.empresa && (
+                            <div className="text-gray-400 text-sm">{aluno.empresa}</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          {aluno.email && (
+                            <div className="text-gray-300 text-sm">{aluno.email}</div>
+                          )}
+                          <div className="text-gray-300 text-sm">{aluno.whatsapp}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {aluno.available_periods && aluno.available_periods.length > 0 ? (
+                            aluno.available_periods.map(period => (
+                              <span
+                                key={period}
+                                className="inline-flex items-center gap-1 px-2 py-1 bg-teal-accent/20 text-teal-accent rounded text-xs"
+                              >
+                                {getPeriodIcon(period)}
+                                {getPeriodLabel(period)}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-gray-500 text-sm">Flexível</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          {aluno.curso_interests && aluno.curso_interests.length > 0 ? (
+                            aluno.curso_interests.slice(0, 2).map(interest => (
+                              <div key={interest.id} className="flex items-center gap-2">
+                                <span className="text-white text-sm">
+                                  {interest.curso?.nome}
+                                </span>
+                                <span className={`text-xs ${getStatusColor(interest.status)}`}>
+                                  {getStatusLabel(interest.status)}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <span className="text-gray-500 text-sm">Nenhum interesse</span>
+                          )}
+                          {aluno.curso_interests && aluno.curso_interests.length > 2 && (
+                            <div className="text-gray-400 text-xs">
+                              +{aluno.curso_interests.length - 2} mais
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleOpenCursosInteresse(aluno.id, aluno.nome)}
+                            className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors text-sm"
+                          >
+                            Gerenciar Cursos
+                          </button>
+                          <button
+                            onClick={() => handleEdit(aluno)}
+                            className="p-2 text-gray-400 hover:text-white transition-colors"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(aluno.id)}
+                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-8 text-center text-gray-400">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhum aluno encontrado</p>
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-gray-400">
+              Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} de {totalCount} alunos
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 bg-dark-lighter text-gray-400 rounded-lg hover:text-white hover:bg-dark-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+              
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-2 rounded-lg transition-colors ${
+                        currentPage === pageNum
+                          ? 'bg-teal-accent text-dark'
+                          : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Botão Próximo */}
               <button
-                onClick={() => goToPage(currentPage + 1)}
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                  currentPage === totalPages
-                    ? 'text-gray-500 cursor-not-allowed'
-                    : 'text-gray-400 hover:text-white hover:bg-dark-lighter'
-                }`}
+                className="px-3 py-2 bg-dark-lighter text-gray-400 rounded-lg hover:text-white hover:bg-dark-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span>Próximo</span>
-                <ChevronRight className="h-4 w-4" />
+                Próxima
               </button>
             </div>
           </div>
@@ -1373,6 +896,21 @@ export function Alunos() {
           togglePeriod={togglePeriod}
         />
 
+        <ModalCursosInteresse
+          isOpen={cursosInteresseModal.isOpen}
+          onClose={handleCloseCursosInteresse}
+          alunoId={cursosInteresseModal.alunoId}
+          alunoNome={cursosInteresseModal.alunoNome}
+        />
+
+        <ModalBulkEdit
+          isOpen={bulkEditModal}
+          onClose={() => setBulkEditModal(false)}
+          selectedStudentIds={Array.from(selectedStudents)}
+          cursos={cursos}
+          onSuccess={handleBulkEditSuccess}
+        />
+
         <ConfirmationModal
           isOpen={confirmModal.isOpen}
           title="Excluir Aluno"
@@ -1383,150 +921,7 @@ export function Alunos() {
           onCancel={handleCancelDelete}
           variant="danger"
         />
-
-        {/* Modal de Gerenciamento de Cursos */}
-        {courseModal.isOpen && courseModal.aluno && createPortal(
-          <div 
-            className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4"
-            onClick={handleCloseCourseModal}
-          >
-            <div 
-              className="bg-dark-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-white">Gerenciar Cursos</h2>
-                  <p className="text-gray-400 mt-1">{courseModal.aluno.nome}</p>
-                </div>
-                <button
-                  onClick={handleCloseCourseModal}
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {cursos.map(curso => {
-                  const interest = courseModal.aluno?.curso_interests?.find(
-                    ci => ci.curso_id === curso.id
-                  );
-                  
-                  return (
-                    <div key={curso.id} className="bg-dark-lighter rounded-lg p-4 border border-gray-700">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-white font-medium">{curso.nome}</h3>
-                          <p className="text-gray-400 text-sm">{formatCurrency(curso.preco)}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (courseModal.aluno) {
-                                handleStatusChange(courseModal.aluno.id, curso.id, 'interested');
-                              }
-                            }}
-                            className={`p-2 rounded-md transition-colors ${
-                              interest?.status === 'interested'
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-dark text-gray-400 hover:text-white'
-                            }`}
-                            title="Interessado"
-                          >
-                            <BookOpen className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (courseModal.aluno) {
-                                handleStatusChange(courseModal.aluno.id, curso.id, 'enrolled');
-                              }
-                            }}
-                            className={`p-2 rounded-md transition-colors ${
-                              interest?.status === 'enrolled'
-                                ? 'bg-yellow-500 text-white'
-                                : 'bg-dark text-gray-400 hover:text-white'
-                            }`}
-                            title="Cursando"
-                          >
-                            <Clock className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (courseModal.aluno) {
-                                handleStatusChange(courseModal.aluno.id, curso.id, 'completed');
-                              }
-                            }}
-                            className={`p-2 rounded-md transition-colors ${
-                              interest?.status === 'completed'
-                                ? 'bg-emerald-500 text-white'
-                                : 'bg-dark text-gray-400 hover:text-white'
-                            }`}
-                            title="Concluído"
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
-                          {interest && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (courseModal.aluno) {
-                                  handleRemoveInterest(courseModal.aluno.id, curso.id);
-                                }
-                              }}
-                              className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                              title="Remover"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      {interest && (
-                        <div className="mt-2 text-xs text-gray-400">
-                          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
-                            interest.status === 'interested' ? 'bg-blue-500/20 text-blue-400' :
-                            interest.status === 'enrolled' ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-emerald-500/20 text-emerald-400'
-                          }`}>
-                          {interest.status === 'interested' && <BookOpen className="h-3 w-3" />}
-                          {interest.status === 'enrolled' && <Clock className="h-3 w-3" />}
-                          {interest.status === 'completed' && <Check className="h-3 w-3" />}
-                          {
-                            interest.status === 'interested' ? 'Interessado' :
-                            interest.status === 'enrolled' ? 'Cursando' :
-                            'Concluído'
-                          }
-                          </div>
-                        </div>
-                      )}
-                      {!interest && (
-                        <div className="mt-2 text-xs text-gray-500">
-                          <div className="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-700/30">
-                            Sem interesse registrado
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
       </div>
-
-      <ModalBulkEdit
-        isOpen={isBulkEditModalOpen}
-        onClose={handleCloseBulkEdit}
-        selectedStudentIds={Array.from(selectedStudents)}
-        cursos={cursos}
-        onSuccess={handleBulkEditSuccess}
-      />
     </div>
   );
 }
