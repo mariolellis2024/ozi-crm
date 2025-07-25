@@ -918,7 +918,7 @@ export function Turmas() {
                         <span>{turma.sala?.nome}</span>
                       </div>
                       <div className="flex items-center text-gray-400">
-                        <Clock className="h-4 w-4 mr-2" />
+                        <Clock className={`h-4 w-4 mr-2 ${getPeriodColor(turma.period)}`} />
                         <span className={getPeriodColor(turma.period)}>{getPeriodLabel(turma.period)}</span>
                       </div>
                       <div className="flex items-center text-gray-400">
