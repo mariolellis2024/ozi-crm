@@ -237,7 +237,15 @@ export function Professores() {
                   <h3 className="text-xl font-semibold text-white mb-2">{professor.nome}</h3>
                   <div className="space-y-2">
                     <p className="text-gray-400">{professor.email}</p>
-                    <p className="text-gray-400">{professor.whatsapp}</p>
+                    <a 
+                      href={`https://wa.me/${professor.whatsapp.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-400 hover:text-green-300 transition-colors cursor-pointer flex items-center gap-1"
+                      title="Abrir WhatsApp"
+                    >
+                      📱 {professor.whatsapp}
+                    </a>
                     <p className="text-teal-accent font-semibold">
                       {formatCurrency(professor.valor_hora)}/hora
                     </p>

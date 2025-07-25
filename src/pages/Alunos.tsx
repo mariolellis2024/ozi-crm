@@ -766,7 +766,15 @@ export function Alunos() {
                           {aluno.email && (
                             <div className="text-gray-300 text-sm">{aluno.email}</div>
                           )}
-                          <div className="text-gray-300 text-sm">{aluno.whatsapp}</div>
+                          <a 
+                            href={`https://wa.me/${aluno.whatsapp.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-400 text-sm hover:text-green-300 transition-colors cursor-pointer flex items-center gap-1"
+                            title="Abrir WhatsApp"
+                          >
+                            📱 {aluno.whatsapp}
+                          </a>
                         </div>
                       </td>
                       <td className="px-6 py-4">

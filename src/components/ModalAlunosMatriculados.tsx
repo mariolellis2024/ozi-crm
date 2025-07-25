@@ -210,7 +210,15 @@ export function ModalAlunosMatriculados({
                       </div>
                       <div className="space-y-1 text-sm text-gray-400">
                         {aluno.email && <div>📧 {aluno.email}</div>}
-                        <div>📱 {aluno.whatsapp}</div>
+                        <a 
+                          href={`https://wa.me/${aluno.whatsapp.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-green-400 hover:text-green-300 transition-colors cursor-pointer flex items-center gap-1"
+                          title="Abrir WhatsApp"
+                        >
+                          📱 {aluno.whatsapp}
+                        </a>
                         {aluno.empresa && <div>🏢 {aluno.empresa}</div>}
                       </div>
                     </div>
