@@ -414,12 +414,7 @@ export function Alunos() {
   }
 
   function getPeriodIcon(period: Period) {
-    switch (period) {
-      case 'manha': return '🌅';
-      case 'tarde': return '☀️';
-      case 'noite': return '🌙';
-      default: return '⏰';
-    }
+    return null; // Removido - usando apenas cores
   }
 
   function getPeriodLabel(period: Period) {
@@ -428,6 +423,15 @@ export function Alunos() {
       case 'tarde': return 'Tarde';
       case 'noite': return 'Noite';
       default: return period;
+    }
+  }
+
+  function getPeriodColor(period: Period) {
+    switch (period) {
+      case 'manha': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'tarde': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+      case 'noite': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
   }
 
@@ -783,9 +787,8 @@ export function Alunos() {
                             aluno.available_periods.map(period => (
                               <span
                                 key={period}
-                                className="inline-flex items-center gap-1 px-2 py-1 bg-teal-accent/20 text-teal-accent rounded text-xs"
+                                className={`inline-flex items-center px-2 py-1 rounded text-xs border ${getPeriodColor(period)}`}
                               >
-                                {getPeriodIcon(period)}
                                 {getPeriodLabel(period)}
                               </span>
                             ))
