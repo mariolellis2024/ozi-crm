@@ -104,18 +104,12 @@ export function Alunos() {
     try {
       const offset = (currentPage - 1) * ITEMS_PER_PAGE;
       
-      let alunosResult;
-      let countResult;
+      let alunosQuery;
+      let countQuery;
 
       if (statusFilter === 'none') {
-        // Students with no interests at all
-        const { data: alunosWithInterests } = await supabase
-          .from('aluno_curso_interests')
-          .select('aluno_id');
-
-        const alunosWithInterestsIds = alunosWithInterests?.map(item => item.aluno_id) || [];
-
-        let query = supabase
+        // Alunos sem nenhum interesse
+        alunosQuery = supabase
           .from('alunos')
           .select(`
             id,
@@ -126,38 +120,23 @@ export function Alunos() {
             available_periods,
             created_at
           `)
-          .not('id', 'in', `(${alunosWithInterestsIds.join(',') || 'null'})`);
+          .filter('id', 'not.in', `(SELECT DISTINCT aluno_id FROM aluno_curso_interests)`);
 
-        if (searchTerm) {
-          query = query.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
-        }
-
-        // Get count
-        let countQuery = supabase
+        countQuery = supabase
           .from('alunos')
-          .select('id', { count: 'exact', head: true })
-          .not('id', 'in', `(${alunosWithInterestsIds.join(',') || 'null'})`);
+          .select('*', { count: 'exact', head: true })
+          .filter('id', 'not.in', `(SELECT DISTINCT aluno_id FROM aluno_curso_interests)`);
 
         if (searchTerm) {
+          alunosQuery = alunosQuery.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
           countQuery = countQuery.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
         }
 
-        [alunosResult, countResult] = await Promise.all([
-          query.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false }),
-          countQuery
-        ]);
-
-        // Add empty curso_interests array for consistency
-        if (alunosResult.data) {
-          alunosResult.data = alunosResult.data.map(aluno => ({
-            ...aluno,
-            curso_interests: []
-          }));
-        }
+        alunosQuery = alunosQuery.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false });
 
       } else if (statusFilter === 'all') {
-        // All students with their interests
-        let query = supabase
+        // Todos os alunos com seus interesses
+        alunosQuery = supabase
           .from('alunos')
           .select(`
             id,
@@ -175,54 +154,40 @@ export function Alunos() {
             )
           `);
 
-        if (searchTerm) {
-          query = query.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
-        }
-
-        // Get count
-        let countQuery = supabase
+        countQuery = supabase
           .from('alunos')
-          .select('id', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true });
 
         if (searchTerm) {
+          alunosQuery = alunosQuery.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
           countQuery = countQuery.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
         }
 
-        [alunosResult, countResult] = await Promise.all([
-          query.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false }),
-          countQuery
-        ]);
+        alunosQuery = alunosQuery.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false });
 
       } else {
-        // Students with specific interest status
-        let baseQuery = `
-          aluno:alunos!inner(
-            id,
-            nome,
-            email,
-            whatsapp,
-            empresa,
-            available_periods,
-            created_at
-          ),
-          curso:cursos(id, nome, preco)
-        `;
-
-        let query = supabase
+        // Alunos com status específico de interesse
+        alunosQuery = supabase
           .from('aluno_curso_interests')
-          .select(baseQuery)
+          .select(`
+            id,
+            curso_id,
+            status,
+            created_at,
+            aluno:alunos!inner(
+              id,
+              nome,
+              email,
+              whatsapp,
+              empresa,
+              available_periods,
+              created_at
+            ),
+            curso:cursos(id, nome, preco)
+          `)
           .eq('status', statusFilter);
 
-        if (cursoFilter) {
-          query = query.eq('curso_id', cursoFilter);
-        }
-
-        if (searchTerm) {
-          query = query.or(`aluno.nome.ilike.%${searchTerm}%,aluno.email.ilike.%${searchTerm}%,aluno.whatsapp.ilike.%${searchTerm}%`);
-        }
-
-        // Get all matching interests to count unique students
-        let countQuery = supabase
+        countQuery = supabase
           .from('aluno_curso_interests')
           .select(`
             aluno_id,
@@ -236,25 +201,46 @@ export function Alunos() {
           .eq('status', statusFilter);
 
         if (cursoFilter) {
+          alunosQuery = alunosQuery.eq('curso_id', cursoFilter);
           countQuery = countQuery.eq('curso_id', cursoFilter);
         }
 
         if (searchTerm) {
+          alunosQuery = alunosQuery.or(`aluno.nome.ilike.%${searchTerm}%,aluno.email.ilike.%${searchTerm}%,aluno.whatsapp.ilike.%${searchTerm}%`);
           countQuery = countQuery.or(`aluno.nome.ilike.%${searchTerm}%,aluno.email.ilike.%${searchTerm}%,aluno.whatsapp.ilike.%${searchTerm}%`);
         }
 
-        const [interestsResult, interestsCountResult] = await Promise.all([
-          query.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false }), // Order by interest creation date
-          countQuery
-        ]);
+        alunosQuery = alunosQuery.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false });
+      }
 
-        if (interestsResult.error) throw interestsResult.error;
-        if (interestsCountResult.error) throw interestsCountResult.error;
+      // Executar as queries
+      const [alunosResult, countResult] = await Promise.all([
+        alunosQuery,
+        countQuery
+      ]);
 
-        // Group interests by student to avoid duplicates
+      if (alunosResult.error) throw alunosResult.error;
+      if (countResult.error) throw countResult.error;
+
+      // Processar resultados baseado no filtro
+      if (statusFilter === 'none') {
+        // Adicionar array vazio de interesses para consistência
+        const alunosData = (alunosResult.data || []).map(aluno => ({
+          ...aluno,
+          curso_interests: []
+        }));
+        setAlunos(alunosData);
+        setTotalCount(countResult.count || 0);
+
+      } else if (statusFilter === 'all') {
+        setAlunos(alunosResult.data || []);
+        setTotalCount(countResult.count || 0);
+
+      } else {
+        // Para filtros específicos, agrupar por aluno para evitar duplicatas
         const studentsMap = new Map();
         
-        interestsResult.data?.forEach(interest => {
+        (alunosResult.data || []).forEach((interest: any) => {
           const aluno = interest.aluno;
           if (!studentsMap.has(aluno.id)) {
             studentsMap.set(aluno.id, {
@@ -264,35 +250,23 @@ export function Alunos() {
           }
           
           studentsMap.get(aluno.id).curso_interests.push({
-            id: interest.id,
+            id,
             curso_id: interest.curso_id,
             status: statusFilter,
             curso: interest.curso
           });
         });
 
-        alunosResult = {
-          data: Array.from(studentsMap.values()),
-          error: null
-        };
+        setAlunos(Array.from(studentsMap.values()));
 
-        // Count unique students from all matching interests (not just the paginated ones)
+        // Contar alunos únicos dos resultados de contagem
         const uniqueStudentIds = new Set();
-        interestsCountResult.data?.forEach((interest: any) => {
+        (countResult.data || []).forEach((interest: any) => {
           uniqueStudentIds.add(interest.aluno_id);
         });
         
-        countResult = {
-          count: uniqueStudentIds.size,
-          error: null
-        };
+        setTotalCount(uniqueStudentIds.size);
       }
-
-      if (alunosResult.error) throw alunosResult.error;
-      if (countResult.error) throw countResult.error;
-
-      setAlunos(alunosResult.data || []);
-      setTotalCount(countResult.count || 0);
     } catch (error) {
       console.error('Erro ao carregar alunos:', error);
       toast.error('Erro ao carregar alunos');
