@@ -619,13 +619,46 @@ export function Turmas() {
 
   async function handleConfirmDelete() {
     try {
+      // Primeiro, verificar se há alunos matriculados na turma
+      const { data: alunosMatriculados, error: checkError } = await supabase
+        .from('aluno_curso_interests')
+        .select('id, aluno:alunos(nome)')
+        .eq('turma_id', confirmModal.turmaId)
+        .eq('status', 'enrolled');
+      
+      if (checkError) throw checkError;
+      
+      // Se há alunos matriculados, alterar status para interessado
+      if (alunosMatriculados && alunosMatriculados.length > 0) {
+        const { error: updateError } = await supabase
+          .from('aluno_curso_interests')
+          .update({ 
+            status: 'interested',
+            turma_id: null
+          })
+          .eq('turma_id', confirmModal.turmaId)
+          .eq('status', 'enrolled');
+        
+        if (updateError) throw updateError;
+        
+        const alunosNomes = alunosMatriculados.map(a => a.aluno?.nome).join(', ');
+        console.log(`Alunos retornados para interessados: ${alunosNomes}`);
+      }
+      
+      // Depois deletar a turma
       const { error } = await supabase
         .from('turmas')
         .delete()
         .eq('id', confirmModal.turmaId);
       
       if (error) throw error;
-      toast.success('Turma excluída com sucesso!');
+      
+      if (alunosMatriculados && alunosMatriculados.length > 0) {
+        toast.success(`Turma excluída com sucesso! ${alunosMatriculados.length} aluno${alunosMatriculados.length > 1 ? 's' : ''} retornado${alunosMatriculados.length > 1 ? 's' : ''} para interessado${alunosMatriculados.length > 1 ? 's' : ''}.`);
+      } else {
+        toast.success('Turma excluída com sucesso!');
+      }
+      
       loadData();
     } catch (error: any) {
       console.error('Erro detalhado ao excluir turma:', error);
