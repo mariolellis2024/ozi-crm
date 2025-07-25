@@ -232,7 +232,7 @@ export function Alunos() {
         }
 
         const [interestsResult, interestsCountResult] = await Promise.all([
-          query.range(offset, offset + ITEMS_PER_PAGE - 1).order('aluno.created_at', { ascending: false }),
+          query.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false }),
           countQuery
         ]);
 
