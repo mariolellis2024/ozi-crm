@@ -81,17 +81,8 @@ export function ModalAlunosInteressados({
 
       if (error) throw error;
 
-      // Filter students who are available in the turma period
-      const alunosData = data
-        .map(item => item.aluno)
-        .filter(aluno => {
-          // If student has no period preferences, include them
-          if (!aluno.available_periods || aluno.available_periods.length === 0) {
-            return true;
-          }
-          // Check if student is available in the turma period
-          return aluno.available_periods.includes(turmaPeriod);
-        });
+      // Show all students interested in the course, regardless of period availability
+      const alunosData = data.map(item => item.aluno);
 
       setAlunosInteressados(alunosData);
     } catch (error) {
@@ -127,6 +118,15 @@ export function ModalAlunosInteressados({
   }
 
   async function handleEnrollStudent(alunoId: string) {
+    const aluno = alunosInteressados.find(a => a.id === alunoId);
+    if (!aluno) return;
+    
+    // Verificar se o aluno está disponível no período da turma
+    if (!isStudentAvailableForPeriod(aluno)) {
+      toast.error('Este aluno não está disponível no período desta turma. Você pode matriculá-lo mesmo assim, mas haverá conflito de horário.');
+      // Permitir matrícula mesmo com conflito, mas com aviso
+    }
+    
     // Verificar se ainda há vagas disponíveis
     if (enrolledCount >= turmaCapacity) {
       toast.error('Turma lotada! Não há mais vagas disponíveis.');
@@ -240,6 +240,18 @@ export function ModalAlunosInteressados({
     }
   }
 
+  /**
+   * Verifica se o aluno está disponível no período da turma
+   */
+  function isStudentAvailableForPeriod(aluno: AlunoInteressado): boolean {
+    // Se o aluno não tem períodos definidos, considera disponível
+    if (!aluno.available_periods || aluno.available_periods.length === 0) {
+      return true;
+    }
+    // Verifica se o período da turma está na lista de períodos disponíveis do aluno
+    return aluno.available_periods.includes(turmaPeriod);
+  }
+
   function handleClose() {
     setSearchTerm('');
     onClose();
@@ -313,15 +325,44 @@ export function ModalAlunosInteressados({
                           📱 {aluno.whatsapp}
                         </a>
                         {aluno.empresa && <div>🏢 {aluno.empresa}</div>}
+                        {aluno.available_periods && aluno.available_periods.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {aluno.available_periods.map(period => {
+                              const isAvailableForTurma = period === turmaPeriod;
+                              const periodColors = {
+                                'manha': isAvailableForTurma ? 'bg-yellow-500/30 text-yellow-300 border-yellow-500/50' : 'bg-yellow-500/10 text-yellow-500/60 border-yellow-500/20',
+                                'tarde': isAvailableForTurma ? 'bg-orange-500/30 text-orange-300 border-orange-500/50' : 'bg-orange-500/10 text-orange-500/60 border-orange-500/20',
+                                'noite': isAvailableForTurma ? 'bg-blue-500/30 text-blue-300 border-blue-500/50' : 'bg-blue-500/10 text-blue-500/60 border-blue-500/20'
+                              };
+                              const periodLabels = {
+                                'manha': 'Manhã',
+                                'tarde': 'Tarde', 
+                                'noite': 'Noite'
+                              };
+                              
+                              return (
+                                <span
+                                  key={period}
+                                  className={`inline-flex items-center px-2 py-1 rounded text-xs border ${periodColors[period as keyof typeof periodColors]}`}
+                                  title={isAvailableForTurma ? 'Disponível para esta turma' : 'Não disponível para esta turma'}
+                                >
+                                  {periodLabels[period as keyof typeof periodLabels]}
+                                  {isAvailableForTurma && ' ✓'}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <button
                       onClick={() => handleEnrollStudent(aluno.id)}
-                      disabled={enrollingStudents.has(aluno.id)}
-                      disabled={enrollingStudents.has(aluno.id) || enrolledCount >= turmaCapacity}
+                      disabled={enrollingStudents.has(aluno.id) || enrolledCount >= turmaCapacity || !isStudentAvailableForPeriod(aluno)}
                       className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
-                        enrolledCount >= turmaCapacity 
-                          ? 'bg-gray-500 text-gray-300' 
+                        enrolledCount >= turmaCapacity
+                          ? 'bg-gray-500 text-gray-300'
+                          : !isStudentAvailableForPeriod(aluno)
+                          ? 'bg-yellow-500 text-white hover:bg-yellow-600'
                           : 'bg-green-500 text-white hover:bg-green-600'
                       }`}
                     >
@@ -332,10 +373,12 @@ export function ModalAlunosInteressados({
                         </>
                       ) : enrolledCount >= turmaCapacity ? (
                         'Turma Lotada'
+                      ) : !isStudentAvailableForPeriod(aluno) ? (
+                        'Conflito de Horário'
                       ) : (
                         'Matricular'
                       )}
-                    </button>
+                    <p>Nenhum aluno interessado neste curso</p>
                   </div>
                 </div>
               ))}
@@ -378,7 +421,12 @@ export function ModalAlunosInteressados({
           <div className="mt-4 pt-4 border-t border-gray-700">
             <div className="flex items-center justify-between text-sm">
               <div className="text-gray-400">
-                <div>{filteredAlunos.length} aluno{filteredAlunos.length !== 1 ? 's' : ''} interessado{filteredAlunos.length !== 1 ? 's' : ''}</div>
+                <div>
+                  {filteredAlunos.length} aluno{filteredAlunos.length !== 1 ? 's' : ''} interessado{filteredAlunos.length !== 1 ? 's' : ''}
+                </div>
+                <div className="text-xs mt-1">
+                  {filteredAlunos.filter(a => isStudentAvailableForPeriod(a)).length} disponível{filteredAlunos.filter(a => isStudentAvailableForPeriod(a)).length !== 1 ? 'eis' : ''} no período
+                </div>
                 <div className="text-xs mt-1">
                   {Math.max(0, turmaCapacity - enrolledCount)} vaga{Math.max(0, turmaCapacity - enrolledCount) !== 1 ? 's' : ''} disponível{Math.max(0, turmaCapacity - enrolledCount) !== 1 ? 'eis' : ''}
                 </div>
