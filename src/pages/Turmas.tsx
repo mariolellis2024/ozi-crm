@@ -731,12 +731,7 @@ export function Turmas() {
   }
 
   function getPeriodIcon(period: Period) {
-    switch (period) {
-      case 'manha': return '🌅';
-      case 'tarde': return '☀️';
-      case 'noite': return '🌙';
-      default: return '⏰';
-    }
+    return null; // Removido - usando apenas cores
   }
 
   function getPeriodLabel(period: Period) {
@@ -745,6 +740,15 @@ export function Turmas() {
       case 'tarde': return 'Tarde';
       case 'noite': return 'Noite';
       default: return period;
+    }
+  }
+
+  function getPeriodColor(period: Period) {
+    switch (period) {
+      case 'manha': return 'text-yellow-400';
+      case 'tarde': return 'text-orange-400';
+      case 'noite': return 'text-blue-400';
+      default: return 'text-gray-400';
     }
   }
 
@@ -857,7 +861,7 @@ export function Turmas() {
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-semibold text-white">{sugestao.cursoNome}</h3>
                         <span className="text-yellow-400 text-sm">
-                          {getPeriodIcon(sugestao.melhorPeriodo)} {getPeriodLabel(sugestao.melhorPeriodo)}
+                          <span className={getPeriodColor(sugestao.melhorPeriodo)}>{getPeriodLabel(sugestao.melhorPeriodo)}</span>
                         </span>
                       </div>
                       <div className="space-y-1 text-sm">
@@ -915,7 +919,7 @@ export function Turmas() {
                       </div>
                       <div className="flex items-center text-gray-400">
                         <Clock className="h-4 w-4 mr-2" />
-                        <span>{getPeriodIcon(turma.period)} {getPeriodLabel(turma.period)}</span>
+                        <span className={getPeriodColor(turma.period)}>{getPeriodLabel(turma.period)}</span>
                       </div>
                       <div className="flex items-center text-gray-400">
                         <Calendar className="h-4 w-4 mr-2" />

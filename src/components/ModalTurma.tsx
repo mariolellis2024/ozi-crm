@@ -43,10 +43,10 @@ interface ModalTurmaProps {
   onClose: () => void;
 }
 
-const PERIODS: { value: Period; label: string }[] = [
-  { value: 'manha', label: 'Manhã' },
-  { value: 'tarde', label: 'Tarde' },
-  { value: 'noite', label: 'Noite' }
+const PERIODS: { value: Period; label: string; color: string }[] = [
+  { value: 'manha', label: 'Manhã', color: 'text-yellow-400' },
+  { value: 'tarde', label: 'Tarde', color: 'text-orange-400' },
+  { value: 'noite', label: 'Noite', color: 'text-blue-400' }
 ];
 
 const DAYS_OF_WEEK = [
@@ -312,7 +312,7 @@ export function ModalTurma({
                   required
                 >
                   {PERIODS.map(period => (
-                    <option key={period.value} value={period.value}>
+                    <option key={period.value} value={period.value} className={period.color}>
                       {period.label}
                     </option>
                   ))}

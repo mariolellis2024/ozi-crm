@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, MapPin, Clock, Sun, Sunset, Moon, Users, BookOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, MapPin, Clock, Users, BookOpen } from 'lucide-react';
 
 /**
  * Tipos para o calendário de ocupação
@@ -40,15 +40,13 @@ const PERIODS = [
   { 
     value: 'manha' as Period, 
     label: 'Manhã', 
-    icon: Sun, 
-    color: 'bg-gradient-to-r from-amber-500/80 to-orange-500/80',
-    borderColor: 'border-amber-400/50',
-    textColor: 'text-amber-100'
+    color: 'bg-gradient-to-r from-yellow-500/80 to-yellow-600/80',
+    borderColor: 'border-yellow-400/50',
+    textColor: 'text-yellow-100'
   },
   { 
     value: 'tarde' as Period, 
     label: 'Tarde', 
-    icon: Sunset, 
     color: 'bg-gradient-to-r from-orange-500/80 to-red-500/80',
     borderColor: 'border-orange-400/50',
     textColor: 'text-orange-100'
@@ -56,10 +54,9 @@ const PERIODS = [
   { 
     value: 'noite' as Period, 
     label: 'Noite', 
-    icon: Moon, 
-    color: 'bg-gradient-to-r from-purple-500/80 to-indigo-500/80',
-    borderColor: 'border-purple-400/50',
-    textColor: 'text-purple-100'
+    color: 'bg-gradient-to-r from-blue-500/80 to-blue-600/80',
+    borderColor: 'border-blue-400/50',
+    textColor: 'text-blue-100'
   }
 ];
 
@@ -251,7 +248,6 @@ export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasPr
         {PERIODS.map(period => (
           <div key={period.value} className="flex items-center gap-2">
             <div className={`w-4 h-4 rounded ${period.color} ${period.borderColor} border`}></div>
-            <period.icon className="h-4 w-4 text-gray-400" />
             <span className="text-gray-300 text-sm">{period.label}</span>
           </div>
         ))}

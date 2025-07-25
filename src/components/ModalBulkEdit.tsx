@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Users, Clock, BookOpen, Sun, Sunset, Moon, Save, AlertCircle } from 'lucide-react';
+import { X, Users, Clock, BookOpen, Save, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
@@ -22,10 +22,10 @@ interface BulkEditData {
   removeInterests: string[];
 }
 
-const PERIODS: { value: Period; label: string; icon: typeof Sun }[] = [
-  { value: 'manha', label: 'Manhã', icon: Sun },
-  { value: 'tarde', label: 'Tarde', icon: Sunset },
-  { value: 'noite', label: 'Noite', icon: Moon }
+const PERIODS: { value: Period; label: string; color: string }[] = [
+  { value: 'manha', label: 'Manhã', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30' },
+  { value: 'tarde', label: 'Tarde', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30' },
+  { value: 'noite', label: 'Noite', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30' }
 ];
 
 export function ModalBulkEdit({ 
@@ -272,11 +272,10 @@ export function ModalBulkEdit({
                       onClick={() => togglePeriod(period.value)}
                       className={`flex items-center justify-center gap-2 p-3 rounded-lg transition-colors ${
                         formData.periods.includes(period.value)
-                          ? 'bg-teal-accent text-dark'
-                          : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
+                          ? 'bg-teal-accent text-dark border border-teal-accent'
+                          : `border ${period.color}`
                       }`}
                     >
-                      <period.icon className="h-4 w-4" />
                       <span className="text-sm">{period.label}</span>
                     </button>
                   ))}

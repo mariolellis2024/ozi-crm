@@ -11,6 +11,18 @@ export default {
         },
         teal: {
           accent: '#2CD3C7'
+        },
+        yellow: {
+          400: '#FBBF24',
+          500: '#F59E0B'
+        },
+        orange: {
+          400: '#FB923C',
+          500: '#F97316'
+        },
+        blue: {
+          400: '#60A5FA',
+          500: '#3B82F6'
         }
       },
       fontFamily: {
