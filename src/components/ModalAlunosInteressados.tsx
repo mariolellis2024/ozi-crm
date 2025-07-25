@@ -378,7 +378,7 @@ export function ModalAlunosInteressados({
                       ) : (
                         'Matricular'
                       )}
-                    <p>Nenhum aluno interessado neste curso</p>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -421,12 +421,7 @@ export function ModalAlunosInteressados({
           <div className="mt-4 pt-4 border-t border-gray-700">
             <div className="flex items-center justify-between text-sm">
               <div className="text-gray-400">
-                <div>
-                  {filteredAlunos.length} aluno{filteredAlunos.length !== 1 ? 's' : ''} interessado{filteredAlunos.length !== 1 ? 's' : ''}
-                </div>
-                <div className="text-xs mt-1">
-                  {filteredAlunos.filter(a => isStudentAvailableForPeriod(a)).length} disponível{filteredAlunos.filter(a => isStudentAvailableForPeriod(a)).length !== 1 ? 'eis' : ''} no período
-                </div>
+                <div>{filteredAlunos.length} aluno{filteredAlunos.length !== 1 ? 's' : ''} interessado{filteredAlunos.length !== 1 ? 's' : ''}</div>
                 <div className="text-xs mt-1">
                   {Math.max(0, turmaCapacity - enrolledCount)} vaga{Math.max(0, turmaCapacity - enrolledCount) !== 1 ? 's' : ''} disponível{Math.max(0, turmaCapacity - enrolledCount) !== 1 ? 'eis' : ''}
                 </div>
