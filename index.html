@@ -1,22 +1,14 @@
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  theme: {
-    extend: {
-      colors: {
-        dark: {
-          DEFAULT: '#1A1D21',
-          lighter: '#22262B',
-          card: '#2A2F35'
-        },
-        teal: {
-          accent: '#2CD3C7'
-        }
-      },
-      fontFamily: {
-        sans: ['Inter', 'sans-serif']
-      }
-    },
-  },
-  plugins: [],
-};
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/webp" href="/favicon.webp" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Pepper Heads</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
