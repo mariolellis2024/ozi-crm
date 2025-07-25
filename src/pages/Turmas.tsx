@@ -749,7 +749,7 @@ export function Turmas() {
   }
 
   function formatDate(dateString: string) {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    return new Date(dateString + 'T00:00:00').toLocaleDateString('pt-BR');
   }
 
   const totalFaturamentoPotencial = turmas.reduce((total, turma) => total + turma.potencial_faturamento, 0);
