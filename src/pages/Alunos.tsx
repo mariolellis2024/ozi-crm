@@ -1,11 +1,12 @@
 import { createPortal } from 'react-dom';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Pencil, Trash2, BookOpen, Clock, Check, ArrowUpDown, Filter, TrendingUp, Sun, Sunset, Moon, X, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, BookOpen, Clock, Check, ArrowUpDown, Filter, TrendingUp, Sun, Sunset, Moon, X, Users, CheckSquare, Square, Edit3 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalAluno } from '../components/ModalAluno';
+import { ModalBulkEdit } from '../components/ModalBulkEdit';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -83,6 +84,9 @@ export function Alunos() {
   const [totalStudents, setTotalStudents] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -421,6 +425,69 @@ export function Alunos() {
   }
 
   /**
+   * Alterna o modo de seleção múltipla
+   */
+  function toggleSelectionMode() {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedStudents(new Set());
+  }
+
+  /**
+   * Alterna a seleção de um aluno específico
+   */
+  function toggleStudentSelection(studentId: string) {
+    const newSelection = new Set(selectedStudents);
+    if (newSelection.has(studentId)) {
+      newSelection.delete(studentId);
+    } else {
+      newSelection.add(studentId);
+    }
+    setSelectedStudents(newSelection);
+  }
+
+  /**
+   * Seleciona todos os alunos visíveis na página atual
+   */
+  function selectAllStudents() {
+    const allStudentIds = new Set(alunos.map(aluno => aluno.id));
+    setSelectedStudents(allStudentIds);
+  }
+
+  /**
+   * Desmarca todos os alunos selecionados
+   */
+  function clearSelection() {
+    setSelectedStudents(new Set());
+  }
+
+  /**
+   * Abre o modal de edição em lote
+   */
+  function handleBulkEdit() {
+    if (selectedStudents.size === 0) {
+      toast.error('Selecione pelo menos um aluno para editar');
+      return;
+    }
+    setIsBulkEditModalOpen(true);
+  }
+
+  /**
+   * Fecha o modal de edição em lote
+   */
+  function handleCloseBulkEdit() {
+    setIsBulkEditModalOpen(false);
+  }
+
+  /**
+   * Callback executado após operação em lote bem-sucedida
+   */
+  function handleBulkEditSuccess() {
+    setSelectedStudents(new Set());
+    setIsSelectionMode(false);
+    loadData(currentPage);
+  }
+
+  /**
    * Submete formulário de criação/edição de aluno
    */
   async function handleSubmit(e: React.FormEvent) {
@@ -687,13 +754,26 @@ export function Alunos() {
             <h1 className="text-3xl font-bold text-white">Alunos</h1>
             <p className="text-gray-400 mt-2">Gerencie seus alunos e acompanhe o progresso nos cursos</p>
           </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center px-4 py-2 bg-teal-accent text-dark rounded-lg hover:bg-teal-accent/90 transition-colors hover-glow slide-in-right"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Novo Aluno
-          </button>
+          <div className="flex items-center gap-3 slide-in-right">
+            <button
+              onClick={toggleSelectionMode}
+              className={`flex items-center px-4 py-2 rounded-lg transition-colors hover-glow ${
+                isSelectionMode 
+                  ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                  : 'bg-gray-600 text-gray-300 hover:bg-gray-700'
+              }`}
+            >
+              {isSelectionMode ? <CheckSquare className="h-5 w-5 mr-2" /> : <Square className="h-5 w-5 mr-2" />}
+              {isSelectionMode ? 'Cancelar Seleção' : 'Selecionar Múltiplos'}
+            </button>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center px-4 py-2 bg-teal-accent text-dark rounded-lg hover:bg-teal-accent/90 transition-colors hover-glow"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Novo Aluno
+            </button>
+          </div>
         </div>
 
         <div className="mb-6 scale-in">
@@ -816,8 +896,42 @@ export function Alunos() {
                 {totalStudents} aluno{totalStudents !== 1 ? 's' : ''} 
                 {searchTerm || filterInterestStatus !== 'all' || selectedCourseId ? ' encontrado' : ' cadastrado'}{totalStudents !== 1 ? 's' : ''}
               </span>
+              {isSelectionMode && (
+                <span className="text-blue-400 font-medium">
+                  • {selectedStudents.size} selecionado{selectedStudents.size !== 1 ? 's' : ''}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-4">
+              {isSelectionMode && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={selectAllStudents}
+                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    Selecionar Todos
+                  </button>
+                  <span className="text-gray-500">|</span>
+                  <button
+                    onClick={clearSelection}
+                    className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
+                  >
+                    Limpar Seleção
+                  </button>
+                  {selectedStudents.size > 0 && (
+                    <>
+                      <span className="text-gray-500">|</span>
+                      <button
+                        onClick={handleBulkEdit}
+                        className="flex items-center gap-1 text-sm bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors"
+                      >
+                        <Edit3 className="h-3 w-3" />
+                        Editar Selecionados
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
               {totalPages > 1 && (
                 <span className="text-gray-400 text-sm">
                   Página {currentPage} de {totalPages}
@@ -835,6 +949,20 @@ export function Alunos() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-700">
+                  {isSelectionMode && (
+                    <th className="text-left p-4 w-12">
+                      <button
+                        onClick={selectedStudents.size === alunos.length ? clearSelection : selectAllStudents}
+                        className="text-gray-400 hover:text-white transition-colors"
+                      >
+                        {selectedStudents.size === alunos.length && alunos.length > 0 ? (
+                          <CheckSquare className="h-4 w-4" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
+                      </button>
+                    </th>
+                  )}
                   <th className="text-left p-4">
                     <button
                       onClick={() => handleSort('nome')}
@@ -853,6 +981,20 @@ export function Alunos() {
               <tbody>
                 {alunos.map((aluno) => (
                   <tr key={aluno.id} className="border-b border-gray-700/50">
+                    {isSelectionMode && (
+                      <td className="p-4">
+                        <button
+                          onClick={() => toggleStudentSelection(aluno.id)}
+                          className="text-gray-400 hover:text-white transition-colors"
+                        >
+                          {selectedStudents.has(aluno.id) ? (
+                            <CheckSquare className="h-4 w-4 text-blue-400" />
+                          ) : (
+                            <Square className="h-4 w-4" />
+                          )}
+                        </button>
+                      </td>
+                    )}
                     <td className="p-4">
                       <span className="text-white font-medium">{aluno.nome}</span>
                     </td>
@@ -907,14 +1049,14 @@ export function Alunos() {
                 ))}
                 {alunos.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={5} className="text-center py-8 text-gray-400">
+                    <td colSpan={isSelectionMode ? 6 : 5} className="text-center py-8 text-gray-400">
                       Nenhum aluno encontrado
                     </td>
                   </tr>
                 )}
                 {loading && (
                   <tr>
-                    <td colSpan={5} className="text-center py-8">
+                    <td colSpan={isSelectionMode ? 6 : 5} className="text-center py-8">
                       <div className="flex items-center justify-center gap-2 text-gray-400">
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-teal-accent border-t-transparent"></div>
                         <span>Carregando alunos...</span>
@@ -1146,6 +1288,14 @@ export function Alunos() {
           document.body
         )}
       </div>
+
+      <ModalBulkEdit
+        isOpen={isBulkEditModalOpen}
+        onClose={handleCloseBulkEdit}
+        selectedStudentIds={Array.from(selectedStudents)}
+        cursos={cursos}
+        onSuccess={handleBulkEditSuccess}
+      />
     </div>
   );
 }
