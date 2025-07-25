@@ -999,8 +999,13 @@ export function Turmas() {
                     // Calcular impostos
                     const impostos = (faturamentoRealizado * turma.imposto) / 100;
                     
+                    // Calcular comissão do vendedor baseada na ocupação
+                    const ocupacaoPercentual = turma.cadeiras > 0 ? (alunosMatriculados / turma.cadeiras) * 100 : 0;
+                    const percentualComissao = ocupacaoPercentual >= 90 ? 5 : 2;
+                    const comissaoVendedor = (faturamentoRealizado * percentualComissao) / 100;
+                    
                     // Resultado final
-                    const resultadoFinal = faturamentoRealizado - custoProfessores - impostos;
+                    const resultadoFinal = faturamentoRealizado - custoProfessores - impostos - comissaoVendedor;
                     const margemLucro = faturamentoRealizado > 0 ? (resultadoFinal / faturamentoRealizado) * 100 : 0;
                     
                     return (
@@ -1033,6 +1038,13 @@ export function Turmas() {
                             <span className="text-gray-400">Impostos ({turma.imposto}%):</span>
                             <span className="text-red-400 font-medium">
                               -{formatCurrency(impostos)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400">Vendedor ({percentualComissao}%):</span>
+                            <span className="text-red-400 font-medium">
+                              -{formatCurrency(comissaoVendedor)}
                             </span>
                           </div>
                         </div>
