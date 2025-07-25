@@ -250,7 +250,7 @@ export function Alunos() {
           }
           
           studentsMap.get(aluno.id).curso_interests.push({
-            id,
+            id: interest.id,
             curso_id: interest.curso_id,
             status: statusFilter,
             curso: interest.curso
