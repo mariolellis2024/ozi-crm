@@ -224,11 +224,15 @@ export function Alunos() {
         // Get count of unique students
         let countQuery = supabase
           .from('aluno_curso_interests')
-          .select('aluno_id', { count: 'exact', head: true })
+          .select('aluno_id')
           .eq('status', statusFilter);
 
         if (cursoFilter) {
           countQuery = countQuery.eq('curso_id', cursoFilter);
+        }
+
+        if (searchTerm) {
+          countQuery = countQuery.or(`aluno.nome.ilike.%${searchTerm}%,aluno.email.ilike.%${searchTerm}%,aluno.whatsapp.ilike.%${searchTerm}%`);
         }
 
         const [interestsResult, interestsCountResult] = await Promise.all([
@@ -264,7 +268,16 @@ export function Alunos() {
           error: null
         };
 
-        countResult = interestsCountResult;
+        // Count unique students from the interests
+        const uniqueStudentIds = new Set();
+        interestsCountResult.data?.forEach(interest => {
+          uniqueStudentIds.add(interest.aluno_id);
+        });
+        
+        countResult = {
+          count: uniqueStudentIds.size,
+          error: null
+        };
       }
 
       if (alunosResult.error) throw alunosResult.error;
