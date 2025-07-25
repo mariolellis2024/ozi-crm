@@ -486,14 +486,32 @@ export function Alunos() {
   }
 
   // Calculate potential revenue from filtered students
-  const faturamentoPotencial = alunos.reduce((total, aluno) => {
-    if (aluno.curso_interests) {
-      return total + aluno.curso_interests
-        .filter(interest => interest.status === 'interested')
-        .reduce((subtotal, interest) => subtotal + (interest.curso?.preco || 0), 0);
+  const faturamentoPotencial = React.useMemo(() => {
+    if (statusFilter === 'interested') {
+      // Se estamos filtrando por interessados, somar todos os valores dos cursos filtrados
+      return alunos.reduce((total, aluno) => {
+        if (aluno.curso_interests) {
+          return total + aluno.curso_interests
+            .filter(interest => interest.status === 'interested')
+            .reduce((subtotal, interest) => subtotal + (interest.curso?.preco || 0), 0);
+        }
+        return total;
+      }, 0);
+    } else if (statusFilter === 'all') {
+      // Se estamos vendo todos, somar apenas os interesses com status 'interested'
+      return alunos.reduce((total, aluno) => {
+        if (aluno.curso_interests) {
+          return total + aluno.curso_interests
+            .filter(interest => interest.status === 'interested')
+            .reduce((subtotal, interest) => subtotal + (interest.curso?.preco || 0), 0);
+        }
+        return total;
+      }, 0);
+    } else {
+      // Para outros filtros (enrolled, completed, none), não mostrar faturamento potencial
+      return 0;
     }
-    return total;
-  }, 0);
+  }, [alunos, statusFilter]);
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
