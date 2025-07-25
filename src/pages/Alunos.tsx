@@ -238,23 +238,138 @@ export function Alunos() {
   async function loadData(page: number = 1) {
     setLoading(true);
     try {
-      // Construir query base para alunos
-      let alunosQuery = supabase
-        .from('alunos')
-        .select(`
-          id,
-          nome,
-          email,
-          whatsapp,
-          empresa,
-          available_periods,
-          created_at,
-          curso_interests:aluno_curso_interests(
+      // Buscar cursos primeiro
+      const cursosResult = await monitoredQuery('load-cursos-for-pricing', () =>
+        supabase
+        .from('cursos')
+        .select('id, nome, preco')
+        .order('nome')
+      );
+
+      if (cursosResult.error) throw cursosResult.error;
+      setCursos(cursosResult.data);
+
+      // Construir query para alunos com filtros aplicados no backend
+      let alunosQuery;
+      
+      if (filterInterestStatus === 'no_interest') {
+        // Para alunos sem interesse, buscar alunos que não têm registros em aluno_curso_interests
+        alunosQuery = supabase
+          .from('alunos')
+          .select(`
             id,
-            curso_id,
-            status
-          )
-        `, { count: 'exact' });
+            nome,
+            email,
+            whatsapp,
+            empresa,
+            available_periods,
+            created_at
+          `, { count: 'exact' })
+          .not('id', 'in', `(
+            SELECT DISTINCT aluno_id 
+            FROM aluno_curso_interests 
+            WHERE aluno_id IS NOT NULL
+          )`);
+      } else if (filterInterestStatus !== 'all') {
+        // Para filtros específicos de status, usar join com aluno_curso_interests
+        let interestQuery = supabase
+          .from('aluno_curso_interests')
+          .select(`
+            aluno_id,
+            aluno:alunos!inner(
+              id,
+              nome,
+              email,
+              whatsapp,
+              empresa,
+              available_periods,
+              created_at
+            )
+          `, { count: 'exact' })
+          .eq('status', filterInterestStatus);
+
+        // Aplicar filtro por curso se selecionado
+        if (selectedCourseId) {
+          interestQuery = interestQuery.eq('curso_id', selectedCourseId);
+        }
+
+        const interestResult = await monitoredQuery('load-alunos-by-interest-status', () => interestQuery);
+        if (interestResult.error) throw interestResult.error;
+
+        // Extrair alunos únicos dos resultados
+        const uniqueAlunos = new Map();
+        interestResult.data.forEach(item => {
+          if (item.aluno && !uniqueAlunos.has(item.aluno.id)) {
+            uniqueAlunos.set(item.aluno.id, item.aluno);
+          }
+        });
+
+        const alunosData = Array.from(uniqueAlunos.values());
+        
+        // Aplicar filtros de busca no frontend (para esta query específica)
+        let filteredAlunos = alunosData;
+        if (searchTerm) {
+          filteredAlunos = alunosData.filter(aluno =>
+            aluno.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            aluno.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            aluno.whatsapp.includes(searchTerm)
+          );
+        }
+
+        // Aplicar ordenação
+        filteredAlunos.sort((a, b) => {
+          if (sortField === 'created_at') {
+            return sortDirection === 'desc' 
+              ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+              : new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          } else {
+            return sortDirection === 'desc'
+              ? b.nome.localeCompare(a.nome)
+              : a.nome.localeCompare(b.nome);
+          }
+        });
+
+        // Aplicar paginação manual
+        const from = (page - 1) * ITEMS_PER_PAGE;
+        const to = from + ITEMS_PER_PAGE;
+        const paginatedAlunos = filteredAlunos.slice(from, to);
+
+        // Buscar interesses para os alunos da página atual
+        const alunosIds = paginatedAlunos.map(a => a.id);
+        const interessesResult = await supabase
+          .from('aluno_curso_interests')
+          .select('id, curso_id, status, aluno_id')
+          .in('aluno_id', alunosIds);
+
+        // Adicionar interesses aos alunos
+        const alunosComInteresses = paginatedAlunos.map(aluno => ({
+          ...aluno,
+          curso_interests: interessesResult.data?.filter(i => i.aluno_id === aluno.id) || []
+        }));
+
+        setAlunos(alunosComInteresses);
+        setTotalStudents(filteredAlunos.length);
+        await calculateTotalOpenRevenue(cursosResult.data);
+        return;
+      } else {
+        // Para "todos", buscar todos os alunos
+        alunosQuery = supabase
+          .from('alunos')
+          .select(`
+            id,
+            nome,
+            email,
+            whatsapp,
+            empresa,
+            available_periods,
+            created_at,
+            curso_interests:aluno_curso_interests(
+              id,
+              curso_id,
+              status
+            )
+          `, { count: 'exact' });
+      }
 
       // Aplicar filtros de busca
       if (searchTerm) {
@@ -273,8 +388,124 @@ export function Alunos() {
       const to = from + ITEMS_PER_PAGE - 1;
       alunosQuery = alunosQuery.range(from, to);
 
-      const [alunosResult, cursosResult] = await Promise.all([
-        monitoredQuery('load-alunos-with-interests-paginated', () => alunosQuery),
+      const alunosResult = await monitoredQuery('load-alunos-with-interests-paginated', () => alunosQuery);
+      if (alunosResult.error) throw alunosResult.error;
+
+      const alunosData = alunosResult.data.map(aluno => ({
+        ...aluno,
+        curso_interests: aluno.curso_interests || []
+      }));
+
+      setAlunos(alunosData);
+      setTotalStudents(alunosResult.count || 0);
+
+      // Calcular faturamento potencial de todos os alunos (não apenas da página atual)
+      await calculateTotalOpenRevenue(cursosResult.data);
+    } catch (error) {
+      toast.error('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /**
+   * Calcula o faturamento potencial total (de todos os alunos, não apenas da página atual)
+   */
+  async function calculateTotalOpenRevenue(cursosData: Curso[]) {
+    try {
+      let query = supabase
+        .from('aluno_curso_interests')
+        .select('curso_id, status')
+        .eq('status', 'interested');
+
+      // Aplicar filtro por curso se selecionado
+      if (selectedCourseId && filterInterestStatus === 'interested') {
+        query = query.eq('curso_id', selectedCourseId);
+      }
+
+      const { data: allInterests, error } = await query;
+      if (error) throw error;
+
+      let total = 0;
+      allInterests.forEach(interest => {
+        const curso = cursosData.find(c => c.id === interest.curso_id);
+        if (curso) {
+          total += curso.preco;
+        }
+      });
+
+      setTotalOpenRevenue(total);
+    } catch (error) {
+      console.error('Erro ao calcular faturamento potencial:', error);
+    }
+  }
+
+  /**
+   * Aplica filtros de interesse nos dados dos alunos
+   * DEPRECATED: Agora os filtros são aplicados no backend
+   */
+  function applyInterestFilters(alunosData: Aluno[]): Aluno[] {
+    // Esta função não é mais usada, mas mantida para compatibilidade
+    return alunosData;
+  }
+
+  /**
+   * Ordena lista de alunos por campo e direção especificados
+   * DEPRECATED: Agora a ordenação é feita no backend
+   */
+  function sortAlunos(alunosToSort: Aluno[], field: SortField, direction: SortDirection): Aluno[] {
+    // Esta função não é mais usada, mas mantida para compatibilidade
+    return alunosToSort;
+  }
+
+  /**
+   * Gerencia mudança de ordenação
+   * Alterna direção se o mesmo campo for clicado novamente
+   */
+  function handleSort(field: SortField) {
+    const newDirection = field === sortField && sortDirection === 'desc' ? 'asc' : 'desc';
+    setSortField(field);
+    setSortDirection(newDirection);
+    setCurrentPage(1); // Reset para primeira página ao ordenar
+  }
+
+  /**
+   * Navega para uma página específica
+   */
+  function goToPage(page: number) {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  }
+
+  /**
+   * Gera array de números de página para exibição
+   */
+  function getPageNumbers(): number[] {
+    const delta = 2; // Número de páginas para mostrar antes e depois da atual
+    const range = [];
+    const rangeWithDots = [];
+
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+      range.push(i);
+    }
+
+    if (currentPage - delta > 2) {
+      rangeWithDots.push(1, -1); // -1 representa "..."
+    } else {
+      rangeWithDots.push(1);
+    }
+
+    rangeWithDots.push(...range);
+
+    if (currentPage + delta < totalPages - 1) {
+      rangeWithDots.push(-1, totalPages); // -1 representa "..."
+    } else if (totalPages > 1) {
+      rangeWithDots.push(totalPages);
+    }
+
+    return rangeWithDots;
+  }
         monitoredQuery('load-cursos-for-pricing', () =>
           supabase
           .from('cursos')
