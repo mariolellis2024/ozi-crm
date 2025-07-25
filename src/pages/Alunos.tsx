@@ -236,7 +236,7 @@ export function Alunos() {
         }
 
         const [interestsResult, interestsCountResult] = await Promise.all([
-          query.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false }),
+          query.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false }), // Order by interest creation date
           countQuery
         ]);
 
@@ -270,7 +270,9 @@ export function Alunos() {
 
         // Count unique students from the interests
         const uniqueStudentIds = new Set();
-        interestsCountResult.data?.forEach(interest => {
+        interestsCountResult.data?.forEach((interest: any) => {
+          // Ensure interest.aluno is not null/undefined before accessing id
+          // The select statement now ensures aluno is present if it matches the filter
           uniqueStudentIds.add(interest.aluno_id);
         });
         
