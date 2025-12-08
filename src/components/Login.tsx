@@ -10,6 +10,8 @@ export function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,12 +19,36 @@ export function Login() {
 
     try {
       if (isSignUp) {
+        if (!name.trim()) {
+          toast.error('Por favor, digite seu nome completo');
+          setIsLoading(false);
+          return;
+        }
+        if (password !== confirmPassword) {
+          toast.error('As senhas não correspondem');
+          setIsLoading(false);
+          return;
+        }
+        if (password.length < 6) {
+          toast.error('A senha deve ter no mínimo 6 caracteres');
+          setIsLoading(false);
+          return;
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              full_name: name,
+            },
+          },
         });
         if (error) throw error;
         toast.success('Conta criada com sucesso!');
+        setName('');
+        setConfirmPassword('');
+        setIsSignUp(false);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -30,8 +56,8 @@ export function Login() {
         });
         if (error) throw error;
         toast.success('Login realizado com sucesso!');
+        navigate('/');
       }
-      navigate('/'); // Redirect to home page after successful login/signup
     } catch (error: any) {
       console.error('Auth error:', error);
       if (error.message?.includes('Failed to fetch')) {
@@ -60,8 +86,12 @@ export function Login() {
           isLoading={isLoading}
           email={email}
           password={password}
+          name={name}
+          confirmPassword={confirmPassword}
           onEmailChange={(e) => setEmail(e.target.value)}
           onPasswordChange={(e) => setPassword(e.target.value)}
+          onNameChange={(e) => setName(e.target.value)}
+          onConfirmPasswordChange={(e) => setConfirmPassword(e.target.value)}
           onSubmit={handleSubmit}
           onToggleMode={() => setIsSignUp(!isSignUp)}
           />
