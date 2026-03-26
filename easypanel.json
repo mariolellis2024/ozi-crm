@@ -1,41 +1,38 @@
 {
-  "services": [
-    {
-      "type": "app",
-      "data": {
-        "serviceName": "ozi-crm",
-        "source": {
-          "type": "github",
-          "owner": "mariolellis2024",
-          "repo": "ozi-crm",
-          "ref": "main",
-          "path": "/"
+    "services": [
+        {
+            "type": "app",
+            "data": {
+                "serviceName": "ozi-crm",
+                "source": {
+                    "type": "image",
+                    "image": "ghcr.io/mariolellis2024/ozi-crm:latest"
+                },
+                "env": "DATABASE_URL=postgresql://ozi_user:ozi_crm_2024@$(PROJECT_NAME)_ozi-crm-db:5432/$(PROJECT_NAME)\nJWT_SECRET=TROQUE_POR_CHAVE_SEGURA_64_CHARS\nNODE_ENV=production\nPORT=3001",
+                "deploy": {
+                    "replicas": 1,
+                    "command": null,
+                    "zeroDowntime": true
+                },
+                "domains": [
+                    {
+                        "host": "$(EASYPANEL_DOMAIN)",
+                        "https": true,
+                        "port": 3001,
+                        "path": "/"
+                    }
+                ],
+                "mounts": [],
+                "ports": []
+            }
         },
-        "env": "DATABASE_URL=postgresql://ozi_user:ozi_crm_2024@$(PROJECT_NAME)_ozi-crm-db:5432/$(PROJECT_NAME)\nJWT_SECRET=TROQUE_POR_CHAVE_SEGURA_64_CHARS\nPORT=3001\nNODE_ENV=production",
-        "deploy": {
-          "replicas": 1,
-          "command": null,
-          "zeroDowntime": true
-        },
-        "domains": [
-          {
-            "host": "$(EASYPANEL_DOMAIN)",
-            "https": true,
-            "port": 3001,
-            "path": "/"
-          }
-        ],
-        "mounts": [],
-        "ports": []
-      }
-    },
-    {
-      "type": "postgres",
-      "data": {
-        "serviceName": "ozi-crm-db",
-        "image": "postgres:16-alpine",
-        "password": "ozi_crm_2024"
-      }
-    }
-  ]
+        {
+            "type": "postgres",
+            "data": {
+                "serviceName": "ozi-crm-db",
+                "image": "postgres:16-alpine",
+                "password": "ozi_crm_2024"
+            }
+        }
+    ]
 }
