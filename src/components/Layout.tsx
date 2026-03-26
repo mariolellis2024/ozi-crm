@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { api } from '../lib/api';
-import { GraduationCap, User, LogOut, BookOpen, Home, DoorClosed, Activity, Users } from 'lucide-react';
+import { GraduationCap, User, LogOut, BookOpen, Home, DoorClosed, Activity, Users, BarChart3, CalendarDays, GitBranch, ClipboardList } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PerformanceDashboard } from './PerformanceDashboard';
@@ -27,11 +27,15 @@ export function Layout({ children }: LayoutProps) {
   };
 
   const menuItems = [
-    { icon: Home, label: 'Turmas', path: '/' },
+    { icon: BarChart3, label: 'Dashboard', path: '/' },
+    { icon: Home, label: 'Turmas', path: '/turmas' },
     { icon: User, label: 'Alunos', path: '/alunos' },
     { icon: BookOpen, label: 'Cursos', path: '/cursos' },
     { icon: GraduationCap, label: 'Professores', path: '/professores' },
     { icon: DoorClosed, label: 'Salas', path: '/salas' },
+    { icon: CalendarDays, label: 'Calendário', path: '/calendario' },
+    { icon: GitBranch, label: 'Pipeline', path: '/pipeline' },
+    { icon: ClipboardList, label: 'Atividades', path: '/atividades' },
     { icon: Users, label: 'Usuários', path: '/usuarios' },
   ];
 
@@ -48,12 +52,12 @@ export function Layout({ children }: LayoutProps) {
             <button
               key={index}
               onClick={() => navigate(item.path)}
-              className={`w-full flex items-center px-6 py-4 text-gray-400 hover:text-white hover:bg-dark-card transition-all duration-200 hover:translate-x-1 ${
+              className={`w-full flex items-center px-6 py-3 text-gray-400 hover:text-white hover:bg-dark-card transition-all duration-200 hover:translate-x-1 text-sm ${
                 location.pathname === item.path ? 'bg-dark-card text-white' : ''
               }`}
             >
-              <item.icon className="h-5 w-5 flex-shrink-0" />
-              <span className="opacity-100 ml-4">
+              <item.icon className="h-4 w-4 flex-shrink-0" />
+              <span className="opacity-100 ml-3">
                 {item.label}
               </span>
             </button>

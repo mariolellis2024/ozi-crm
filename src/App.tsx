@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { api } from './lib/api';
 import { Login } from './components/Login';
@@ -8,6 +8,10 @@ import { Cursos } from './pages/Cursos';
 import { Turmas } from './pages/Turmas';
 import { Salas } from './pages/Salas';
 import { Usuarios } from './pages/Usuarios';
+import { DashboardPage } from './pages/DashboardPage';
+import { Calendario } from './pages/Calendario';
+import { Pipeline } from './pages/Pipeline';
+import { Atividades } from './pages/Atividades';
 import { Layout } from './components/Layout';
 import { Toaster } from 'react-hot-toast';
 import { OrganicBackground } from './components/OrganicBackground';
@@ -60,62 +64,16 @@ export default function App() {
       <OrganicBackground />
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <Turmas />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/professores"
-          element={
-            <PrivateRoute>
-              <Professores />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/alunos"
-          element={
-            <PrivateRoute>
-              <Alunos />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/cursos"
-          element={
-            <PrivateRoute>
-              <Cursos />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/turmas"
-          element={
-            <PrivateRoute>
-              <Turmas />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/salas"
-          element={
-            <PrivateRoute>
-              <Salas />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/usuarios"
-          element={
-            <PrivateRoute>
-              <Usuarios />
-            </PrivateRoute>
-          }
-        />
+        <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+        <Route path="/turmas" element={<PrivateRoute><Turmas /></PrivateRoute>} />
+        <Route path="/alunos" element={<PrivateRoute><Alunos /></PrivateRoute>} />
+        <Route path="/cursos" element={<PrivateRoute><Cursos /></PrivateRoute>} />
+        <Route path="/professores" element={<PrivateRoute><Professores /></PrivateRoute>} />
+        <Route path="/salas" element={<PrivateRoute><Salas /></PrivateRoute>} />
+        <Route path="/usuarios" element={<PrivateRoute><Usuarios /></PrivateRoute>} />
+        <Route path="/calendario" element={<PrivateRoute><Calendario /></PrivateRoute>} />
+        <Route path="/pipeline" element={<PrivateRoute><Pipeline /></PrivateRoute>} />
+        <Route path="/atividades" element={<PrivateRoute><Atividades /></PrivateRoute>} />
       </Routes>
       <Toaster position="top-right" />
     </BrowserRouter>

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import pool, { parsePgArray } from '../db.js';
+import { logActivity } from '../activityLog.js';
 
 const router = Router();
 

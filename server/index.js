@@ -15,6 +15,9 @@ import salasRoutes from './routes/salas.js';
 import categoriasRoutes from './routes/categorias.js';
 import interestsRoutes from './routes/interests.js';
 import usersRoutes from './routes/users.js';
+import activityRoutes from './routes/activity.js';
+import dashboardRoutes from './routes/dashboard.js';
+import pipelineRoutes from './routes/pipeline.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -38,6 +41,9 @@ app.use('/api/salas', authenticateToken, salasRoutes);
 app.use('/api/categorias', authenticateToken, categoriasRoutes);
 app.use('/api/interests', authenticateToken, interestsRoutes);
 app.use('/api/users', authenticateToken, usersRoutes);
+app.use('/api/activity', authenticateToken, activityRoutes);
+app.use('/api/dashboard', authenticateToken, dashboardRoutes);
+app.use('/api/pipeline', authenticateToken, pipelineRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

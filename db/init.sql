@@ -177,6 +177,24 @@ CREATE INDEX IF NOT EXISTS idx_interactions_interest_id ON lead_interactions(int
 CREATE INDEX IF NOT EXISTS idx_interactions_date_type ON lead_interactions (interaction_date DESC, interaction_type);
 
 -- =====================================================
+-- Activity Log (Audit Trail)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES users(id) ON DELETE SET NULL,
+  user_email text,
+  action text NOT NULL,
+  entity_type text NOT NULL,
+  entity_id uuid,
+  entity_name text,
+  details jsonb,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_entity_type ON activity_logs(entity_type);
+
+-- =====================================================
 -- Functions
 -- =====================================================
 

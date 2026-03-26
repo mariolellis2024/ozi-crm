@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import pool from '../db.js';
+import { logActivity } from '../activityLog.js';
 
 const router = Router();
 
@@ -44,7 +45,13 @@ router.post('/', async (req, res) => {
       [email, password_hash, full_name || null]
     );
 
-    res.status(201).json(result.rows[0]);
+    const newUser = result.rows[0];
+    logActivity({
+      userId: req.user?.id, userEmail: req.user?.email,
+      action: 'create', entityType: 'user',
+      entityId: newUser.id, entityName: email
+    });
+    res.status(201).json(newUser);
   } catch (error) {
     console.error('Error creating user:', error);
     res.status(500).json({ error: 'Erro ao criar usuário' });
@@ -116,8 +123,14 @@ router.put('/:id/block', async (req, res) => {
       [id]
     );
 
-    const action = result.rows[0].is_blocked ? 'bloqueado' : 'desbloqueado';
-    res.json({ ...result.rows[0], message: `Usuário ${action} com sucesso` });
+    const action = result.rows[0].is_blocked ? 'block' : 'unblock';
+    logActivity({
+      userId: req.user?.id, userEmail: req.user?.email,
+      action, entityType: 'user',
+      entityId: id, entityName: target.rows[0].email
+    });
+    const actionLabel = result.rows[0].is_blocked ? 'bloqueado' : 'desbloqueado';
+    res.json({ ...result.rows[0], message: `Usuário ${actionLabel} com sucesso` });
   } catch (error) {
     console.error('Error toggling block:', error);
     res.status(500).json({ error: 'Erro ao alterar bloqueio' });
@@ -145,6 +158,11 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
     res.json({ success: true });
+    logActivity({
+      userId: req.user?.id, userEmail: req.user?.email,
+      action: 'delete', entityType: 'user',
+      entityId: id, entityName: target.rows[0].email
+    });
   } catch (error) {
     console.error('Error deleting user:', error);
     res.status(500).json({ error: 'Erro ao excluir usuário' });

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import pool, { parsePgArray } from '../db.js';
+import { logActivity } from '../activityLog.js';
 
 const router = Router();
 
@@ -187,7 +188,13 @@ router.post('/', async (req, res) => {
        RETURNING *`,
       [nome, email || null, whatsapp, empresa || null, available_periods || []]
     );
-    res.status(201).json(result.rows[0]);
+    const aluno = result.rows[0];
+    logActivity({
+      userId: req.user?.id, userEmail: req.user?.email,
+      action: 'create', entityType: 'aluno',
+      entityId: aluno.id, entityName: nome
+    });
+    res.status(201).json(aluno);
   } catch (error) {
     console.error('Error creating aluno:', error);
     res.status(500).json({ error: 'Erro ao criar aluno' });

@@ -1,0 +1,26 @@
+import { Router } from 'express';
+import pool from '../db.js';
+
+const router = Router();
+
+// GET /api/pipeline — all interests with student/course info for kanban
+router.get('/', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        aci.id, aci.aluno_id, aci.curso_id, aci.status, aci.turma_id, aci.created_at,
+        a.nome as aluno_nome, a.email as aluno_email, a.whatsapp as aluno_whatsapp,
+        c.nome as curso_nome
+      FROM aluno_curso_interests aci
+      JOIN alunos a ON a.id = aci.aluno_id
+      JOIN cursos c ON c.id = aci.curso_id
+      ORDER BY aci.created_at DESC
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error loading pipeline:', error);
+    res.status(500).json({ error: 'Erro ao carregar pipeline' });
+  }
+});
+
+export default router;
