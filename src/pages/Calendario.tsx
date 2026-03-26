@@ -29,9 +29,6 @@ const PERIOD_LABELS: Record<string, string> = {
 };
 
 const DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-const DAY_MAP: Record<string, number> = {
-  domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6
-};
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
@@ -74,7 +71,9 @@ export function Calendario() {
 
   function getTurmasForDay(day: number): Turma[] {
     const date = new Date(year, month, day);
-    const dayOfWeek = date.getDay();
+    const jsDow = date.getDay(); // 0=Sunday ... 6=Saturday
+    // Convert JS day-of-week to ISO day-of-week (1=Monday ... 7=Sunday)
+    const isoDow = jsDow === 0 ? 7 : jsDow;
 
     return turmas.filter(turma => {
       const start = new Date(turma.start_date + 'T00:00:00');
@@ -83,7 +82,8 @@ export function Calendario() {
 
       const daysArr = Array.isArray(turma.days_of_week) ? turma.days_of_week : [];
       if (daysArr.length === 0) return true;
-      return daysArr.some(d => DAY_MAP[d] === dayOfWeek);
+      // days_of_week contains ISO numbers (1=Mon..7=Sun), may be strings from backend
+      return daysArr.some(d => Number(d) === isoDow);
     });
   }
 
