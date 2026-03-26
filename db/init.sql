@@ -38,8 +38,25 @@ END $$;
 UPDATE users SET is_super_admin = true WHERE email = 'mario@ozi.com.br';
 
 -- =====================================================
--- Core tables
+-- Core tables (order matters for foreign keys)
 -- =====================================================
+
+CREATE TABLE IF NOT EXISTS unidades (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome text NOT NULL,
+  cidade text,
+  endereco text,
+  meta_pixel_id text,
+  meta_capi_token text,
+  google_analytics_id text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS categorias (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome text UNIQUE NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
 
 CREATE TABLE IF NOT EXISTS professores (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -51,12 +68,6 @@ CREATE TABLE IF NOT EXISTS professores (
   created_at timestamptz DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS categorias (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  nome text UNIQUE NOT NULL,
-  created_at timestamptz DEFAULT now()
-);
-
 CREATE TABLE IF NOT EXISTS cursos (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   nome text NOT NULL,
@@ -64,17 +75,6 @@ CREATE TABLE IF NOT EXISTS cursos (
   preco numeric NOT NULL DEFAULT 0,
   categoria_id uuid REFERENCES categorias(id) ON DELETE SET NULL,
   imagem_url text,
-  created_at timestamptz DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS unidades (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  nome text NOT NULL,
-  cidade text,
-  endereco text,
-  meta_pixel_id text,
-  meta_capi_token text,
-  google_analytics_id text,
   created_at timestamptz DEFAULT now()
 );
 
