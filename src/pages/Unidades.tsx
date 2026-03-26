@@ -121,6 +121,38 @@ export function Unidades() {
                   <span className="text-white font-bold text-lg">{parseInt(String(u.total_turmas))}</span>
                   <p className="text-gray-400 text-xs">Turmas</p>
                 </div>
+                <div className="text-center">
+                  <span className="text-white font-bold text-lg">{parseInt(String((u as any).total_formularios || 0))}</span>
+                  <p className="text-gray-400 text-xs">Forms</p>
+                </div>
+              </div>
+
+              {/* Tracking Status */}
+              <div className="flex flex-wrap gap-2 mt-3">
+                <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${
+                  (u as any).meta_pixel_id
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${(u as any).meta_pixel_id ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+                  Meta Pixel
+                </span>
+                <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${
+                  (u as any).meta_capi_token
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${(u as any).meta_capi_token ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+                  CAPI
+                </span>
+                <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${
+                  (u as any).google_analytics_id
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${(u as any).google_analytics_id ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+                  Analytics
+                </span>
               </div>
             </div>
           ))}

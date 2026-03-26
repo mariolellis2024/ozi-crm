@@ -11,7 +11,8 @@ router.get('/', async (req, res) => {
         (SELECT COUNT(*) FROM salas s WHERE s.unidade_id = u.id) as total_salas,
         (SELECT COUNT(*) FROM turmas t 
          JOIN salas s ON s.id = t.sala_id 
-         WHERE s.unidade_id = u.id) as total_turmas
+         WHERE s.unidade_id = u.id) as total_turmas,
+        (SELECT COUNT(*) FROM formularios f WHERE f.unidade_id = u.id) as total_formularios
       FROM unidades u 
       ORDER BY u.nome
     `);
