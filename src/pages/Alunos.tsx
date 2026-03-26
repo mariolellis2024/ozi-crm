@@ -109,7 +109,7 @@ export function Alunos() {
       if (cursoFilter) params.set('curso', cursoFilter);
       if (searchTerm) params.set('search', searchTerm);
 
-      const result = await api.get(`/alunos?${params.toString()}`);
+      const result = await api.get(`/api/alunos?${params.toString()}`);
       setAlunos(result.data || []);
       setTotalCount(result.count || 0);
     } catch (error) {
@@ -161,7 +161,7 @@ export function Alunos() {
     e.preventDefault();
     try {
       if (editingId) {
-        await api.put(`/alunos/${editingId}`, formData);
+        await api.put(`/api/alunos/${editingId}`, formData);
         toast.success('Aluno atualizado com sucesso!');
       } else {
         await api.post('/api/alunos', formData);
@@ -190,7 +190,7 @@ export function Alunos() {
 
   async function handleConfirmDelete() {
     try {
-      await api.delete(`/alunos/${confirmModal.alunoId}`);
+      await api.delete(`/api/alunos/${confirmModal.alunoId}`);
       toast.success('Aluno excluído com sucesso!');
       loadAlunos();
     } catch (error) {

@@ -1,53 +1,28 @@
 import React, { useState } from 'react';
 import { api } from '../lib/api';
 import toast from 'react-hot-toast';
-import { AuthForm } from './AuthForm';
 import { useNavigate } from 'react-router-dom';
+import { Mail, Lock } from 'lucide-react';
+import { InputField } from './InputField';
+import { LoadingButton } from './LoadingButton';
 
 export function Login() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      if (isSignUp) {
-        if (!name.trim()) {
-          toast.error('Por favor, digite seu nome completo');
-          setIsLoading(false);
-          return;
-        }
-        if (password !== confirmPassword) {
-          toast.error('As senhas não correspondem');
-          setIsLoading(false);
-          return;
-        }
-        if (password.length < 6) {
-          toast.error('A senha deve ter no mínimo 6 caracteres');
-          setIsLoading(false);
-          return;
-        }
-
-        await api.signup(email, password, name);
-        toast.success('Conta criada com sucesso!');
-        setName('');
-        setConfirmPassword('');
-        setIsSignUp(false);
-      } else {
-        await api.login(email, password);
-        toast.success('Login realizado com sucesso!');
-        navigate('/');
-      }
+      await api.login(email, password);
+      toast.success('Login realizado com sucesso!');
+      navigate('/');
     } catch (error: any) {
       console.error('Auth error:', error);
-      toast.error(error.message || 'Erro ao realizar operação. Tente novamente.');
+      toast.error(error.message || 'Erro ao realizar login. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -59,26 +34,33 @@ export function Login() {
         <div className="text-center scale-in-delay-1">
           <img src="/icon.webp" alt="OZI CRM Logo" className="mx-auto w-[44%] h-auto rounded" />
           <p className="mt-2 text-sm text-gray-400">
-            {isSignUp ? 'Comece sua jornada conosco' : 'Faça login na sua conta'}
+            Faça login na sua conta
           </p>
         </div>
 
-        <div className="scale-in-delay-2">
-          <AuthForm
-          isSignUp={isSignUp}
-          isLoading={isLoading}
-          email={email}
-          password={password}
-          name={name}
-          confirmPassword={confirmPassword}
-          onEmailChange={(e) => setEmail(e.target.value)}
-          onPasswordChange={(e) => setPassword(e.target.value)}
-          onNameChange={(e) => setName(e.target.value)}
-          onConfirmPasswordChange={(e) => setConfirmPassword(e.target.value)}
-          onSubmit={handleSubmit}
-          onToggleMode={() => setIsSignUp(!isSignUp)}
-          />
-        </div>
+        <form className="mt-8 space-y-6 scale-in-delay-2" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <InputField
+              id="email"
+              type="email"
+              label="E-mail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              icon={<Mail className="h-5 w-5 text-gray-400" />}
+            />
+
+            <InputField
+              id="password"
+              type="password"
+              label="Senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              icon={<Lock className="h-5 w-5 text-gray-400" />}
+            />
+          </div>
+
+          <LoadingButton isLoading={isLoading} text="Entrar" />
+        </form>
       </div>
     </div>
   );

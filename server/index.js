@@ -14,6 +14,7 @@ import professoresRoutes from './routes/professores.js';
 import salasRoutes from './routes/salas.js';
 import categoriasRoutes from './routes/categorias.js';
 import interestsRoutes from './routes/interests.js';
+import usersRoutes from './routes/users.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -36,6 +37,7 @@ app.use('/api/professores', authenticateToken, professoresRoutes);
 app.use('/api/salas', authenticateToken, salasRoutes);
 app.use('/api/categorias', authenticateToken, categoriasRoutes);
 app.use('/api/interests', authenticateToken, interestsRoutes);
+app.use('/api/users', authenticateToken, usersRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

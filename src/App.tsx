@@ -7,6 +7,7 @@ import { Alunos } from './pages/Alunos';
 import { Cursos } from './pages/Cursos';
 import { Turmas } from './pages/Turmas';
 import { Salas } from './pages/Salas';
+import { Usuarios } from './pages/Usuarios';
 import { Layout } from './components/Layout';
 import { Toaster } from 'react-hot-toast';
 import { OrganicBackground } from './components/OrganicBackground';
@@ -104,6 +105,14 @@ export default function App() {
           element={
             <PrivateRoute>
               <Salas />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/usuarios"
+          element={
+            <PrivateRoute>
+              <Usuarios />
             </PrivateRoute>
           }
         />
