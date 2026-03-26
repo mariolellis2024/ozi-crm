@@ -211,12 +211,9 @@ export function FormularioPublico() {
         {/* Logo */}
         <div className="text-center mb-6">
           <img
-            src="/ozi-logo.png"
+            src="/icon.webp"
             alt="OZI"
-            className="h-10 mx-auto"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
+            className="h-12 mx-auto rounded-lg"
           />
         </div>
 
