@@ -93,8 +93,7 @@ export function ModalAlunosMatriculados({
     try {
       await api.put('/api/interests/unenroll', {
         aluno_id: alunoId,
-        curso_id: cursoId,
-        turma_id: turmaId
+        curso_id: cursoId
       });
       
       toast.success('Aluno removido da turma com sucesso!');

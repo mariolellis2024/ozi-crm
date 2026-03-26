@@ -217,7 +217,8 @@ export function Pagamentos() {
                     {m.turma_nome && <span className="text-gray-500 text-xs ml-2">({m.turma_nome})</span>}
                   </div>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
+                      await loadFormData();
                       setForm({
                         aluno_id: m.aluno_id,
                         curso_id: m.curso_id,
@@ -225,7 +226,6 @@ export function Pagamentos() {
                         valor_total: String(m.curso_preco),
                         first_due_date: new Date().toISOString().split('T')[0]
                       });
-                      loadFormData();
                       setShowModal(true);
                     }}
                     className="px-3 py-1 rounded-lg bg-teal-accent/20 text-teal-accent hover:bg-teal-accent/30 text-xs font-medium transition-colors whitespace-nowrap"

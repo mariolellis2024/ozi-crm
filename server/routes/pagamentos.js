@@ -9,6 +9,12 @@ router.get('/', async (req, res) => {
   try {
     const { status, aluno_id, turma_id } = req.query;
     
+    // Auto-mark overdue payments
+    await pool.query(
+      `UPDATE pagamentos SET status = 'atrasado'
+       WHERE status = 'pendente' AND due_date < CURRENT_DATE`
+    );
+    
     let query = `
       SELECT p.*, 
         a.nome as aluno_nome, a.whatsapp as aluno_whatsapp,
@@ -184,21 +190,8 @@ router.put('/:id/undo', async (req, res) => {
   }
 });
 
-// DELETE /api/pagamentos/:id
-router.delete('/:id', async (req, res) => {
-  try {
-    const result = await pool.query('DELETE FROM pagamentos WHERE id = $1 RETURNING id', [req.params.id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Pagamento não encontrado' });
-    }
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting payment:', error);
-    res.status(500).json({ error: 'Erro ao excluir pagamento' });
-  }
-});
-
 // DELETE /api/pagamentos/by-enrollment/:alunoId/:turmaId — bulk delete
+// IMPORTANT: Must come BEFORE /:id to avoid Express matching 'by-enrollment' as :id
 router.delete('/by-enrollment/:alunoId/:turmaId', async (req, res) => {
   try {
     const { alunoId, turmaId } = req.params;
@@ -210,6 +203,20 @@ router.delete('/by-enrollment/:alunoId/:turmaId', async (req, res) => {
   } catch (error) {
     console.error('Error bulk deleting payments:', error);
     res.status(500).json({ error: 'Erro ao excluir pagamentos' });
+  }
+});
+
+// DELETE /api/pagamentos/:id
+router.delete('/:id', async (req, res) => {
+  try {
+    const result = await pool.query('DELETE FROM pagamentos WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Pagamento não encontrado' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting payment:', error);
+    res.status(500).json({ error: 'Erro ao excluir pagamento' });
   }
 });
 
