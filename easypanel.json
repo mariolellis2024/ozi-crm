@@ -8,7 +8,7 @@
                     "type": "image",
                     "image": "ghcr.io/mariolellis2024/ozi-crm:latest"
                 },
-                "env": "DATABASE_URL=postgresql://ozi_user:ozi_crm_2024@$(PROJECT_NAME)_ozi-crm-db:5432/$(PROJECT_NAME)\nJWT_SECRET=TROQUE_POR_CHAVE_SEGURA_64_CHARS\nNODE_ENV=production\nPORT=3001",
+                "env": "DATABASE_URL=postgresql://postgres:ozi_crm_2024@$(PROJECT_NAME)_ozi-crm-db:5432/$(PROJECT_NAME)\nJWT_SECRET=TROQUE_POR_CHAVE_SEGURA_64_CHARS\nNODE_ENV=production\nPORT=3001",
                 "deploy": {
                     "replicas": 1,
                     "command": null,

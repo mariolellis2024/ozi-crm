@@ -8,7 +8,7 @@ services:
     ports:
       - "${PORT:-3001}:3001"
     environment:
-      - DATABASE_URL=postgresql://ozi_user:${POSTGRES_PASSWORD:-ozi_secret_2024}@postgres:5432/ozi_crm
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-ozi_crm_2024}@postgres:5432/ozi_crm
       - JWT_SECRET=${JWT_SECRET:-change_me_in_production}
       - PORT=3001
       - NODE_ENV=production
@@ -21,15 +21,15 @@ services:
     image: postgres:16-alpine
     environment:
       - POSTGRES_DB=ozi_crm
-      - POSTGRES_USER=ozi_user
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ozi_secret_2024}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ozi_crm_2024}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ozi_user -d ozi_crm"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ozi_crm"]
       interval: 5s
       timeout: 5s
       retries: 5
