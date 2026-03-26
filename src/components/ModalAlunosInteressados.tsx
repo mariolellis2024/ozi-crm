@@ -401,8 +401,14 @@ export function ModalAlunosInteressados({
 
       {/* Enrollment Form Sub-Modal */}
       {enrollForm.isOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center">
-          <div className="bg-dark-card rounded-2xl border border-dark-lighter p-6 w-full max-w-md mx-4 shadow-xl">
+        <div
+          className="fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            className="bg-dark-card rounded-2xl border border-dark-lighter p-6 w-full max-w-md mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-lg font-semibold text-white mb-1">Completar Matrícula</h3>
             <p className="text-sm text-gray-400 mb-4">
               Preencha os dados de <strong className="text-white">{enrollForm.alunoNome}</strong> para concluir a matrícula.
