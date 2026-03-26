@@ -37,13 +37,20 @@ router.get('/aluno/:alunoId', async (req, res) => {
 router.get('/curso/:cursoId/interested', async (req, res) => {
   try {
     const { cursoId } = req.params;
-    const result = await pool.query(
-      `SELECT a.id, a.nome, a.email, a.whatsapp, a.empresa, a.available_periods
+    const { unidade_id } = req.query;
+
+    let query = `SELECT a.id, a.nome, a.email, a.whatsapp, a.empresa, a.available_periods
        FROM aluno_curso_interests aci
        INNER JOIN alunos a ON a.id = aci.aluno_id
-       WHERE aci.curso_id = $1 AND aci.status = 'interested' AND aci.turma_id IS NULL`,
-      [cursoId]
-    );
+       WHERE aci.curso_id = $1 AND aci.status = 'interested' AND aci.turma_id IS NULL`;
+    const params = [cursoId];
+
+    if (unidade_id) {
+      params.push(unidade_id);
+      query += ` AND a.unidade_id = $${params.length}`;
+    }
+
+    const result = await pool.query(query, params);
     res.json(result.rows.map(r => ({ ...r, available_periods: parsePgArray(r.available_periods) })));
   } catch (error) {
     console.error('Error loading interested students:', error);

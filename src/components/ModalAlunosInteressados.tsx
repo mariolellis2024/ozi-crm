@@ -22,6 +22,7 @@ interface ModalAlunosInteressadosProps {
   turmaPeriod: string;
   cursoNome: string;
   cursoPreco: number;
+  unidadeId?: string;
   onStudentEnrolled: () => void;
   onPaymentRequested?: (alunoId: string, alunoNome: string, cursoId: string, cursoPreco: number, turmaId: string) => void;
 }
@@ -35,7 +36,8 @@ export function ModalAlunosInteressados({
   cursoNome,
   cursoPreco,
   onStudentEnrolled,
-  onPaymentRequested
+  onPaymentRequested,
+  unidadeId
 }: ModalAlunosInteressadosProps) {
   const [alunosInteressados, setAlunosInteressados] = useState<AlunoInteressado[]>([]);
   const [filteredAlunos, setFilteredAlunos] = useState<AlunoInteressado[]>([]);
@@ -65,7 +67,8 @@ export function ModalAlunosInteressados({
   async function loadAlunosInteressados() {
     setLoading(true);
     try {
-      const data = await api.get(`/api/interests/curso/${cursoId}/interested`);
+      const unidadeParam = unidadeId ? `?unidade_id=${unidadeId}` : '';
+      const data = await api.get(`/api/interests/curso/${cursoId}/interested${unidadeParam}`);
       setAlunosInteressados(data);
     } catch (error) {
       toast.error('Erro ao carregar alunos interessados');

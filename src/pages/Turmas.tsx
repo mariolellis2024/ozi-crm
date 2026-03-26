@@ -93,7 +93,8 @@ export function Turmas() {
     cursoId: '',
     turmaPeriod: '' as Period,
     cursoNome: '',
-    cursoPreco: 0
+    cursoPreco: 0,
+    unidadeId: ''
   });
   const [alunosMatriculadosModal, setAlunosMatriculadosModal] = useState({
     isOpen: false,
@@ -533,7 +534,8 @@ export function Turmas() {
       cursoId: turma.curso_id,
       turmaPeriod: turma.period,
       cursoNome: turma.curso.nome,
-      cursoPreco: turma.curso.preco
+      cursoPreco: turma.curso.preco,
+      unidadeId: turma.sala?.unidade_id || ''
     });
   }
 
@@ -544,7 +546,8 @@ export function Turmas() {
       cursoId: '',
       turmaPeriod: 'manha',
       cursoNome: '',
-      cursoPreco: 0
+      cursoPreco: 0,
+      unidadeId: ''
     });
   }
 
@@ -1096,6 +1099,7 @@ export function Turmas() {
           turmaPeriod={alunosInteressadosModal.turmaPeriod}
           cursoNome={alunosInteressadosModal.cursoNome}
           cursoPreco={alunosInteressadosModal.cursoPreco}
+          unidadeId={alunosInteressadosModal.unidadeId}
           onStudentEnrolled={handleStudentEnrolled}
           onPaymentRequested={handlePaymentRequested}
         />
