@@ -45,7 +45,7 @@
                 "env": "MINIO_ROOT_USER=minioadmin\nMINIO_ROOT_PASSWORD=TROQUE_POR_CHAVE_SEGURA",
                 "deploy": {
                     "replicas": 1,
-                    "command": "server /data --console-address ':9001'",
+                    "command": "minio server /data --console-address :9001",
                     "zeroDowntime": false
                 },
                 "domains": [
