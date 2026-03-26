@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
 import { Plus, Pencil, Trash2, MapPin, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -126,9 +127,9 @@ export function Unidades() {
         </div>
 
         {/* Modal */}
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={handleCloseModal}>
-            <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+        {isModalOpen && createPortal(
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={handleCloseModal}>
+            <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md scale-in" onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-white">
                   {editingId ? 'Editar Unidade' : 'Nova Unidade'}
@@ -169,7 +170,8 @@ export function Unidades() {
                 </button>
               </form>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         <ConfirmationModal
