@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { DollarSign, Check, Clock, AlertTriangle, Filter, Plus, Undo2, X, Trash2 } from 'lucide-react';
+import { DollarSign, Check, Clock, AlertTriangle, Filter, Plus, Undo2, X, Trash2, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import toast from 'react-hot-toast';
 
@@ -35,6 +35,11 @@ interface Summary {
 
 interface Aluno { id: string; nome: string; }
 interface Curso { id: string; nome: string; preco: number; }
+interface MissingPayment {
+  aluno_id: string; aluno_nome: string;
+  curso_id: string; curso_nome: string; curso_preco: number;
+  turma_id: string; turma_nome: string;
+}
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   pendente: { label: 'Pendente', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30', icon: Clock },
@@ -53,6 +58,7 @@ export function Pagamentos() {
     aluno_id: '', curso_id: '', total_parcelas: '1', valor_total: '', first_due_date: ''
   });
   const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; id: string }>({ isOpen: false, id: '' });
+  const [missingPayments, setMissingPayments] = useState<MissingPayment[]>([]);
 
   useEffect(() => { loadData(); }, [filter]);
 
@@ -62,6 +68,11 @@ export function Pagamentos() {
       const data = await api.get(`/api/pagamentos${params}`);
       setPagamentos(data.data);
       setSummary(data.summary);
+      // Also load missing payments
+      try {
+        const missing = await api.get('/api/pagamentos/missing');
+        setMissingPayments(missing);
+      } catch { setMissingPayments([]); }
     } catch (error) {
       console.error('Erro ao carregar pagamentos:', error);
     }
@@ -187,6 +198,45 @@ export function Pagamentos() {
           </div>
         </div>
 
+        {/* Missing Payments Alert */}
+        {missingPayments.length > 0 && (
+          <div className="mb-6 bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertCircle className="h-5 w-5 text-amber-400" />
+              <h3 className="text-amber-400 font-medium text-sm">
+                {missingPayments.length} aluno{missingPayments.length > 1 ? 's' : ''} matriculado{missingPayments.length > 1 ? 's' : ''} sem pagamento registrado
+              </h3>
+            </div>
+            <div className="space-y-2">
+              {missingPayments.map((m, i) => (
+                <div key={i} className="flex items-center justify-between bg-dark-lighter/50 rounded-lg px-3 py-2">
+                  <div className="text-sm">
+                    <span className="text-white font-medium">{m.aluno_nome}</span>
+                    <span className="text-gray-400 mx-2">&bull;</span>
+                    <span className="text-gray-400">{m.curso_nome}</span>
+                    {m.turma_nome && <span className="text-gray-500 text-xs ml-2">({m.turma_nome})</span>}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setForm({
+                        aluno_id: m.aluno_id,
+                        curso_id: m.curso_id,
+                        total_parcelas: '1',
+                        valor_total: String(m.curso_preco),
+                        first_due_date: new Date().toISOString().split('T')[0]
+                      });
+                      loadFormData();
+                      setShowModal(true);
+                    }}
+                    className="px-3 py-1 rounded-lg bg-teal-accent/20 text-teal-accent hover:bg-teal-accent/30 text-xs font-medium transition-colors whitespace-nowrap"
+                  >
+                    Gerar Parcelas
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {/* Filters */}
         <div className="flex items-center gap-2 mb-6">
           <Filter className="h-4 w-4 text-gray-400" />

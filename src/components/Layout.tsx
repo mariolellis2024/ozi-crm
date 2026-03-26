@@ -30,13 +30,13 @@ export function Layout({ children }: LayoutProps) {
     { icon: BarChart3, label: 'Dashboard', path: '/' },
     { icon: Home, label: 'Turmas', path: '/turmas' },
     { icon: User, label: 'Alunos', path: '/alunos' },
-    { icon: BookOpen, label: 'Cursos', path: '/cursos' },
-    { icon: GraduationCap, label: 'Professores', path: '/professores' },
-    { icon: DoorClosed, label: 'Salas', path: '/salas' },
     { icon: CalendarDays, label: 'Calendário', path: '/calendario' },
     { icon: GitBranch, label: 'Pipeline', path: '/pipeline' },
     { icon: Wallet, label: 'Pagamentos', path: '/pagamentos' },
     { icon: ClipboardList, label: 'Atividades', path: '/atividades' },
+    { icon: BookOpen, label: 'Cursos', path: '/cursos' },
+    { icon: GraduationCap, label: 'Professores', path: '/professores' },
+    { icon: DoorClosed, label: 'Salas', path: '/salas' },
     { icon: Users, label: 'Usuários', path: '/usuarios' },
   ];
 

@@ -75,6 +75,29 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/pagamentos/missing — enrolled students without payments
+router.get('/missing', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT DISTINCT
+        i.aluno_id, a.nome as aluno_nome,
+        i.curso_id, c.nome as curso_nome, c.preco as curso_preco,
+        i.turma_id, t.name as turma_nome
+      FROM interests i
+      JOIN alunos a ON a.id = i.aluno_id
+      JOIN cursos c ON c.id = i.curso_id
+      LEFT JOIN turmas t ON t.id = i.turma_id
+      LEFT JOIN pagamentos p ON p.aluno_id = i.aluno_id AND p.turma_id = i.turma_id
+      WHERE i.status = 'enrolled' AND p.id IS NULL
+      ORDER BY a.nome
+    `);
+    res.json(result.rows.map(r => ({ ...r, curso_preco: parseFloat(r.curso_preco) })));
+  } catch (error) {
+    console.error('Error loading missing payments:', error);
+    res.status(500).json({ error: 'Erro ao carregar alunos sem pagamento' });
+  }
+});
+
 // POST /api/pagamentos/generate — generate parcelas for an enrolled student
 router.post('/generate', async (req, res) => {
   try {
