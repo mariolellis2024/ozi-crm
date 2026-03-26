@@ -11,10 +11,12 @@ router.get('/', async (req, res) => {
       `SELECT t.id, t.name, t.curso_id, t.sala_id, t.cadeiras, t.potencial_faturamento,
               t.period, t.start_date, t.end_date, t.imposto, t.investimento_anuncios, t.days_of_week, t.created_at,
               c.id as c_id, c.nome as c_nome, c.preco as c_preco, c.carga_horaria as c_carga_horaria,
-              s.id as s_id, s.nome as s_nome, s.cadeiras as s_cadeiras
+              s.id as s_id, s.nome as s_nome, s.cadeiras as s_cadeiras, s.unidade_id as s_unidade_id,
+              un.nome as unidade_nome
        FROM turmas t
        LEFT JOIN cursos c ON c.id = t.curso_id
        LEFT JOIN salas s ON s.id = t.sala_id
+       LEFT JOIN unidades un ON un.id = s.unidade_id
        ORDER BY t.created_at DESC`
     );
 
@@ -66,7 +68,7 @@ router.get('/', async (req, res) => {
       days_of_week: parsePgArray(t.days_of_week),
       created_at: t.created_at,
       curso: t.c_id ? { id: t.c_id, nome: t.c_nome, preco: parseFloat(t.c_preco), carga_horaria: t.c_carga_horaria } : null,
-      sala: t.s_id ? { id: t.s_id, nome: t.s_nome, cadeiras: t.s_cadeiras } : null,
+      sala: t.s_id ? { id: t.s_id, nome: t.s_nome, cadeiras: t.s_cadeiras, unidade_id: t.s_unidade_id, unidade_nome: t.unidade_nome } : null,
       professores: profByTurma[t.id] || [],
       alunos_enrolled: enrolledByTurma[t.id] || []
     }));

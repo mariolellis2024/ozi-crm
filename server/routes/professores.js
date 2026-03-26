@@ -7,7 +7,11 @@ const router = Router();
 router.get('/', async (req, res) => {
   try {
     const [professoresResult, turmasResult] = await Promise.all([
-      pool.query('SELECT id, nome, email, whatsapp, valor_hora, created_at FROM professores ORDER BY created_at DESC'),
+      pool.query(`SELECT p.id, p.nome, p.email, p.whatsapp, p.valor_hora, p.unidade_id, p.created_at,
+                         u.nome as unidade_nome
+                  FROM professores p
+                  LEFT JOIN unidades u ON u.id = p.unidade_id
+                  ORDER BY p.created_at DESC`),
       pool.query(
         `SELECT tp.professor_id, tp.hours, t.id as turma_id, t.start_date, t.end_date
          FROM turma_professores tp
@@ -55,7 +59,7 @@ router.get('/', async (req, res) => {
 // GET /api/professores/simple
 router.get('/simple', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, nome, valor_hora FROM professores ORDER BY nome');
+    const result = await pool.query('SELECT p.id, p.nome, p.valor_hora, p.unidade_id, u.nome as unidade_nome FROM professores p LEFT JOIN unidades u ON u.id = p.unidade_id ORDER BY p.nome');
     res.json(result.rows.map(r => ({ ...r, valor_hora: parseFloat(r.valor_hora) })));
   } catch (error) {
     console.error('Error loading professores:', error);
@@ -66,10 +70,10 @@ router.get('/simple', async (req, res) => {
 // POST /api/professores
 router.post('/', async (req, res) => {
   try {
-    const { nome, email, whatsapp, valor_hora } = req.body;
+    const { nome, email, whatsapp, valor_hora, unidade_id } = req.body;
     const result = await pool.query(
-      'INSERT INTO professores (nome, email, whatsapp, valor_hora) VALUES ($1, $2, $3, $4) RETURNING *',
-      [nome, email, whatsapp, parseFloat(valor_hora)]
+      'INSERT INTO professores (nome, email, whatsapp, valor_hora, unidade_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [nome, email, whatsapp, parseFloat(valor_hora), unidade_id || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -82,10 +86,10 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, email, whatsapp, valor_hora } = req.body;
+    const { nome, email, whatsapp, valor_hora, unidade_id } = req.body;
     const result = await pool.query(
-      'UPDATE professores SET nome = $1, email = $2, whatsapp = $3, valor_hora = $4 WHERE id = $5 RETURNING *',
-      [nome, email, whatsapp, parseFloat(valor_hora), id]
+      'UPDATE professores SET nome = $1, email = $2, whatsapp = $3, valor_hora = $4, unidade_id = $5 WHERE id = $6 RETURNING *',
+      [nome, email, whatsapp, parseFloat(valor_hora), unidade_id || null, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Professor não encontrado' });

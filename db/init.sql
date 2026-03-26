@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS professores (
   email text UNIQUE NOT NULL,
   whatsapp text NOT NULL,
   valor_hora numeric NOT NULL DEFAULT 0,
+  unidade_id uuid REFERENCES unidades(id) ON DELETE SET NULL,
   created_at timestamptz DEFAULT now()
 );
 

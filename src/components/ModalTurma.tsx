@@ -38,7 +38,7 @@ interface ModalTurmaProps {
     days_of_week: number[];
   }>>;
   cursos: Array<{ id: string; nome: string; carga_horaria: number }>;
-  salas: Array<{ id: string; nome: string; cadeiras: number }>;
+  salas: Array<{ id: string; nome: string; cadeiras: number; unidade_nome?: string }>;
   professores: Array<{ id: string; nome: string; valor_hora: number }>;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
@@ -278,11 +278,31 @@ export function ModalTurma({
                   required
                 >
                   <option value="">Selecione uma sala</option>
-                  {salas.map(sala => (
-                    <option key={sala.id} value={sala.id}>
-                      {sala.nome} ({sala.cadeiras} cadeiras)
-                    </option>
-                  ))}
+                  {(() => {
+                    const grouped: Record<string, typeof salas> = {};
+                    salas.forEach(s => {
+                      const key = s.unidade_nome || 'Sem unidade';
+                      if (!grouped[key]) grouped[key] = [];
+                      grouped[key].push(s);
+                    });
+                    const keys = Object.keys(grouped);
+                    if (keys.length <= 1 && keys[0] === 'Sem unidade') {
+                      return salas.map(sala => (
+                        <option key={sala.id} value={sala.id}>
+                          {sala.nome} ({sala.cadeiras} cadeiras)
+                        </option>
+                      ));
+                    }
+                    return keys.map(key => (
+                      <optgroup key={key} label={key}>
+                        {grouped[key].map(sala => (
+                          <option key={sala.id} value={sala.id}>
+                            {sala.nome} ({sala.cadeiras} cadeiras)
+                          </option>
+                        ))}
+                      </optgroup>
+                    ));
+                  })()}
                 </select>
               </div>
 

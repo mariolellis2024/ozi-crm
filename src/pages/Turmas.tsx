@@ -41,6 +41,8 @@ interface Turma {
     id: string;
     nome: string;
     cadeiras: number;
+    unidade_id?: string;
+    unidade_nome?: string;
   };
   professores?: Array<{
     id: string;
@@ -790,7 +792,7 @@ export function Turmas() {
                       </div>
                       <div className="flex items-center text-gray-400">
                         <MapPin className="h-4 w-4 mr-2" />
-                        <span>{turma.sala?.nome}</span>
+                        <span>{turma.sala?.nome}{turma.sala?.unidade_nome ? ` • ${turma.sala.unidade_nome}` : ''}</span>
                       </div>
                       <div className="flex items-center text-gray-400">
                         <Clock className={`h-4 w-4 mr-2 ${getPeriodColor(turma.period)}`} />

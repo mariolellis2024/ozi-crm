@@ -12,8 +12,15 @@ interface Professor {
   email: string;
   whatsapp: string;
   valor_hora: number;
+  unidade_id?: string;
+  unidade_nome?: string;
   total_a_receber?: number;
   total_recebido?: number;
+}
+
+interface Unidade {
+  id: string;
+  nome: string;
 }
 
 export function Professores() {
@@ -23,8 +30,10 @@ export function Professores() {
     nome: '',
     email: '',
     whatsapp: '',
-    valor_hora: ''
+    valor_hora: '',
+    unidade_id: ''
   });
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -34,6 +43,7 @@ export function Professores() {
 
   useEffect(() => {
     loadProfessores();
+    loadUnidades();
   }, []);
 
   async function loadProfessores() {
@@ -43,6 +53,13 @@ export function Professores() {
     } catch (error) {
       toast.error('Erro ao carregar professores');
     }
+  }
+
+  async function loadUnidades() {
+    try {
+      const data = await api.get('/api/unidades');
+      setUnidades(data);
+    } catch { /* ignore */ }
   }
 
   async function checkProfessorInUse(_professorId: string): Promise<boolean> {
@@ -66,7 +83,7 @@ export function Professores() {
         toast.success('Professor adicionado com sucesso!');
       }
 
-      setFormData({ nome: '', email: '', whatsapp: '', valor_hora: '' });
+      setFormData({ nome: '', email: '', whatsapp: '', valor_hora: '', unidade_id: '' });
       setEditingId(null);
       setIsModalOpen(false);
       loadProfessores();
@@ -117,7 +134,8 @@ export function Professores() {
       nome: professor.nome,
       email: professor.email,
       whatsapp: professor.whatsapp,
-      valor_hora: professor.valor_hora.toString()
+      valor_hora: professor.valor_hora.toString(),
+      unidade_id: professor.unidade_id || ''
     });
     setEditingId(professor.id);
     setIsModalOpen(true);
@@ -125,7 +143,7 @@ export function Professores() {
 
   function handleCloseModal() {
     setIsModalOpen(false);
-    setFormData({ nome: '', email: '', whatsapp: '', valor_hora: '' });
+    setFormData({ nome: '', email: '', whatsapp: '', valor_hora: '', unidade_id: '' });
     setEditingId(null);
   }
 
@@ -166,6 +184,11 @@ export function Professores() {
                     <p className="text-teal-accent font-semibold">
                       {formatCurrency(professor.valor_hora)}/hora
                     </p>
+                    {professor.unidade_nome && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-accent/10 text-teal-accent text-xs rounded-full">
+                        📍 {professor.unidade_nome}
+                      </span>
+                    )}
                     {(professor.total_a_receber !== undefined && professor.total_recebido !== undefined) && (
                       <div className="space-y-1 pt-2 border-t border-gray-700">
                         {professor.total_a_receber > 0 && (
@@ -211,6 +234,7 @@ export function Professores() {
           editingId={editingId}
           formData={formData}
           setFormData={setFormData}
+          unidades={unidades}
           onSubmit={handleSubmit}
           onClose={handleCloseModal}
         />

@@ -10,13 +10,16 @@ interface ModalProfessorProps {
     email: string;
     whatsapp: string;
     valor_hora: string;
+    unidade_id: string;
   };
   setFormData: React.Dispatch<React.SetStateAction<{
     nome: string;
     email: string;
     whatsapp: string;
     valor_hora: string;
+    unidade_id: string;
   }>>;
+  unidades: Array<{ id: string; nome: string }>;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
 }
@@ -26,6 +29,7 @@ export function ModalProfessor({
   editingId, 
   formData, 
   setFormData, 
+  unidades,
   onSubmit, 
   onClose 
 }: ModalProfessorProps) {
@@ -110,6 +114,23 @@ export function ModalProfessor({
               step="0.01"
               required
             />
+          </div>
+
+          <div>
+            <label htmlFor="unidade_id" className="block text-sm font-medium text-gray-400 mb-1">
+              Unidade
+            </label>
+            <select
+              id="unidade_id"
+              value={formData.unidade_id}
+              onChange={(e) => setFormData({ ...formData, unidade_id: e.target.value })}
+              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+            >
+              <option value="">Sem unidade</option>
+              {unidades.map(u => (
+                <option key={u.id} value={u.id}>{u.nome}</option>
+              ))}
+            </select>
           </div>
 
           <button
