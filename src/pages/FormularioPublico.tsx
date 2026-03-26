@@ -213,7 +213,7 @@ export function FormularioPublico() {
           <img
             src="/icon.webp"
             alt="OZI"
-            className="h-12 mx-auto rounded-lg"
+            className="h-12 mx-auto"
           />
         </div>
 
