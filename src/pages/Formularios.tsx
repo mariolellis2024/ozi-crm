@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
 import { Plus, Pencil, Trash2, Link2, Copy, ExternalLink, FileText, ToggleLeft, ToggleRight } from 'lucide-react';
@@ -46,6 +46,16 @@ export function Formularios() {
     ativo: true
   });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: '', nome: '' });
+
+  // Check if current user is superadmin from JWT
+  const isSuperAdmin = useMemo(() => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return false;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return !!payload.is_super_admin;
+    } catch { return false; }
+  }, []);
 
   useEffect(() => {
     loadFormularios();
@@ -188,13 +198,15 @@ export function Formularios() {
             <h1 className="text-3xl font-bold text-white">Formulários</h1>
             <p className="text-gray-400 mt-2">Landing pages para captura de leads</p>
           </div>
-          <button
-            onClick={handleNew}
-            className="bg-teal-accent text-dark px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-teal-400 transition-all duration-200 font-medium shadow-glow hover:shadow-glow-intense"
-          >
-            <Plus className="h-5 w-5" />
-            Novo Formulário
-          </button>
+          {isSuperAdmin && (
+            <button
+              onClick={handleNew}
+              className="bg-teal-accent text-dark px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-teal-400 transition-all duration-200 font-medium shadow-glow hover:shadow-glow-intense"
+            >
+              <Plus className="h-5 w-5" />
+              Novo Formulário
+            </button>
+          )}
         </div>
 
         {/* List */}
@@ -243,27 +255,31 @@ export function Formularios() {
                 >
                   <ExternalLink className="h-4 w-4" />
                 </a>
-                <button
-                  onClick={() => handleToggleAtivo(f)}
-                  className={`p-2 transition-colors ${f.ativo ? 'text-emerald-400' : 'text-gray-500'}`}
-                  title={f.ativo ? 'Desativar' : 'Ativar'}
-                >
-                  {f.ativo ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
-                </button>
-                <button
-                  onClick={() => handleEdit(f)}
-                  className="p-2 text-gray-400 hover:text-teal-accent transition-colors"
-                  title="Editar"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setConfirmModal({ isOpen: true, id: f.id, nome: f.curso_nome })}
-                  className="p-2 text-gray-400 hover:text-red-400 transition-colors"
-                  title="Excluir"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                {isSuperAdmin && (
+                  <>
+                    <button
+                      onClick={() => handleToggleAtivo(f)}
+                      className={`p-2 transition-colors ${f.ativo ? 'text-emerald-400' : 'text-gray-500'}`}
+                      title={f.ativo ? 'Desativar' : 'Ativar'}
+                    >
+                      {f.ativo ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
+                    </button>
+                    <button
+                      onClick={() => handleEdit(f)}
+                      className="p-2 text-gray-400 hover:text-teal-accent transition-colors"
+                      title="Editar"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setConfirmModal({ isOpen: true, id: f.id, nome: f.curso_nome })}
+                      className="p-2 text-gray-400 hover:text-red-400 transition-colors"
+                      title="Excluir"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}

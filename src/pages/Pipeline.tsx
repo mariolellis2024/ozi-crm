@@ -16,6 +16,7 @@ interface Interest {
   status: string;
   turma_id: string | null;
   created_at: string;
+  unidade_nome: string | null;
 }
 
 interface Curso {
@@ -186,6 +187,13 @@ export function Pipeline() {
                           )}
                         </div>
                         <p className="text-gray-500 text-xs truncate">{interest.curso_nome}</p>
+                        {interest.unidade_nome && (
+                          <p className="text-[10px] mt-0.5">
+                            <span className="px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                              📍 {interest.unidade_nome}
+                            </span>
+                          </p>
+                        )}
                         {interest.aluno_whatsapp && (
                           <p className="text-gray-500 text-[10px] mt-1">📱 {formatPhone(interest.aluno_whatsapp)}</p>
                         )}
