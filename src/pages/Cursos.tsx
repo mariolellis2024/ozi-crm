@@ -14,6 +14,7 @@ interface Curso {
   carga_horaria: number;
   preco: number;
   categoria_id?: string;
+  imagem_url?: string;
   interested_students_count?: number;
   categoria?: {
     nome: string;
@@ -31,7 +32,8 @@ export function Cursos() {
     nome: '',
     carga_horaria: '',
     preco: '',
-    categoria_id: ''
+    categoria_id: '',
+    imagem_url: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({
@@ -94,7 +96,7 @@ export function Cursos() {
       }
 
       setIsModalOpen(false);
-      setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '' });
+      setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '' });
       setEditingId(null);
       loadCursos();
     } catch (error) {
@@ -134,7 +136,8 @@ export function Cursos() {
       nome: curso.nome,
       carga_horaria: curso.carga_horaria.toString(),
       preco: curso.preco.toString(),
-      categoria_id: curso.categoria_id || ''
+      categoria_id: curso.categoria_id || '',
+      imagem_url: curso.imagem_url || ''
     });
     setEditingId(curso.id);
     setIsModalOpen(true);
@@ -269,7 +272,7 @@ export function Cursos() {
           onSubmit={handleSubmit}
           onClose={() => {
             setIsModalOpen(false);
-            setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '' });
+            setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '' });
             setEditingId(null);
           }}
         />

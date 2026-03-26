@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Plus, Pencil, Trash2, Check } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, ImagePlus, Loader2 } from 'lucide-react';
 import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 
@@ -17,12 +17,14 @@ interface ModalCursoProps {
     carga_horaria: string;
     preco: string;
     categoria_id: string;
+    imagem_url: string;
   };
   setFormData: React.Dispatch<React.SetStateAction<{
     nome: string;
     carga_horaria: string;
     preco: string;
     categoria_id: string;
+    imagem_url: string;
   }>>;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
@@ -40,6 +42,8 @@ export function ModalCurso({
   const [showCategoriaForm, setShowCategoriaForm] = useState(false);
   const [editingCategoriaId, setEditingCategoriaId] = useState<string | null>(null);
   const [categoriaFormData, setCategoriaFormData] = useState({ nome: '' });
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -102,37 +106,54 @@ export function ModalCurso({
     setShowCategoriaForm(false);
   }
 
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('image', file);
+
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formDataUpload
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Erro ao fazer upload');
+      }
+
+      const data = await response.json();
+      setFormData(prev => ({ ...prev, imagem_url: data.url }));
+      toast.success('Imagem enviada com sucesso!');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao enviar imagem');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
 
   return createPortal(
     isOpen ? (
     <div 
       className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 9999,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem'
-      }}
       onClick={onClose}
     >
       <div 
-        className="bg-dark-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl transform transition-all"
-        style={{
-          borderRadius: '1rem',
-          padding: '1.5rem',
-          width: '100%',
-          maxWidth: '42rem',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-        }}
+        className="bg-dark-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
@@ -149,6 +170,71 @@ export function ModalCurso({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-4">
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Imagem Hero do Curso
+            </label>
+            <div 
+              className="relative border-2 border-dashed border-gray-600 rounded-xl overflow-hidden cursor-pointer hover:border-teal-accent/50 transition-colors"
+              onClick={() => !uploading && fileInputRef.current?.click()}
+            >
+              {formData.imagem_url ? (
+                <div className="relative group">
+                  <img 
+                    src={formData.imagem_url} 
+                    alt="Hero do curso" 
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      className="px-4 py-2 bg-teal-accent text-dark rounded-lg text-sm font-medium"
+                    >
+                      Trocar imagem
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFormData(prev => ({ ...prev, imagem_url: '' }));
+                      }}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+                  {uploading ? (
+                    <>
+                      <Loader2 className="h-8 w-8 animate-spin mb-2 text-teal-accent" />
+                      <span className="text-sm">Enviando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ImagePlus className="h-8 w-8 mb-2" />
+                      <span className="text-sm">Clique para enviar uma imagem</span>
+                      <span className="text-xs text-gray-500 mt-1">JPG, PNG, WebP • Máx. 5MB</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+          </div>
+
           <div>
             <label htmlFor="nome" className="block text-sm font-medium text-gray-400 mb-1">
               Nome

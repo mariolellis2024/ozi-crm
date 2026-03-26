@@ -7,7 +7,7 @@ const router = Router();
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT c.id, c.nome, c.carga_horaria, c.preco, c.categoria_id, c.created_at,
+      `SELECT c.id, c.nome, c.carga_horaria, c.preco, c.categoria_id, c.imagem_url, c.created_at,
               cat.nome as categoria_nome
        FROM cursos c
        LEFT JOIN categorias cat ON cat.id = c.categoria_id
@@ -32,6 +32,7 @@ router.get('/', async (req, res) => {
       carga_horaria: c.carga_horaria,
       preco: parseFloat(c.preco),
       categoria_id: c.categoria_id,
+      imagem_url: c.imagem_url,
       created_at: c.created_at,
       categoria: c.categoria_nome ? { nome: c.categoria_nome } : null,
       interested_students_count: interestCounts[c.id] || 0
@@ -60,11 +61,11 @@ router.get('/simple', async (req, res) => {
 // POST /api/cursos
 router.post('/', async (req, res) => {
   try {
-    const { nome, carga_horaria, preco, categoria_id } = req.body;
+    const { nome, carga_horaria, preco, categoria_id, imagem_url } = req.body;
     const result = await pool.query(
-      `INSERT INTO cursos (nome, carga_horaria, preco, categoria_id)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [nome, parseInt(carga_horaria), parseFloat(preco), categoria_id || null]
+      `INSERT INTO cursos (nome, carga_horaria, preco, categoria_id, imagem_url)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [nome, parseInt(carga_horaria), parseFloat(preco), categoria_id || null, imagem_url || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -77,11 +78,11 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, carga_horaria, preco, categoria_id } = req.body;
+    const { nome, carga_horaria, preco, categoria_id, imagem_url } = req.body;
     const result = await pool.query(
-      `UPDATE cursos SET nome = $1, carga_horaria = $2, preco = $3, categoria_id = $4
-       WHERE id = $5 RETURNING *`,
-      [nome, parseInt(carga_horaria), parseFloat(preco), categoria_id || null, id]
+      `UPDATE cursos SET nome = $1, carga_horaria = $2, preco = $3, categoria_id = $4, imagem_url = $5
+       WHERE id = $6 RETURNING *`,
+      [nome, parseInt(carga_horaria), parseFloat(preco), categoria_id || null, imagem_url || null, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Curso não encontrado' });

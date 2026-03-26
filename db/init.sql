@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS cursos (
   carga_horaria integer NOT NULL DEFAULT 0,
   preco numeric NOT NULL DEFAULT 0,
   categoria_id uuid REFERENCES categorias(id) ON DELETE SET NULL,
+  imagem_url text,
   created_at timestamptz DEFAULT now()
 );
 

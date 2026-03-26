@@ -21,6 +21,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import pipelineRoutes from './routes/pipeline.js';
 import certificatesRoutes from './routes/certificates.js';
 import pagamentosRoutes from './routes/pagamentos.js';
+import uploadRoutes from './routes/upload.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,6 +32,9 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded files publicly (no auth needed for external pages)
+app.use('/uploads', express.static('/app/uploads'));
 
 // Public routes
 app.use('/api/auth', authRoutes);
@@ -50,6 +54,7 @@ app.use('/api/dashboard', authenticateToken, dashboardRoutes);
 app.use('/api/pipeline', authenticateToken, pipelineRoutes);
 app.use('/api/certificates', authenticateToken, certificatesRoutes);
 app.use('/api/pagamentos', authenticateToken, pagamentosRoutes);
+app.use('/api/upload', authenticateToken, uploadRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

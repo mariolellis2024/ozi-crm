@@ -19,7 +19,10 @@ class ApiClient {
     if (response.status === 401 || response.status === 403) {
       this.token = null;
       localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      // Only redirect if not already on login page to avoid loop
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
       throw new Error('Sessão expirada');
     }
     const data = await response.json();
