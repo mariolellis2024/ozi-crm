@@ -85,23 +85,7 @@ export function Cursos() {
     }
   }
 
-  async function updateTurmaNames(cursoId: string, newNome: string) {
-    try {
-      const turmas = await api.get('/api/turmas');
-      const cursoTurmas = turmas.filter((t: any) => t.curso_id === cursoId);
 
-      const updatePromises = cursoTurmas.map(async (turma: any) => {
-        const currentNumber = turma.name.split(' ').pop();
-        const newName = `${newNome} ${currentNumber}`;
-        await api.put(`/api/turmas/${turma.id}`, { name: newName });
-      });
-
-      await Promise.all(updatePromises);
-    } catch (error) {
-      console.error('Error updating turma names:', error);
-      throw error;
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -114,7 +98,6 @@ export function Cursos() {
 
       if (editingId) {
         await api.put(`/api/cursos/${editingId}`, cursoData);
-        await updateTurmaNames(editingId, cursoData.nome);
         toast.success('Curso atualizado com sucesso!');
       } else {
         await api.post('/api/cursos', cursoData);
