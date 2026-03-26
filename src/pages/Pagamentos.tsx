@@ -39,6 +39,7 @@ interface MissingPayment {
   aluno_id: string; aluno_nome: string;
   curso_id: string; curso_nome: string; curso_preco: number;
   turma_id: string; turma_nome: string;
+  total_registrado: number; total_pago: number; parcelas_count: number;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
@@ -215,6 +216,15 @@ export function Pagamentos() {
                     <span className="text-gray-400 mx-2">&bull;</span>
                     <span className="text-gray-400">{m.curso_nome}</span>
                     {m.turma_nome && <span className="text-gray-500 text-xs ml-2">({m.turma_nome})</span>}
+                    <span className="ml-2 text-xs">
+                      {m.parcelas_count === 0 ? (
+                        <span className="text-red-400">Nenhuma parcela registrada</span>
+                      ) : (
+                        <span className="text-amber-400">
+                          {formatCurrency(m.total_registrado)} de {formatCurrency(m.curso_preco)} registrado • faltam {formatCurrency(m.curso_preco - m.total_registrado)}
+                        </span>
+                      )}
+                    </span>
                   </div>
                   <button
                     onClick={async () => {

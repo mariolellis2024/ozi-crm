@@ -81,23 +81,33 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/pagamentos/missing — enrolled students without payments
+// GET /api/pagamentos/missing — enrolled students with missing or incomplete payments
 router.get('/missing', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT DISTINCT
+      SELECT 
         i.aluno_id, a.nome as aluno_nome,
         i.curso_id, c.nome as curso_nome, c.preco as curso_preco,
-        i.turma_id, t.name as turma_nome
+        i.turma_id, t.name as turma_nome,
+        COALESCE(SUM(p.valor), 0) as total_registrado,
+        COALESCE(SUM(p.valor) FILTER (WHERE p.status = 'pago'), 0) as total_pago,
+        COUNT(p.id)::int as parcelas_count
       FROM aluno_curso_interests i
       JOIN alunos a ON a.id = i.aluno_id
       JOIN cursos c ON c.id = i.curso_id
       LEFT JOIN turmas t ON t.id = i.turma_id
       LEFT JOIN pagamentos p ON p.aluno_id = i.aluno_id AND p.turma_id = i.turma_id
-      WHERE i.status = 'enrolled' AND i.turma_id IS NOT NULL AND p.id IS NULL
-      ORDER BY a.nome
+      WHERE i.status = 'enrolled' AND i.turma_id IS NOT NULL
+      GROUP BY i.aluno_id, a.nome, i.curso_id, c.nome, c.preco, i.turma_id, t.name
+      HAVING COALESCE(SUM(p.valor), 0) < c.preco
+      ORDER BY COALESCE(SUM(p.valor), 0) ASC, a.nome
     `);
-    res.json(result.rows.map(r => ({ ...r, curso_preco: parseFloat(r.curso_preco) })));
+    res.json(result.rows.map(r => ({
+      ...r,
+      curso_preco: parseFloat(r.curso_preco),
+      total_registrado: parseFloat(r.total_registrado),
+      total_pago: parseFloat(r.total_pago),
+    })));
   } catch (error) {
     console.error('Error loading missing payments:', error);
     res.status(500).json({ error: 'Erro ao carregar alunos sem pagamento' });
