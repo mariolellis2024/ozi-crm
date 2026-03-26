@@ -904,6 +904,43 @@ export function Turmas() {
                           </div>
                         </div>
                         
+                        {/* Ponto de Equilíbrio */}
+                        {precoUnitario > 0 && (() => {
+                          // Revenue per student after variable costs (taxes + commission at base 2%)
+                          const totalVariableRate = turma.imposto + 2; // imposto% + vendedor base 2%
+                          const netRevenuePerStudent = precoUnitario * (1 - totalVariableRate / 100);
+                          const pontoEquilibrio = netRevenuePerStudent > 0 
+                            ? Math.ceil(custoProfessores / netRevenuePerStudent) 
+                            : 0;
+                          const faltam = Math.max(0, pontoEquilibrio - alunosMatriculados);
+                          const atingiu = alunosMatriculados >= pontoEquilibrio && pontoEquilibrio > 0;
+                          
+                          return (
+                            <div className="pt-2 border-t border-gray-700/50">
+                              <div className="flex justify-between items-center">
+                                <span className="text-gray-400">Ponto de Equilíbrio:</span>
+                                <span className={`font-bold ${atingiu ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                  {pontoEquilibrio} alunos
+                                </span>
+                              </div>
+                              {!atingiu && pontoEquilibrio > 0 && (
+                                <div className="mt-1 text-right">
+                                  <span className="text-amber-400 text-[10px]">
+                                    Faltam {faltam} aluno{faltam !== 1 ? 's' : ''} para cobrir custos
+                                  </span>
+                                </div>
+                              )}
+                              {atingiu && (
+                                <div className="mt-1 text-right">
+                                  <span className="text-emerald-400 text-[10px]">
+                                    ✅ Custos cobertos!
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                        
                         {/* Indicadores visuais */}
                         {alunosMatriculados === 0 && (
                           <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-yellow-400 text-xs">

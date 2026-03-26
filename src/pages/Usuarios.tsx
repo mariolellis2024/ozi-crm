@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
 import { Pencil, Trash2, UserPlus, Mail, Lock, User } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -161,10 +162,9 @@ export function Usuarios() {
         </div>
       </div>
 
-      {/* Modal de Criação/Edição */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md">
+      {isModalOpen && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 fade-in">
+          <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md scale-in">
             <h2 className="text-xl font-bold text-white mb-6">
               {editingId ? 'Editar Usuário' : 'Novo Usuário'}
             </h2>
@@ -230,7 +230,8 @@ export function Usuarios() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <ConfirmationModal
