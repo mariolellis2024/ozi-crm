@@ -52,7 +52,10 @@ export function Formularios() {
     try {
       const token = localStorage.getItem('auth_token');
       if (!token) return false;
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      // JWT uses base64url encoding — convert to standard base64
+      let base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      while (base64.length % 4) base64 += '=';
+      const payload = JSON.parse(atob(base64));
       return !!payload.is_super_admin;
     } catch { return false; }
   }, []);
