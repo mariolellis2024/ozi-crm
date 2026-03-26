@@ -242,7 +242,7 @@ export function ModalAlunosInteressados({
                         {aluno.empresa && <div>🏢 {aluno.empresa}</div>}
                         {aluno.available_periods && aluno.available_periods.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
-                            {aluno.available_periods.map(period => {
+                            {(aluno.available_periods || []).map(period => {
                               const isAvailableForTurma = period === turmaPeriod;
                               const periodColors = {
                                 'manha': isAvailableForTurma ? 'bg-yellow-500/30 text-yellow-300 border-yellow-500/50' : 'bg-yellow-500/10 text-yellow-500/60 border-yellow-500/20',

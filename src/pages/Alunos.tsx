@@ -610,7 +610,7 @@ export function Alunos() {
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
                           {aluno.available_periods && aluno.available_periods.length > 0 ? (
-                            aluno.available_periods.map(period => (
+                            (aluno.available_periods || []).map(period => (
                               <span
                                 key={period}
                                 className={`inline-flex items-center px-2 py-1 rounded text-xs border ${getPeriodColor(period)}`}
