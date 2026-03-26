@@ -175,4 +175,19 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/pagamentos/by-enrollment/:alunoId/:turmaId — bulk delete
+router.delete('/by-enrollment/:alunoId/:turmaId', async (req, res) => {
+  try {
+    const { alunoId, turmaId } = req.params;
+    const result = await pool.query(
+      'DELETE FROM pagamentos WHERE aluno_id = $1 AND turma_id = $2 RETURNING id',
+      [alunoId, turmaId]
+    );
+    res.json({ success: true, deleted: result.rowCount });
+  } catch (error) {
+    console.error('Error bulk deleting payments:', error);
+    res.status(500).json({ error: 'Erro ao excluir pagamentos' });
+  }
+});
+
 export default router;

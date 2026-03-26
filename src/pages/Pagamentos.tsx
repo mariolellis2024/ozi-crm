@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { DollarSign, Check, Clock, AlertTriangle, Filter, Plus, Undo2, X } from 'lucide-react';
+import { DollarSign, Check, Clock, AlertTriangle, Filter, Plus, Undo2, X, Trash2 } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import toast from 'react-hot-toast';
 
@@ -108,6 +108,17 @@ export function Pagamentos() {
       loadData();
     } catch (error: any) {
       toast.error(error.message || 'Erro ao estornar');
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Tem certeza que deseja excluir este pagamento?')) return;
+    try {
+      await api.delete(`/api/pagamentos/${id}`);
+      toast.success('Pagamento excluído');
+      loadData();
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao excluir');
     }
   }
 
@@ -221,15 +232,20 @@ export function Pagamentos() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-right">
-                      {p.status === 'pago' ? (
-                        <button onClick={() => handleUndo(p.id)} className="p-1.5 text-gray-400 hover:text-amber-400 transition-colors" title="Estornar">
-                          <Undo2 className="h-4 w-4" />
+                      <div className="flex items-center justify-end gap-1">
+                        {p.status === 'pago' ? (
+                          <button onClick={() => handleUndo(p.id)} className="p-1.5 text-gray-400 hover:text-amber-400 transition-colors" title="Estornar">
+                            <Undo2 className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <button onClick={() => handleMarkPaid(p.id)} className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-xs font-medium transition-colors">
+                            Confirmar ✓
+                          </button>
+                        )}
+                        <button onClick={() => handleDelete(p.id)} className="p-1.5 text-gray-500 hover:text-red-400 transition-colors" title="Excluir">
+                          <Trash2 className="h-4 w-4" />
                         </button>
-                      ) : (
-                        <button onClick={() => handleMarkPaid(p.id)} className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-xs font-medium transition-colors">
-                          Confirmar ✓
-                        </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 );

@@ -41,10 +41,12 @@ export function ModalAlunosMatriculados({
     isOpen: boolean;
     alunoId: string;
     alunoNome: string;
+    deletePayments: boolean;
   }>({
     isOpen: false,
     alunoId: '',
-    alunoNome: ''
+    alunoNome: '',
+    deletePayments: true
   });
 
   useEffect(() => {
@@ -79,7 +81,8 @@ export function ModalAlunosMatriculados({
     setConfirmUnenroll({
       isOpen: true,
       alunoId,
-      alunoNome
+      alunoNome,
+      deletePayments: true
     });
   }
 
@@ -96,6 +99,15 @@ export function ModalAlunosMatriculados({
       
       toast.success('Aluno removido da turma com sucesso!');
       
+      // Delete associated payments if requested
+      if (confirmUnenroll.deletePayments) {
+        try {
+          await api.delete(`/api/pagamentos/by-enrollment/${alunoId}/${turmaId}`);
+        } catch (err) {
+          console.warn('Pagamentos não removidos:', err);
+        }
+      }
+      
       setAlunosMatriculados(prev => prev.filter(aluno => aluno.id !== alunoId));
       onStudentUnenrolled();
     } catch (error) {
@@ -109,7 +121,8 @@ export function ModalAlunosMatriculados({
       setConfirmUnenroll({
         isOpen: false,
         alunoId: '',
-        alunoNome: ''
+        alunoNome: '',
+        deletePayments: true
       });
     }
   }
@@ -118,7 +131,8 @@ export function ModalAlunosMatriculados({
     setConfirmUnenroll({
       isOpen: false,
       alunoId: '',
-      alunoNome: ''
+      alunoNome: '',
+      deletePayments: true
     });
   }
 
@@ -269,13 +283,25 @@ export function ModalAlunosMatriculados({
                 <h3 className="text-xl font-semibold text-white">Confirmar Remoção</h3>
               </div>
               
-              <p className="text-gray-300 mb-6">
+              <p className="text-gray-300 mb-4">
                 Tem certeza que deseja remover <strong>{confirmUnenroll.alunoNome}</strong> desta turma?
                 <br />
                 <span className="text-sm text-gray-400 mt-2 block">
                   O aluno voltará para a lista de interessados no curso.
                 </span>
               </p>
+
+              <label className="flex items-center gap-3 mb-6 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={confirmUnenroll.deletePayments}
+                  onChange={e => setConfirmUnenroll(prev => ({ ...prev, deletePayments: e.target.checked }))}
+                  className="w-4 h-4 rounded border-gray-600 bg-dark-lighter text-red-500 focus:ring-red-500"
+                />
+                <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
+                  Remover também os pagamentos/parcelas deste aluno nesta turma
+                </span>
+              </label>
 
               <div className="flex gap-3 justify-end">
                 <button
