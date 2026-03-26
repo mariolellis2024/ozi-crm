@@ -928,28 +928,41 @@ export function Turmas() {
                             </span>
                           </div>
                           
-                          <div className="flex justify-between items-center">
+                          <div className="flex justify-between items-center group">
                             <span className="text-gray-400">Anúncios:</span>
-                            <div className="flex items-center gap-1">
-                              <span className="text-gray-500 text-[10px]">R$</span>
-                              <input
-                                type="number"
-                                defaultValue={turma.investimento_anuncios || 0}
-                                onBlur={async (e) => {
-                                  const val = parseFloat(e.target.value) || 0;
-                                  if (val !== (turma.investimento_anuncios || 0)) {
+                            <span
+                              className="text-red-400 font-medium cursor-pointer hover:underline"
+                              onClick={(e) => {
+                                const span = e.currentTarget;
+                                const currentVal = turma.investimento_anuncios || 0;
+                                const input = document.createElement('input');
+                                input.type = 'number';
+                                input.value = String(currentVal);
+                                input.min = '0';
+                                input.step = '100';
+                                input.className = 'w-20 bg-dark-lighter border border-teal-accent rounded px-1.5 py-0.5 text-red-400 text-xs text-right focus:ring-1 focus:ring-teal-accent outline-none font-medium';
+                                const save = async () => {
+                                  const val = parseFloat(input.value) || 0;
+                                  if (val !== currentVal) {
                                     try {
                                       await api.patch(`/api/turmas/${turma.id}/investimento`, { investimento_anuncios: val });
                                       loadData();
                                     } catch { toast.error('Erro ao salvar investimento'); }
                                   }
-                                }}
-                                onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                                className="w-20 bg-dark-lighter border border-gray-600 rounded px-1.5 py-0.5 text-red-400 text-xs text-right focus:ring-1 focus:ring-teal-accent outline-none font-medium"
-                                min="0"
-                                step="100"
-                              />
-                            </div>
+                                  span.style.display = '';
+                                  input.remove();
+                                };
+                                input.onblur = save;
+                                input.onkeydown = (ev) => { if (ev.key === 'Enter') input.blur(); if (ev.key === 'Escape') { span.style.display = ''; input.remove(); } };
+                                span.style.display = 'none';
+                                span.parentElement!.appendChild(input);
+                                input.focus();
+                                input.select();
+                              }}
+                              title="Clique para editar"
+                            >
+                              -{formatCurrency(investAnuncios)}
+                            </span>
                           </div>
                         </div>
                         
