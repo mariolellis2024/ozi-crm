@@ -24,3 +24,24 @@ export function formatCurrency(value: number): string {
     maximumFractionDigits: 2
   }).format(value);
 }
+
+/**
+ * Formata um número de telefone brasileiro com máscara
+ * 
+ * @param phone - Número de telefone (pode conter formatação)
+ * @returns String formatada (ex: "(11) 99999-9999")
+ */
+export function formatPhone(phone: string): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 13 && digits.startsWith('55')) {
+    return `(${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9)}`;
+  }
+  return phone;
+}

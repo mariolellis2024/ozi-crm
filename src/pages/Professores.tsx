@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, formatPhone } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalProfessor } from '../components/ModalProfessor';
 
@@ -161,7 +161,7 @@ export function Professores() {
                       className="text-green-400 hover:text-green-300 transition-colors cursor-pointer flex items-center gap-1"
                       title="Abrir WhatsApp"
                     >
-                      📱 {professor.whatsapp}
+                      📱 {formatPhone(professor.whatsapp)}
                     </a>
                     <p className="text-teal-accent font-semibold">
                       {formatCurrency(professor.valor_hora)}/hora

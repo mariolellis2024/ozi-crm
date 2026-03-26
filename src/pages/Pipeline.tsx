@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Filter } from 'lucide-react';
+import { formatPhone } from '../utils/format';
 import toast from 'react-hot-toast';
 
 interface Interest {
@@ -183,7 +184,7 @@ export function Pipeline() {
                         </div>
                         <p className="text-gray-500 text-xs truncate">{interest.curso_nome}</p>
                         {interest.aluno_whatsapp && (
-                          <p className="text-gray-500 text-[10px] mt-1">📱 {interest.aluno_whatsapp}</p>
+                          <p className="text-gray-500 text-[10px] mt-1">📱 {formatPhone(interest.aluno_whatsapp)}</p>
                         )}
                         {/* Quick actions */}
                         <div className="flex gap-1 mt-2">

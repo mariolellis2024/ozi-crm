@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Search, Users, BookOpen } from 'lucide-react';
 import { api } from '../lib/api';
 import toast from 'react-hot-toast';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, formatPhone } from '../utils/format';
 
 interface AlunoInteressado {
   id: string;
@@ -244,7 +244,7 @@ export function ModalAlunosInteressados({
                           className="text-green-400 hover:text-green-300 transition-colors cursor-pointer flex items-center gap-1"
                           title="Abrir WhatsApp"
                         >
-                          📱 {aluno.whatsapp}
+                          📱 {formatPhone(aluno.whatsapp)}
                         </a>
                         {aluno.empresa && <div>🏢 {aluno.empresa}</div>}
                         {aluno.available_periods && aluno.available_periods.length > 0 && (
