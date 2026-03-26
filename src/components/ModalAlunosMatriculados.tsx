@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Search, Users, BookOpen, UserMinus, AlertTriangle } from 'lucide-react';
+import { X, Search, Users, BookOpen, UserMinus, AlertTriangle, Award } from 'lucide-react';
 import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
@@ -174,7 +174,7 @@ export function ModalAlunosMatriculados({
             </div>
           ) : filteredAlunos.length > 0 ? (
             <div className="space-y-3">
-              {filteredAlunos.map((aluno) => (
+               {filteredAlunos.map((aluno) => (
                 <div key={aluno.id} className="bg-dark-lighter rounded-lg p-4 border border-gray-700">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -196,23 +196,36 @@ export function ModalAlunosMatriculados({
                         {aluno.empresa && <div>🏢 {aluno.empresa}</div>}
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleUnenrollClick(aluno.id, aluno.nome)}
-                      disabled={unenrollingStudents.has(aluno.id)}
-                      className="px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 bg-red-500 text-white hover:bg-red-600"
-                    >
-                      {unenrollingStudents.has(aluno.id) ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                          Removendo...
-                        </>
-                      ) : (
-                        <>
-                          <UserMinus className="h-4 w-4" />
-                          Remover
-                        </>
-                      )}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          const token = localStorage.getItem('token');
+                          window.open(`/api/certificates/${aluno.id}/${cursoId}?token=${token}`, '_blank');
+                        }}
+                        className="px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-sm"
+                        title="Gerar Certificado"
+                      >
+                        <Award className="h-4 w-4" />
+                        Certificado
+                      </button>
+                      <button
+                        onClick={() => handleUnenrollClick(aluno.id, aluno.nome)}
+                        disabled={unenrollingStudents.has(aluno.id)}
+                        className="px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 bg-red-500 text-white hover:bg-red-600"
+                      >
+                        {unenrollingStudents.has(aluno.id) ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                            Removendo...
+                          </>
+                        ) : (
+                          <>
+                            <UserMinus className="h-4 w-4" />
+                            Remover
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

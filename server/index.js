@@ -18,6 +18,8 @@ import usersRoutes from './routes/users.js';
 import activityRoutes from './routes/activity.js';
 import dashboardRoutes from './routes/dashboard.js';
 import pipelineRoutes from './routes/pipeline.js';
+import certificatesRoutes from './routes/certificates.js';
+import pagamentosRoutes from './routes/pagamentos.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -44,6 +46,8 @@ app.use('/api/users', authenticateToken, usersRoutes);
 app.use('/api/activity', authenticateToken, activityRoutes);
 app.use('/api/dashboard', authenticateToken, dashboardRoutes);
 app.use('/api/pipeline', authenticateToken, pipelineRoutes);
+app.use('/api/certificates', authenticateToken, certificatesRoutes);
+app.use('/api/pagamentos', authenticateToken, pagamentosRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

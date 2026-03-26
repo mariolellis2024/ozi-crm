@@ -12,6 +12,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { Calendario } from './pages/Calendario';
 import { Pipeline } from './pages/Pipeline';
 import { Atividades } from './pages/Atividades';
+import { Pagamentos } from './pages/Pagamentos';
 import { Layout } from './components/Layout';
 import { Toaster } from 'react-hot-toast';
 import { OrganicBackground } from './components/OrganicBackground';
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="/calendario" element={<PrivateRoute><Calendario /></PrivateRoute>} />
         <Route path="/pipeline" element={<PrivateRoute><Pipeline /></PrivateRoute>} />
         <Route path="/atividades" element={<PrivateRoute><Atividades /></PrivateRoute>} />
+        <Route path="/pagamentos" element={<PrivateRoute><Pagamentos /></PrivateRoute>} />
       </Routes>
       <Toaster position="top-right" />
     </BrowserRouter>

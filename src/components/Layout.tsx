@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../lib/api';
-import { GraduationCap, User, LogOut, BookOpen, Home, DoorClosed, Activity, Users, BarChart3, CalendarDays, GitBranch, ClipboardList } from 'lucide-react';
+import { GraduationCap, User, LogOut, BookOpen, Home, DoorClosed, Activity, Users, BarChart3, CalendarDays, GitBranch, ClipboardList, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PerformanceDashboard } from './PerformanceDashboard';
@@ -35,6 +35,7 @@ export function Layout({ children }: LayoutProps) {
     { icon: DoorClosed, label: 'Salas', path: '/salas' },
     { icon: CalendarDays, label: 'Calendário', path: '/calendario' },
     { icon: GitBranch, label: 'Pipeline', path: '/pipeline' },
+    { icon: Wallet, label: 'Pagamentos', path: '/pagamentos' },
     { icon: ClipboardList, label: 'Atividades', path: '/atividades' },
     { icon: Users, label: 'Usuários', path: '/usuarios' },
   ];

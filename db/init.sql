@@ -195,6 +195,29 @@ CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created
 CREATE INDEX IF NOT EXISTS idx_activity_logs_entity_type ON activity_logs(entity_type);
 
 -- =====================================================
+-- Payments (Pagamentos / Parcelas)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS pagamentos (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  aluno_id uuid NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
+  curso_id uuid NOT NULL REFERENCES cursos(id) ON DELETE CASCADE,
+  turma_id uuid REFERENCES turmas(id) ON DELETE SET NULL,
+  parcela integer NOT NULL DEFAULT 1,
+  total_parcelas integer NOT NULL DEFAULT 1,
+  valor numeric NOT NULL,
+  status text NOT NULL DEFAULT 'pendente',
+  due_date date NOT NULL,
+  paid_date date,
+  payment_method text,
+  notes text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pagamentos_aluno ON pagamentos(aluno_id);
+CREATE INDEX IF NOT EXISTS idx_pagamentos_status ON pagamentos(status);
+CREATE INDEX IF NOT EXISTS idx_pagamentos_due_date ON pagamentos(due_date);
+
+-- =====================================================
 -- Functions
 -- =====================================================
 
