@@ -116,13 +116,33 @@ export function FormularioPublico() {
 
     setSubmitting(true);
     try {
+      // Read Meta cookies for CAPI matching (fbc = click ID, fbp = browser ID)
+      const getCookie = (name: string) => {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? match[2] : '';
+      };
+
+      let fbc = getCookie('_fbc');
+      const fbp = getCookie('_fbp');
+
+      // If _fbc cookie doesn't exist but fbclid is in URL, construct it
+      if (!fbc) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const fbclid = urlParams.get('fbclid');
+        if (fbclid) {
+          fbc = `fb.1.${Date.now()}.${fbclid}`;
+        }
+      }
+
       const response = await fetch(`/api/public/forms/${slug}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nome: nome.trim(),
           whatsapp: whatsapp.replace(/\D/g, ''),
-          available_periods: periods
+          available_periods: periods,
+          fbc,
+          fbp
         })
       });
 

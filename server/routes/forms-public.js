@@ -64,7 +64,7 @@ router.get('/:slug', async (req, res) => {
 router.post('/:slug/register', async (req, res) => {
   try {
     const { slug } = req.params;
-    const { nome, whatsapp, available_periods } = req.body;
+    const { nome, whatsapp, available_periods, email, fbc, fbp } = req.body;
 
     if (!nome || !whatsapp) {
       return res.status(400).json({ error: 'Nome e WhatsApp são obrigatórios' });
@@ -129,21 +129,41 @@ router.post('/:slug/register', async (req, res) => {
       );
     }
 
-    // Send Meta Conversions API event (server-side)
+    // === Meta Conversions API — Maximum Event Match Quality ===
     const sourceUrl = `${req.protocol}://${req.get('host')}/f/${slug}`;
-    // Extract city and state from unidade_cidade (e.g. "São Paulo" or "Brasília - DF")
+    
+    // Extract city and state from unidade_cidade
     const cidadeParts = (form.unidade_cidade || '').split(' - ');
     const cidade = cidadeParts[0]?.trim() || '';
     const estado = cidadeParts[1]?.trim() || '';
+
+    // Get client IP (behind reverse proxy)
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+                  || req.headers['x-real-ip']
+                  || req.socket?.remoteAddress
+                  || '';
+
+    // Get client User Agent
+    const clientUserAgent = req.headers['user-agent'] || '';
+
+    // Generate unique event ID for deduplication
+    const eventId = `lead_${alunoId}_${form.curso_id}_${Date.now()}`;
 
     await sendMetaConversion({
       pixelId: form.meta_pixel_id,
       accessToken: form.meta_capi_token,
       nome,
       whatsapp: normalizedWhatsapp,
+      email: email || '',
       cidade,
       estado,
-      sourceUrl
+      sourceUrl,
+      clientIp,
+      clientUserAgent,
+      fbc: fbc || '',
+      fbp: fbp || '',
+      externalId: alunoId,
+      eventId
     });
 
     res.status(201).json({
