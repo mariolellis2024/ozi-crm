@@ -274,3 +274,9 @@ BEGIN
     RETURN updated_count;
 END;
 $$;
+
+-- Meta tracking columns for CAPI Purchase events (added after initial schema)
+ALTER TABLE alunos ADD COLUMN IF NOT EXISTS meta_fbc text;
+ALTER TABLE alunos ADD COLUMN IF NOT EXISTS meta_fbp text;
+ALTER TABLE alunos ADD COLUMN IF NOT EXISTS meta_client_ip text;
+ALTER TABLE alunos ADD COLUMN IF NOT EXISTS meta_user_agent text;

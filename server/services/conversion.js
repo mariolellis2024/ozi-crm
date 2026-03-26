@@ -212,3 +212,97 @@ export async function sendMetaConversion({
     console.error('Error sending Meta conversion:', error);
   }
 }
+
+/**
+ * Send a Purchase conversion event to Meta Conversions API
+ * Triggered when a student is enrolled (status → enrolled)
+ * Uses stored tracking data from the original Lead visit
+ * 
+ * @param {object} params
+ * @param {string} params.pixelId - Meta Pixel ID
+ * @param {string} params.accessToken - Meta CAPI access token
+ * @param {string} params.nome - Student name
+ * @param {string} params.whatsapp - Student phone
+ * @param {string} [params.email] - Student email
+ * @param {string} [params.cidade] - City
+ * @param {string} [params.estado] - State
+ * @param {number} params.value - Purchase value (course price)
+ * @param {string} [params.cursoNome] - Course name
+ * @param {string} [params.cursoId] - Course ID
+ * @param {string} [params.sourceUrl] - Original form URL or site URL
+ * @param {string} [params.clientIp] - Stored client IP from Lead visit
+ * @param {string} [params.clientUserAgent] - Stored user agent from Lead visit
+ * @param {string} [params.fbc] - Facebook Click ID (stored from Lead visit)
+ * @param {string} [params.fbp] - Facebook Browser ID (stored from Lead visit)
+ * @param {string} [params.externalId] - External unique ID (aluno ID)
+ */
+export async function sendMetaPurchase({
+  pixelId, accessToken, nome, whatsapp, email,
+  cidade, estado, value, cursoNome, cursoId, sourceUrl,
+  clientIp, clientUserAgent, fbc, fbp, externalId
+}) {
+  if (!pixelId || !accessToken) return;
+
+  try {
+    const nameParts = nome.trim().split(/\s+/);
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+    const phone = normalizePhone(whatsapp);
+    const stateCode = resolveState(estado, cidade);
+    const normalizedCity = normalizeCity(cidade);
+
+    const userData = {};
+
+    if (firstName) userData.fn = hashSha256(firstName);
+    if (lastName) userData.ln = hashSha256(lastName);
+    userData.ph = hashSha256(phone);
+    if (email) userData.em = hashSha256(email);
+    if (normalizedCity) userData.ct = hashSha256(normalizedCity);
+    if (stateCode) userData.st = hashSha256(stateCode);
+    userData.country = hashSha256('br');
+    if (externalId) userData.external_id = hashSha256(externalId);
+
+    // Reuse stored tracking data from the original Lead visit
+    if (clientIp) userData.client_ip_address = clientIp;
+    if (clientUserAgent) userData.client_user_agent = clientUserAgent;
+    if (fbc) userData.fbc = fbc;
+    if (fbp) userData.fbp = fbp;
+
+    const eventPayload = {
+      event_name: 'Purchase',
+      event_time: Math.floor(Date.now() / 1000),
+      action_source: 'website',
+      user_data: userData,
+      custom_data: {
+        value: value || 0,
+        currency: 'BRL',
+        content_type: 'product',
+        content_name: cursoNome || '',
+        content_ids: cursoId ? [cursoId] : [],
+      },
+      event_id: `purchase_${externalId}_${cursoId}_${Date.now()}`
+    };
+
+    if (sourceUrl) eventPayload.event_source_url = sourceUrl;
+
+    const eventData = { data: [eventPayload] };
+
+    const url = `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${accessToken}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(eventData)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('Meta CAPI Purchase error:', result);
+    } else {
+      console.log(`✅ Meta CAPI Purchase event sent (R$${value}):`, result);
+    }
+  } catch (error) {
+    console.error('Error sending Meta Purchase conversion:', error);
+  }
+}

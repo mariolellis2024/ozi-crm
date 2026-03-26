@@ -96,20 +96,32 @@ router.post('/:slug/register', async (req, res) => {
       [normalizedWhatsapp, form.unidade_id]
     );
 
+    // Capture tracking data early (needed for both DB storage and CAPI)
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+                  || req.headers['x-real-ip']
+                  || req.socket?.remoteAddress
+                  || '';
+    const clientUserAgent = req.headers['user-agent'] || '';
+
     if (existingAluno.rows.length > 0) {
       alunoId = existingAluno.rows[0].id;
-      // Update name and periods if provided
+      // Update name, periods, and tracking data
       await pool.query(
-        'UPDATE alunos SET nome = $1, available_periods = $2 WHERE id = $3',
-        [nome, available_periods && available_periods.length > 0 ? `{${available_periods.join(',')}}` : null, alunoId]
+        `UPDATE alunos SET nome = $1, available_periods = $2,
+         meta_fbc = COALESCE($4, meta_fbc), meta_fbp = COALESCE($5, meta_fbp),
+         meta_client_ip = COALESCE($6, meta_client_ip), meta_user_agent = COALESCE($7, meta_user_agent)
+         WHERE id = $3`,
+        [nome, available_periods && available_periods.length > 0 ? `{${available_periods.join(',')}}` : null,
+         alunoId, fbc || null, fbp || null, clientIp || null, clientUserAgent || null]
       );
     } else {
-      // Create new aluno
+      // Create new aluno with tracking data
       const alunoResult = await pool.query(
-        `INSERT INTO alunos (nome, whatsapp, unidade_id, available_periods)
-         VALUES ($1, $2, $3, $4) RETURNING id`,
+        `INSERT INTO alunos (nome, whatsapp, unidade_id, available_periods, meta_fbc, meta_fbp, meta_client_ip, meta_user_agent)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
         [nome, normalizedWhatsapp, form.unidade_id,
-         available_periods && available_periods.length > 0 ? `{${available_periods.join(',')}}` : null]
+         available_periods && available_periods.length > 0 ? `{${available_periods.join(',')}}` : null,
+         fbc || null, fbp || null, clientIp || null, clientUserAgent || null]
       );
       alunoId = alunoResult.rows[0].id;
     }
@@ -136,15 +148,6 @@ router.post('/:slug/register', async (req, res) => {
     const cidadeParts = (form.unidade_cidade || '').split(' - ');
     const cidade = cidadeParts[0]?.trim() || '';
     const estado = cidadeParts[1]?.trim() || '';
-
-    // Get client IP (behind reverse proxy)
-    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
-                  || req.headers['x-real-ip']
-                  || req.socket?.remoteAddress
-                  || '';
-
-    // Get client User Agent
-    const clientUserAgent = req.headers['user-agent'] || '';
 
     // Generate unique event ID for deduplication
     const eventId = `lead_${alunoId}_${form.curso_id}_${Date.now()}`;

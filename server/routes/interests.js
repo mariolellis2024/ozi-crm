@@ -1,7 +1,56 @@
 import { Router } from 'express';
 import pool, { parsePgArray } from '../db.js';
+import { sendMetaPurchase } from '../services/conversion.js';
 
 const router = Router();
+
+/**
+ * Fire a Meta CAPI Purchase event when a student is enrolled.
+ * Uses stored tracking data from the original Lead form visit.
+ */
+async function firePurchaseEvent(alunoId, cursoId) {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        a.nome, a.whatsapp, a.email, a.meta_fbc, a.meta_fbp,
+        a.meta_client_ip, a.meta_user_agent,
+        c.nome as curso_nome, c.preco, c.id as curso_id,
+        u.meta_pixel_id, u.meta_capi_token, u.cidade as unidade_cidade
+      FROM alunos a
+      JOIN cursos c ON c.id = $2
+      LEFT JOIN unidades u ON u.id = a.unidade_id
+      WHERE a.id = $1
+    `, [alunoId, cursoId]);
+
+    if (result.rows.length === 0) return;
+    const r = result.rows[0];
+    if (!r.meta_pixel_id || !r.meta_capi_token) return;
+
+    const cidadeParts = (r.unidade_cidade || '').split(' - ');
+    const cidade = cidadeParts[0]?.trim() || '';
+    const estado = cidadeParts[1]?.trim() || '';
+
+    await sendMetaPurchase({
+      pixelId: r.meta_pixel_id,
+      accessToken: r.meta_capi_token,
+      nome: r.nome,
+      whatsapp: r.whatsapp,
+      email: r.email || '',
+      cidade,
+      estado,
+      value: parseFloat(r.preco) || 0,
+      cursoNome: r.curso_nome,
+      cursoId: r.curso_id,
+      clientIp: r.meta_client_ip || '',
+      clientUserAgent: r.meta_user_agent || '',
+      fbc: r.meta_fbc || '',
+      fbp: r.meta_fbp || '',
+      externalId: alunoId
+    });
+  } catch (err) {
+    console.error('Error firing Purchase event:', err);
+  }
+}
 
 // GET /api/interests — interests by curso for a specific aluno
 router.get('/aluno/:alunoId', async (req, res) => {
@@ -223,6 +272,10 @@ router.post('/enroll', async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Interesse não encontrado' });
     }
+
+    // Fire Purchase event to Meta CAPI
+    firePurchaseEvent(aluno_id, curso_id);
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error enrolling student:', error);
@@ -244,6 +297,10 @@ router.put('/enroll', async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Interesse não encontrado' });
     }
+
+    // Fire Purchase event to Meta CAPI
+    firePurchaseEvent(aluno_id, curso_id);
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error enrolling student:', error);
@@ -293,6 +350,12 @@ router.put('/:id/status', async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Interesse não encontrado' });
     }
+
+    // Fire Purchase event when status changes to enrolled
+    if (status === 'enrolled') {
+      firePurchaseEvent(result.rows[0].aluno_id, result.rows[0].curso_id);
+    }
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating interest status:', error);
