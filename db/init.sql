@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS alunos (
   whatsapp text NOT NULL,
   empresa text,
   available_periods period_type[] DEFAULT ARRAY[]::period_type[],
+  unidade_id uuid REFERENCES unidades(id) ON DELETE SET NULL,
   created_at timestamptz DEFAULT now()
 );
 

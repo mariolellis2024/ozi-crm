@@ -8,6 +8,7 @@ import { ModalAluno } from '../components/ModalAluno';
 import { ModalCursosInteresse } from '../components/ModalCursosInteresse';
 import { ModalBulkEdit } from '../components/ModalBulkEdit';
 import { useSearchParams } from 'react-router-dom';
+import { useUnidade } from '../contexts/UnidadeContext';
 
 type Period = 'manha' | 'tarde' | 'noite';
 type InterestStatus = 'interested' | 'enrolled' | 'completed';
@@ -30,6 +31,8 @@ interface Aluno {
       preco: number;
     };
   }>;
+  unidade_id?: string;
+  unidade_nome?: string;
 }
 
 interface Curso {
@@ -41,6 +44,7 @@ interface Curso {
 const ITEMS_PER_PAGE = 20;
 
 export function Alunos() {
+  const { selectedUnidadeId } = useUnidade();
   const [searchParams, setSearchParams] = useSearchParams();
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
@@ -84,16 +88,16 @@ export function Alunos() {
     if (status) setStatusFilter(status);
     
     loadData();
-  }, [searchParams]);
+  }, [searchParams, selectedUnidadeId]);
 
   useEffect(() => {
     const delayedSearch = setTimeout(() => {
-      setCurrentPage(1); // Reset to first page when search changes
+      setCurrentPage(1);
       loadAlunos();
     }, 300);
 
     return () => clearTimeout(delayedSearch);
-  }, [searchTerm, statusFilter, cursoFilter, currentPage]);
+  }, [searchTerm, statusFilter, cursoFilter, currentPage, selectedUnidadeId]);
 
   async function loadData() {
     await Promise.all([loadAlunos(), loadCursos()]);
@@ -108,6 +112,7 @@ export function Alunos() {
       if (statusFilter !== 'all') params.set('status', statusFilter);
       if (cursoFilter) params.set('curso', cursoFilter);
       if (searchTerm) params.set('search', searchTerm);
+      if (selectedUnidadeId) params.set('unidade_id', selectedUnidadeId);
 
       const result = await api.get(`/api/alunos?${params.toString()}`);
       setAlunos(result.data || []);

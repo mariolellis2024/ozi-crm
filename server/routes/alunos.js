@@ -7,7 +7,7 @@ const router = Router();
 // GET /api/alunos
 router.get('/', async (req, res) => {
   try {
-    const { search, status, curso, page = 1, limit = 20 } = req.query;
+    const { search, status, curso, page = 1, limit = 20, unidade_id } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
     if (status === 'none') {
@@ -15,6 +15,12 @@ router.get('/', async (req, res) => {
       let whereClause = 'WHERE a.id NOT IN (SELECT DISTINCT aluno_id FROM aluno_curso_interests)';
       const params = [];
       let paramIndex = 1;
+
+      if (unidade_id) {
+        whereClause += ` AND a.unidade_id = $${paramIndex}`;
+        params.push(unidade_id);
+        paramIndex++;
+      }
 
       if (search) {
         whereClause += ` AND (a.nome ILIKE $${paramIndex} OR a.email ILIKE $${paramIndex} OR a.whatsapp ILIKE $${paramIndex})`;
@@ -28,8 +34,11 @@ router.get('/', async (req, res) => {
       );
 
       const dataResult = await pool.query(
-        `SELECT a.id, a.nome, a.email, a.whatsapp, a.empresa, a.available_periods, a.created_at
-         FROM alunos a ${whereClause}
+        `SELECT a.id, a.nome, a.email, a.whatsapp, a.empresa, a.available_periods, a.unidade_id, a.created_at,
+                u.nome as unidade_nome
+         FROM alunos a
+         LEFT JOIN unidades u ON u.id = a.unidade_id
+         ${whereClause}
          ORDER BY a.created_at DESC
          LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
         [...params, parseInt(limit), offset]
@@ -50,6 +59,12 @@ router.get('/', async (req, res) => {
         paramIndex++;
       }
 
+      if (unidade_id) {
+        whereClause += ` AND a.unidade_id = $${paramIndex}`;
+        params.push(unidade_id);
+        paramIndex++;
+      }
+
       if (search) {
         whereClause += ` AND (a.nome ILIKE $${paramIndex} OR a.email ILIKE $${paramIndex} OR a.whatsapp ILIKE $${paramIndex})`;
         params.push(`%${search}%`);
@@ -58,11 +73,13 @@ router.get('/', async (req, res) => {
 
       const dataResult = await pool.query(
         `SELECT aci.id as interest_id, aci.curso_id, aci.status, aci.created_at as interest_created_at,
-                a.id, a.nome, a.email, a.whatsapp, a.empresa, a.available_periods, a.created_at,
-                c.id as c_id, c.nome as c_nome, c.preco as c_preco
+                a.id, a.nome, a.email, a.whatsapp, a.empresa, a.available_periods, a.unidade_id, a.created_at,
+                c.id as c_id, c.nome as c_nome, c.preco as c_preco,
+                un.nome as unidade_nome
          FROM aluno_curso_interests aci
          INNER JOIN alunos a ON a.id = aci.aluno_id
          LEFT JOIN cursos c ON c.id = aci.curso_id
+         LEFT JOIN unidades un ON un.id = a.unidade_id
          ${whereClause}
          ORDER BY aci.created_at DESC
          LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
@@ -80,6 +97,8 @@ router.get('/', async (req, res) => {
             whatsapp: row.whatsapp,
             empresa: row.empresa,
             available_periods: parsePgArray(row.available_periods),
+            unidade_id: row.unidade_id,
+            unidade_nome: row.unidade_nome,
             created_at: row.created_at,
             curso_interests: []
           });
@@ -98,6 +117,10 @@ router.get('/', async (req, res) => {
       const countParams = params.slice(0, curso ? 2 : 1);
       let countWhere = 'WHERE aci.status = $1';
       if (curso) countWhere += ' AND aci.curso_id = $2';
+      if (unidade_id) {
+        countWhere += ` AND a.unidade_id = $${countParams.length + 1}`;
+        countParams.push(unidade_id);
+      }
       if (search) {
         countWhere += ` AND (a.nome ILIKE $${countParams.length + 1} OR a.email ILIKE $${countParams.length + 1} OR a.whatsapp ILIKE $${countParams.length + 1})`;
         countParams.push(`%${search}%`);
@@ -117,8 +140,14 @@ router.get('/', async (req, res) => {
       const params = [];
       let paramIndex = 1;
 
+      if (unidade_id) {
+        whereClause = `WHERE a.unidade_id = $${paramIndex}`;
+        params.push(unidade_id);
+        paramIndex++;
+      }
+
       if (search) {
-        whereClause = `WHERE (a.nome ILIKE $${paramIndex} OR a.email ILIKE $${paramIndex} OR a.whatsapp ILIKE $${paramIndex})`;
+        whereClause += (whereClause ? ' AND' : 'WHERE') + ` (a.nome ILIKE $${paramIndex} OR a.email ILIKE $${paramIndex} OR a.whatsapp ILIKE $${paramIndex})`;
         params.push(`%${search}%`);
         paramIndex++;
       }
@@ -129,8 +158,11 @@ router.get('/', async (req, res) => {
       );
 
       const dataResult = await pool.query(
-        `SELECT a.id, a.nome, a.email, a.whatsapp, a.empresa, a.available_periods, a.created_at
-         FROM alunos a ${whereClause}
+        `SELECT a.id, a.nome, a.email, a.whatsapp, a.empresa, a.available_periods, a.unidade_id, a.created_at,
+                u.nome as unidade_nome
+         FROM alunos a
+         LEFT JOIN unidades u ON u.id = a.unidade_id
+         ${whereClause}
          ORDER BY a.created_at DESC
          LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
         [...params, parseInt(limit), offset]
@@ -150,9 +182,7 @@ router.get('/', async (req, res) => {
 
         const interestsByStudent = {};
         interestsResult.rows.forEach(row => {
-          if (!interestsByStudent[row.aluno_id]) {
-            interestsByStudent[row.aluno_id] = [];
-          }
+          if (!interestsByStudent[row.aluno_id]) interestsByStudent[row.aluno_id] = [];
           interestsByStudent[row.aluno_id].push({
             id: row.id,
             curso_id: row.curso_id,
@@ -181,12 +211,12 @@ router.get('/', async (req, res) => {
 // POST /api/alunos
 router.post('/', async (req, res) => {
   try {
-    const { nome, email, whatsapp, empresa, available_periods } = req.body;
+    const { nome, email, whatsapp, empresa, available_periods, unidade_id } = req.body;
     const result = await pool.query(
-      `INSERT INTO alunos (nome, email, whatsapp, empresa, available_periods)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO alunos (nome, email, whatsapp, empresa, available_periods, unidade_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [nome, email || null, whatsapp, empresa || null, available_periods || []]
+      [nome, email || null, whatsapp, empresa || null, available_periods || [], unidade_id || null]
     );
     const aluno = result.rows[0];
     logActivity({
@@ -221,15 +251,20 @@ router.put('/bulk/periods', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, email, whatsapp, empresa, available_periods } = req.body;
+    const { nome, email, whatsapp, empresa, available_periods, unidade_id } = req.body;
     const result = await pool.query(
-      `UPDATE alunos SET nome = $1, email = $2, whatsapp = $3, empresa = $4, available_periods = $5
-       WHERE id = $6 RETURNING *`,
-      [nome, email || null, whatsapp, empresa || null, available_periods || [], id]
+      `UPDATE alunos SET nome = $1, email = $2, whatsapp = $3, empresa = $4, available_periods = $5, unidade_id = $6
+       WHERE id = $7 RETURNING *`,
+      [nome, email || null, whatsapp, empresa || null, available_periods || [], unidade_id || null, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Aluno não encontrado' });
     }
+    logActivity({
+      userId: req.user?.id, userEmail: req.user?.email,
+      action: 'update', entityType: 'aluno',
+      entityId: id, entityName: nome
+    });
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating aluno:', error);
@@ -241,10 +276,19 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('DELETE FROM alunos WHERE id = $1 RETURNING id', [id]);
-    if (result.rows.length === 0) {
+    const alunoResult = await pool.query('SELECT nome FROM alunos WHERE id = $1', [id]);
+    if (alunoResult.rows.length === 0) {
       return res.status(404).json({ error: 'Aluno não encontrado' });
     }
+    // Delete dependencies
+    await pool.query('DELETE FROM aluno_curso_interests WHERE aluno_id = $1', [id]);
+    await pool.query('DELETE FROM pagamentos WHERE aluno_id = $1', [id]);
+    await pool.query('DELETE FROM alunos WHERE id = $1', [id]);
+    logActivity({
+      userId: req.user?.id, userEmail: req.user?.email,
+      action: 'delete', entityType: 'aluno',
+      entityId: id, entityName: alunoResult.rows[0].nome
+    });
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting aluno:', error);

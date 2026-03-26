@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import { DollarSign, Check, Clock, AlertTriangle, Filter, Plus, Undo2, X, Trash2, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import toast from 'react-hot-toast';
+import { useUnidade } from '../contexts/UnidadeContext';
 
 interface Pagamento {
   id: string;
@@ -49,6 +50,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }>
 };
 
 export function Pagamentos() {
+  const { selectedUnidadeId } = useUnidade();
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
   const [summary, setSummary] = useState<Summary>({ pendente: 0, pago: 0, atrasado: 0, total_pago: 0, total_pendente: 0, total_atrasado: 0 });
   const [filter, setFilter] = useState('');
@@ -61,11 +63,14 @@ export function Pagamentos() {
   const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; id: string }>({ isOpen: false, id: '' });
   const [missingPayments, setMissingPayments] = useState<MissingPayment[]>([]);
 
-  useEffect(() => { loadData(); }, [filter]);
+  useEffect(() => { loadData(); }, [filter, selectedUnidadeId]);
 
   async function loadData() {
     try {
-      const params = filter ? `?status=${filter}` : '';
+      let params = filter ? `?status=${filter}` : '';
+      if (selectedUnidadeId) {
+        params += (params ? '&' : '?') + `unidade_id=${selectedUnidadeId}`;
+      }
       const data = await api.get(`/api/pagamentos${params}`);
       setPagamentos(data.data);
       setSummary(data.summary);

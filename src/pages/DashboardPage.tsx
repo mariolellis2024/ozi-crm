@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Users, TrendingUp, Target, BarChart3, DollarSign, ArrowUpRight } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
+import { useUnidade } from '../contexts/UnidadeContext';
 
 interface DashboardStats {
   totalTurmas: number;
@@ -25,16 +26,18 @@ const PERIOD_LABELS: Record<string, string> = {
 };
 
 export function DashboardPage() {
+  const { selectedUnidadeId } = useUnidade();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [selectedUnidadeId]);
 
   async function loadStats() {
     try {
-      const data = await api.get('/api/dashboard/stats');
+      const unidadeParam = selectedUnidadeId ? `?unidade_id=${selectedUnidadeId}` : '';
+      const data = await api.get(`/api/dashboard/stats${unidadeParam}`);
       setStats(data);
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);

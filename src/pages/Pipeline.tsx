@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import { Filter } from 'lucide-react';
 import { formatPhone } from '../utils/format';
 import toast from 'react-hot-toast';
+import { useUnidade } from '../contexts/UnidadeContext';
 
 interface Interest {
   id: string;
@@ -31,6 +32,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: str
 const COLUMNS = ['interested', 'enrolled', 'completed'];
 
 export function Pipeline() {
+  const { selectedUnidadeId } = useUnidade();
   const [interests, setInterests] = useState<Interest[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [selectedCurso, setSelectedCurso] = useState('');
@@ -39,13 +41,14 @@ export function Pipeline() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [selectedUnidadeId]);
 
   async function loadData() {
     try {
+      const unidadeParam = selectedUnidadeId ? `?unidade_id=${selectedUnidadeId}` : '';
       const [cursosData, interestsData] = await Promise.all([
         api.get('/api/cursos'),
-        api.get('/api/pipeline')
+        api.get(`/api/pipeline${unidadeParam}`)
       ]);
       setCursos(cursosData);
       setInterests(interestsData);

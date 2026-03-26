@@ -7,7 +7,7 @@ const router = Router();
 // GET /api/pagamentos — list all payments with filters
 router.get('/', async (req, res) => {
   try {
-    const { status, aluno_id, turma_id } = req.query;
+    const { status, aluno_id, turma_id, unidade_id } = req.query;
     
     // Auto-mark overdue payments
     await pool.query(
@@ -39,6 +39,10 @@ router.get('/', async (req, res) => {
     if (turma_id) {
       params.push(turma_id);
       conditions.push(`p.turma_id = $${params.length}`);
+    }
+    if (unidade_id) {
+      params.push(unidade_id);
+      conditions.push(`a.unidade_id = $${params.length}`);
     }
     
     if (conditions.length > 0) {

@@ -6,6 +6,10 @@ const router = Router();
 // GET /api/pipeline — all interests with student/course info for kanban
 router.get('/', async (req, res) => {
   try {
+    const { unidade_id } = req.query;
+    const whereClause = unidade_id ? 'WHERE a.unidade_id = $1' : '';
+    const params = unidade_id ? [unidade_id] : [];
+    
     const result = await pool.query(`
       SELECT 
         aci.id, aci.aluno_id, aci.curso_id, aci.status, aci.turma_id, aci.created_at,
@@ -14,8 +18,9 @@ router.get('/', async (req, res) => {
       FROM aluno_curso_interests aci
       JOIN alunos a ON a.id = aci.aluno_id
       JOIN cursos c ON c.id = aci.curso_id
+      ${whereClause}
       ORDER BY aci.created_at DESC
-    `);
+    `, params);
     res.json(result.rows);
   } catch (error) {
     console.error('Error loading pipeline:', error);

@@ -6,6 +6,14 @@ const router = Router();
 // GET /api/dashboard/stats — aggregated KPIs
 router.get('/stats', async (req, res) => {
   try {
+    const { unidade_id } = req.query;
+    
+    // Build filter conditions
+    const turmaFilter = unidade_id ? 'WHERE s.unidade_id = $1' : '';
+    const alunoFilter = unidade_id ? 'WHERE a.unidade_id = $1' : '';
+    const aciTurmaFilter = unidade_id ? 'AND s2.unidade_id = $1' : '';
+    const params = unidade_id ? [unidade_id] : [];
+
     const [
       turmasResult,
       alunosResult,
@@ -14,26 +22,29 @@ router.get('/stats', async (req, res) => {
       turmasDetailResult,
       recentActivityResult
     ] = await Promise.all([
-      pool.query('SELECT COUNT(*) as total FROM turmas'),
-      pool.query('SELECT COUNT(*) as total FROM alunos'),
+      pool.query(`SELECT COUNT(*) as total FROM turmas t LEFT JOIN salas s ON s.id = t.sala_id ${turmaFilter}`, params),
+      pool.query(`SELECT COUNT(*) as total FROM alunos a ${alunoFilter}`, params),
       pool.query(`
         SELECT 
-          COUNT(*) FILTER (WHERE status = 'interested') as interested,
-          COUNT(*) FILTER (WHERE status = 'enrolled') as enrolled,
-          COUNT(*) FILTER (WHERE status = 'completed') as completed,
+          COUNT(*) FILTER (WHERE aci.status = 'interested') as interested,
+          COUNT(*) FILTER (WHERE aci.status = 'enrolled') as enrolled,
+          COUNT(*) FILTER (WHERE aci.status = 'completed') as completed,
           COUNT(*) as total
-        FROM aluno_curso_interests
-      `),
+        FROM aluno_curso_interests aci
+        ${unidade_id ? 'JOIN alunos a ON a.id = aci.aluno_id WHERE a.unidade_id = $1' : ''}
+      `, params),
       pool.query(`
         SELECT c.id, c.nome, c.preco,
           COUNT(DISTINCT aci.aluno_id) FILTER (WHERE aci.status = 'interested') as interested,
           COUNT(DISTINCT aci.aluno_id) FILTER (WHERE aci.status = 'enrolled') as enrolled
         FROM cursos c
         LEFT JOIN aluno_curso_interests aci ON aci.curso_id = c.id
+        ${unidade_id ? 'LEFT JOIN alunos a ON a.id = aci.aluno_id' : ''}
+        ${unidade_id ? 'WHERE (a.unidade_id = $1 OR aci.id IS NULL)' : ''}
         GROUP BY c.id, c.nome, c.preco
         ORDER BY interested DESC
         LIMIT 10
-      `),
+      `, params),
       pool.query(`
         SELECT t.id, t.name, t.cadeiras, t.period, t.start_date, t.end_date,
           c.nome as curso_nome, c.preco,
@@ -43,9 +54,10 @@ router.get('/stats', async (req, res) => {
         JOIN cursos c ON c.id = t.curso_id
         LEFT JOIN salas s ON s.id = t.sala_id
         LEFT JOIN aluno_curso_interests aci ON aci.turma_id = t.id
+        ${turmaFilter}
         GROUP BY t.id, t.name, t.cadeiras, t.period, t.start_date, t.end_date, c.nome, c.preco, s.nome
         ORDER BY t.start_date DESC
-      `),
+      `, params),
       pool.query(`
         SELECT * FROM activity_logs
         ORDER BY created_at DESC

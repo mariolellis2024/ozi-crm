@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalSala } from '../components/ModalSala';
+import { useUnidade } from '../contexts/UnidadeContext';
 
 interface Sala {
   id: string;
@@ -19,6 +20,7 @@ interface Unidade {
 }
 
 export function Salas() {
+  const { selectedUnidadeId } = useUnidade();
   const [salas, setSalas] = useState<Sala[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({
@@ -37,11 +39,12 @@ export function Salas() {
   useEffect(() => {
     loadSalas();
     loadUnidades();
-  }, []);
+  }, [selectedUnidadeId]);
 
   async function loadSalas() {
     try {
-      const data = await api.get('/api/salas');
+      const unidadeParam = selectedUnidadeId ? `?unidade_id=${selectedUnidadeId}` : '';
+      const data = await api.get(`/api/salas${unidadeParam}`);
       setSalas(data);
     } catch (error) {
       toast.error('Erro ao carregar salas');

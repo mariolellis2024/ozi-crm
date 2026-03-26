@@ -6,13 +6,18 @@ const router = Router();
 // GET /api/salas
 router.get('/', async (req, res) => {
   try {
+    const { unidade_id } = req.query;
+    const whereClause = unidade_id ? 'WHERE s.unidade_id = $1' : '';
+    const params = unidade_id ? [unidade_id] : [];
+    
     const result = await pool.query(`
       SELECT s.id, s.nome, s.cadeiras, s.unidade_id, s.created_at,
              u.nome as unidade_nome
       FROM salas s
       LEFT JOIN unidades u ON u.id = s.unidade_id
+      ${whereClause}
       ORDER BY u.nome, s.created_at DESC
-    `);
+    `, params);
     res.json(result.rows);
   } catch (error) {
     console.error('Error loading salas:', error);

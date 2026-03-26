@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { CalendarOcupacaoSalas } from '../components/CalendarOcupacaoSalas';
+import { useUnidade } from '../contexts/UnidadeContext';
 
 interface Sala {
   id: string;
@@ -23,18 +24,20 @@ interface Turma {
 }
 
 export function Calendario() {
+  const { selectedUnidadeId } = useUnidade();
   const [salas, setSalas] = useState<Sala[]>([]);
   const [turmas, setTurmas] = useState<Turma[]>([]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [selectedUnidadeId]);
 
   async function loadData() {
     try {
+      const unidadeParam = selectedUnidadeId ? `?unidade_id=${selectedUnidadeId}` : '';
       const [salasData, turmasData] = await Promise.all([
-        api.get('/api/salas'),
-        api.get('/api/turmas')
+        api.get(`/api/salas${unidadeParam}`),
+        api.get(`/api/turmas${unidadeParam}`)
       ]);
       setSalas(salasData);
       setTurmas(turmasData);
