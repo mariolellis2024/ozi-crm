@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS turmas (
   start_date date NOT NULL,
   end_date date NOT NULL,
   imposto numeric NOT NULL DEFAULT 0,
+  investimento_anuncios numeric NOT NULL DEFAULT 0,
   days_of_week integer[],
   created_at timestamptz DEFAULT now()
 );

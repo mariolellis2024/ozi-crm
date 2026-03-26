@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
   try {
     const turmasResult = await pool.query(
       `SELECT t.id, t.name, t.curso_id, t.sala_id, t.cadeiras, t.potencial_faturamento,
-              t.period, t.start_date, t.end_date, t.imposto, t.days_of_week, t.created_at,
+              t.period, t.start_date, t.end_date, t.imposto, t.investimento_anuncios, t.days_of_week, t.created_at,
               c.id as c_id, c.nome as c_nome, c.preco as c_preco, c.carga_horaria as c_carga_horaria,
               s.id as s_id, s.nome as s_nome, s.cadeiras as s_cadeiras
        FROM turmas t
@@ -62,6 +62,7 @@ router.get('/', async (req, res) => {
       start_date: t.start_date instanceof Date ? t.start_date.toISOString().split('T')[0] : t.start_date,
       end_date: t.end_date instanceof Date ? t.end_date.toISOString().split('T')[0] : t.end_date,
       imposto: parseFloat(t.imposto),
+      investimento_anuncios: parseFloat(t.investimento_anuncios),
       days_of_week: parsePgArray(t.days_of_week),
       created_at: t.created_at,
       curso: t.c_id ? { id: t.c_id, nome: t.c_nome, preco: parseFloat(t.c_preco), carga_horaria: t.c_carga_horaria } : null,
@@ -113,11 +114,12 @@ router.post('/', async (req, res) => {
   try {
     const { name, curso_id, sala_id, cadeiras, period, start_date, end_date, potencial_faturamento, imposto, days_of_week, professores } = req.body;
 
+    const { investimento_anuncios } = req.body;
     const result = await pool.query(
-      `INSERT INTO turmas (name, curso_id, sala_id, cadeiras, period, start_date, end_date, potencial_faturamento, imposto, days_of_week)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      `INSERT INTO turmas (name, curso_id, sala_id, cadeiras, period, start_date, end_date, potencial_faturamento, imposto, investimento_anuncios, days_of_week)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
       [name, curso_id, sala_id || null, parseInt(cadeiras), period, start_date, end_date,
-       parseFloat(potencial_faturamento) || 0, parseFloat(imposto) || 0, days_of_week || null]
+       parseFloat(potencial_faturamento) || 0, parseFloat(imposto) || 0, parseFloat(investimento_anuncios) || 0, days_of_week || null]
     );
 
     const turmaId = result.rows[0].id;
@@ -146,12 +148,13 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const { name, curso_id, sala_id, cadeiras, period, start_date, end_date, potencial_faturamento, imposto, days_of_week, professores } = req.body;
 
+    const { investimento_anuncios } = req.body;
     const result = await pool.query(
       `UPDATE turmas SET name = $1, curso_id = $2, sala_id = $3, cadeiras = $4, period = $5,
-       start_date = $6, end_date = $7, potencial_faturamento = $8, imposto = $9, days_of_week = $10
-       WHERE id = $11 RETURNING *`,
+       start_date = $6, end_date = $7, potencial_faturamento = $8, imposto = $9, investimento_anuncios = $10, days_of_week = $11
+       WHERE id = $12 RETURNING *`,
       [name, curso_id, sala_id || null, parseInt(cadeiras), period, start_date, end_date,
-       parseFloat(potencial_faturamento) || 0, parseFloat(imposto) || 0, days_of_week || null, id]
+       parseFloat(potencial_faturamento) || 0, parseFloat(imposto) || 0, parseFloat(investimento_anuncios) || 0, days_of_week || null, id]
     );
 
     if (result.rows.length === 0) {
@@ -174,6 +177,25 @@ router.put('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error updating turma:', error);
     res.status(500).json({ error: 'Erro ao atualizar turma' });
+  }
+});
+
+// PATCH /api/turmas/:id/investimento — update ad spend inline
+router.patch('/:id/investimento', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { investimento_anuncios } = req.body;
+    const result = await pool.query(
+      'UPDATE turmas SET investimento_anuncios = $1 WHERE id = $2 RETURNING id, investimento_anuncios',
+      [parseFloat(investimento_anuncios) || 0, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Turma não encontrada' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating investimento:', error);
+    res.status(500).json({ error: 'Erro ao atualizar investimento' });
   }
 });
 

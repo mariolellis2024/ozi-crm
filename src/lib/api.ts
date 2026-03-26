@@ -54,6 +54,15 @@ class ApiClient {
     return this.handleResponse(response);
   }
 
+  async patch(path: string, body: any) {
+    const response = await fetch(`${API_BASE}${path}`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify(body),
+    });
+    return this.handleResponse(response);
+  }
+
   async delete(path: string) {
     const response = await fetch(`${API_BASE}${path}`, {
       method: 'DELETE',
