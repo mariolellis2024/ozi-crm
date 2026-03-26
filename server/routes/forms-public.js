@@ -105,23 +105,24 @@ router.post('/:slug/register', async (req, res) => {
 
     if (existingAluno.rows.length > 0) {
       alunoId = existingAluno.rows[0].id;
-      // Update name, periods, and tracking data
+      // Update name, periods, email, and tracking data
       await pool.query(
         `UPDATE alunos SET nome = $1, available_periods = $2,
-         meta_fbc = COALESCE($4, meta_fbc), meta_fbp = COALESCE($5, meta_fbp),
-         meta_client_ip = COALESCE($6, meta_client_ip), meta_user_agent = COALESCE($7, meta_user_agent)
+         email = COALESCE($4, email),
+         meta_fbc = COALESCE($5, meta_fbc), meta_fbp = COALESCE($6, meta_fbp),
+         meta_client_ip = COALESCE($7, meta_client_ip), meta_user_agent = COALESCE($8, meta_user_agent)
          WHERE id = $3`,
         [nome, available_periods && available_periods.length > 0 ? `{${available_periods.join(',')}}` : null,
-         alunoId, fbc || null, fbp || null, clientIp || null, clientUserAgent || null]
+         alunoId, email || null, fbc || null, fbp || null, clientIp || null, clientUserAgent || null]
       );
     } else {
-      // Create new aluno with tracking data
+      // Create new aluno with email and tracking data
       const alunoResult = await pool.query(
-        `INSERT INTO alunos (nome, whatsapp, unidade_id, available_periods, meta_fbc, meta_fbp, meta_client_ip, meta_user_agent)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+        `INSERT INTO alunos (nome, whatsapp, unidade_id, available_periods, email, meta_fbc, meta_fbp, meta_client_ip, meta_user_agent)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
         [nome, normalizedWhatsapp, form.unidade_id,
          available_periods && available_periods.length > 0 ? `{${available_periods.join(',')}}` : null,
-         fbc || null, fbp || null, clientIp || null, clientUserAgent || null]
+         email || null, fbc || null, fbp || null, clientIp || null, clientUserAgent || null]
       );
       alunoId = alunoResult.rows[0].id;
     }

@@ -37,6 +37,7 @@ export function FormularioPublico() {
   const [submitted, setSubmitted] = useState(false);
 
   const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [periods, setPeriods] = useState<Period[]>([]);
 
@@ -140,6 +141,7 @@ export function FormularioPublico() {
         body: JSON.stringify({
           nome: nome.trim(),
           whatsapp: whatsapp.replace(/\D/g, ''),
+          email: email.trim() || undefined,
           available_periods: periods,
           fbc,
           fbp
@@ -287,6 +289,16 @@ export function FormularioPublico() {
               onChange={(e) => setNome(e.target.value)}
               placeholder="Seu nome completo"
               required
+              className="w-full bg-white/5 backdrop-blur-sm border border-white/10 text-white px-4 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-accent/50 focus:border-teal-accent/50 placeholder-gray-500 text-base"
+            />
+          </div>
+
+          <div>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Seu melhor e-mail"
               className="w-full bg-white/5 backdrop-blur-sm border border-white/10 text-white px-4 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-accent/50 focus:border-teal-accent/50 placeholder-gray-500 text-base"
             />
           </div>
