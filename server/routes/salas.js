@@ -6,7 +6,13 @@ const router = Router();
 // GET /api/salas
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, nome, cadeiras, created_at FROM salas ORDER BY created_at DESC');
+    const result = await pool.query(`
+      SELECT s.id, s.nome, s.cadeiras, s.unidade_id, s.created_at,
+             u.nome as unidade_nome
+      FROM salas s
+      LEFT JOIN unidades u ON u.id = s.unidade_id
+      ORDER BY u.nome, s.created_at DESC
+    `);
     res.json(result.rows);
   } catch (error) {
     console.error('Error loading salas:', error);
@@ -17,7 +23,11 @@ router.get('/', async (req, res) => {
 // GET /api/salas/simple
 router.get('/simple', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, nome, cadeiras FROM salas ORDER BY nome');
+    const result = await pool.query(`
+      SELECT s.id, s.nome, s.cadeiras, s.unidade_id, u.nome as unidade_nome
+      FROM salas s LEFT JOIN unidades u ON u.id = s.unidade_id
+      ORDER BY u.nome, s.nome
+    `);
     res.json(result.rows);
   } catch (error) {
     console.error('Error loading salas:', error);
@@ -28,10 +38,10 @@ router.get('/simple', async (req, res) => {
 // POST /api/salas
 router.post('/', async (req, res) => {
   try {
-    const { nome, cadeiras } = req.body;
+    const { nome, cadeiras, unidade_id } = req.body;
     const result = await pool.query(
-      'INSERT INTO salas (nome, cadeiras) VALUES ($1, $2) RETURNING *',
-      [nome, parseInt(cadeiras)]
+      'INSERT INTO salas (nome, cadeiras, unidade_id) VALUES ($1, $2, $3) RETURNING *',
+      [nome, parseInt(cadeiras), unidade_id || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -44,10 +54,10 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, cadeiras } = req.body;
+    const { nome, cadeiras, unidade_id } = req.body;
     const result = await pool.query(
-      'UPDATE salas SET nome = $1, cadeiras = $2 WHERE id = $3 RETURNING *',
-      [nome, parseInt(cadeiras), id]
+      'UPDATE salas SET nome = $1, cadeiras = $2, unidade_id = $3 WHERE id = $4 RETURNING *',
+      [nome, parseInt(cadeiras), unidade_id || null, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Sala não encontrada' });

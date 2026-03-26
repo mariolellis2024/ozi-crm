@@ -7,6 +7,7 @@ import { Alunos } from './pages/Alunos';
 import { Cursos } from './pages/Cursos';
 import { Turmas } from './pages/Turmas';
 import { Salas } from './pages/Salas';
+import { Unidades } from './pages/Unidades';
 import { Usuarios } from './pages/Usuarios';
 import { DashboardPage } from './pages/DashboardPage';
 import { Calendario } from './pages/Calendario';
@@ -71,6 +72,7 @@ export default function App() {
         <Route path="/cursos" element={<PrivateRoute><Cursos /></PrivateRoute>} />
         <Route path="/professores" element={<PrivateRoute><Professores /></PrivateRoute>} />
         <Route path="/salas" element={<PrivateRoute><Salas /></PrivateRoute>} />
+        <Route path="/unidades" element={<PrivateRoute><Unidades /></PrivateRoute>} />
         <Route path="/usuarios" element={<PrivateRoute><Usuarios /></PrivateRoute>} />
         <Route path="/calendario" element={<PrivateRoute><Calendario /></PrivateRoute>} />
         <Route path="/pipeline" element={<PrivateRoute><Pipeline /></PrivateRoute>} />

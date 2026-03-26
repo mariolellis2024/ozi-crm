@@ -65,10 +65,19 @@ CREATE TABLE IF NOT EXISTS cursos (
   created_at timestamptz DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS unidades (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome text NOT NULL,
+  cidade text,
+  endereco text,
+  created_at timestamptz DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS salas (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   nome text NOT NULL,
   cadeiras integer NOT NULL DEFAULT 1,
+  unidade_id uuid REFERENCES unidades(id) ON DELETE SET NULL,
   created_at timestamptz DEFAULT now()
 );
 

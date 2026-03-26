@@ -9,6 +9,13 @@ interface Sala {
   id: string;
   nome: string;
   cadeiras: number;
+  unidade_id?: string;
+  unidade_nome?: string;
+}
+
+interface Unidade {
+  id: string;
+  nome: string;
 }
 
 export function Salas() {
@@ -21,12 +28,15 @@ export function Salas() {
   });
   const [formData, setFormData] = useState({
     nome: '',
-    cadeiras: ''
+    cadeiras: '',
+    unidade_id: ''
   });
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadSalas();
+    loadUnidades();
   }, []);
 
   async function loadSalas() {
@@ -36,6 +46,13 @@ export function Salas() {
     } catch (error) {
       toast.error('Erro ao carregar salas');
     }
+  }
+
+  async function loadUnidades() {
+    try {
+      const data = await api.get('/api/unidades');
+      setUnidades(data);
+    } catch { /* ignore */ }
   }
 
 
@@ -57,7 +74,7 @@ export function Salas() {
       }
 
       setIsModalOpen(false);
-      setFormData({ nome: '', cadeiras: '' });
+      setFormData({ nome: '', cadeiras: '', unidade_id: '' });
       setEditingId(null);
       loadSalas();
     } catch (error) {
@@ -95,7 +112,8 @@ export function Salas() {
   function handleEdit(sala: Sala) {
     setFormData({
       nome: sala.nome,
-      cadeiras: sala.cadeiras.toString()
+      cadeiras: sala.cadeiras.toString(),
+      unidade_id: sala.unidade_id || ''
     });
     setEditingId(sala.id);
     setIsModalOpen(true);
@@ -103,7 +121,7 @@ export function Salas() {
 
   function handleCloseModal() {
     setIsModalOpen(false);
-    setFormData({ nome: '', cadeiras: '' });
+    setFormData({ nome: '', cadeiras: '', unidade_id: '' });
     setEditingId(null);
   }
 
@@ -133,6 +151,11 @@ export function Salas() {
                   <p className="text-gray-400">
                     {sala.cadeiras} {sala.cadeiras === 1 ? 'cadeira' : 'cadeiras'}
                   </p>
+                  {sala.unidade_nome && (
+                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 bg-teal-accent/10 text-teal-accent text-xs rounded-full">
+                      📍 {sala.unidade_nome}
+                    </span>
+                  )}
                 </div>
                 <div className="flex space-x-2">
                   <button
@@ -163,6 +186,7 @@ export function Salas() {
           editingId={editingId}
           formData={formData}
           setFormData={setFormData}
+          unidades={unidades}
           onSubmit={handleSubmit}
           onClose={handleCloseModal}
         />
