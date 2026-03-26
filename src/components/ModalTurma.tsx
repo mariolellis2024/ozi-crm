@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, Trash2, GraduationCap, Calendar } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 type Period = 'manha' | 'tarde' | 'noite';
 
@@ -191,7 +192,7 @@ export function ModalTurma({
     e.preventDefault();
     
     if (!horasValidas && cargaHorariaCurso > 0) {
-      alert(`O total de horas dos professores (${totalHorasProfessores}h) deve ser igual à carga horária do curso (${cargaHorariaCurso}h)`);
+      toast.error(`O total de horas dos professores (${totalHorasProfessores}h) deve ser igual à carga horária do curso (${cargaHorariaCurso}h)`);
       return;
     }
 

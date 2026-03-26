@@ -52,6 +52,7 @@ export function Pagamentos() {
   const [form, setForm] = useState({
     aluno_id: '', curso_id: '', total_parcelas: '1', valor_total: '', first_due_date: ''
   });
+  const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; id: string }>({ isOpen: false, id: '' });
 
   useEffect(() => { loadData(); }, [filter]);
 
@@ -112,13 +113,18 @@ export function Pagamentos() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Tem certeza que deseja excluir este pagamento?')) return;
+    setConfirmDelete({ isOpen: true, id });
+  }
+
+  async function handleConfirmDelete() {
     try {
-      await api.delete(`/api/pagamentos/${id}`);
+      await api.delete(`/api/pagamentos/${confirmDelete.id}`);
       toast.success('Pagamento excluído');
       loadData();
     } catch (error: any) {
       toast.error(error.message || 'Erro ao excluir');
+    } finally {
+      setConfirmDelete({ isOpen: false, id: '' });
     }
   }
 
@@ -319,6 +325,36 @@ export function Pagamentos() {
                 <button type="submit" className="flex-1 py-3 rounded-xl bg-teal-accent text-dark font-medium hover:bg-teal-400 transition-colors">Gerar</button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {confirmDelete.isOpen && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10001] p-4 fade-in">
+          <div className="bg-dark-card rounded-2xl p-6 w-full max-w-sm scale-in">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle className="h-6 w-6 text-red-500" />
+              <h3 className="text-xl font-semibold text-white">Excluir Pagamento</h3>
+            </div>
+            <p className="text-gray-300 mb-6">
+              Tem certeza que deseja excluir este pagamento? Essa ação não pode ser desfeita.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmDelete({ isOpen: false, id: '' })}
+                className="px-4 py-2 bg-dark-lighter text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Excluir
+              </button>
+            </div>
           </div>
         </div>,
         document.body
