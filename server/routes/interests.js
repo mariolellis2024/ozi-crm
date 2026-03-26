@@ -268,10 +268,21 @@ router.put('/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const result = await pool.query(
-      'UPDATE aluno_curso_interests SET status = $1 WHERE id = $2 RETURNING *',
-      [status, id]
-    );
+    
+    // When moving back to interested, clear turma_id so student appears in interested list
+    let result;
+    if (status === 'interested') {
+      result = await pool.query(
+        'UPDATE aluno_curso_interests SET status = $1, turma_id = NULL WHERE id = $2 RETURNING *',
+        [status, id]
+      );
+    } else {
+      result = await pool.query(
+        'UPDATE aluno_curso_interests SET status = $1 WHERE id = $2 RETURNING *',
+        [status, id]
+      );
+    }
+    
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Interesse não encontrado' });
     }
