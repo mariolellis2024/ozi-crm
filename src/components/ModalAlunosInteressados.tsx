@@ -148,7 +148,7 @@ export function ModalAlunosInteressados({
   // Step 2: After form submit, proceed with enrollment
   async function handleConfirmEnroll() {
     const { alunoId, genero, dataNascimento, cep } = enrollForm;
-    if (!genero || !dataNascimento || !cep || cep.replace(/\D/g, '').length < 8) {
+    if (!genero || !dataNascimento || !cep || cep.replace(/\D/g, '').length < 5) {
       toast.error('Preencha todos os campos obrigatórios (Gênero, Data de Nascimento e CEP)');
       return;
     }

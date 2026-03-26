@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { Plus, Pencil, Trash2, Link2, Copy, ExternalLink, FileText, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Link2, Copy, ExternalLink, FileText, ToggleLeft, ToggleRight, Code2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { useUnidade } from '../contexts/UnidadeContext';
@@ -171,6 +171,14 @@ export function Formularios() {
     toast.success('Link copiado!');
   }
 
+  // Embed modal state
+  const [embedSlug, setEmbedSlug] = useState<string | null>(null);
+
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text);
+    toast.success('Código copiado!');
+  }
+
   function handleCursoChange(cursoId: string) {
     setFormData(prev => {
       const curso = cursos.find(c => c.id === cursoId);
@@ -258,6 +266,13 @@ export function Formularios() {
                 >
                   <ExternalLink className="h-4 w-4" />
                 </a>
+                <button
+                  onClick={() => setEmbedSlug(f.slug)}
+                  className="p-2 text-gray-400 hover:text-teal-accent transition-colors"
+                  title="Incorporar em site externo"
+                >
+                  <Code2 className="h-4 w-4" />
+                </button>
                 {isSuperAdmin && (
                   <>
                     <button
@@ -402,6 +417,112 @@ export function Formularios() {
         title="Excluir Formulário"
         message={`Tem certeza que deseja excluir o formulário "${confirmModal.nome}"?`}
       />
+
+      {/* Embed Tutorial Modal */}
+      {embedSlug && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4"
+          onClick={() => setEmbedSlug(null)}
+        >
+          <div
+            className="bg-dark-card rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <Code2 className="h-5 w-5 text-teal-accent" />
+                <h2 className="text-lg font-semibold text-white">Incorporar Formulário</h2>
+              </div>
+              <button onClick={() => setEmbedSlug(null)} className="text-gray-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-gray-400 text-sm mb-6">
+              Adicione este formulário em qualquer site externo (WordPress, Elementor, Wix, HTML).
+            </p>
+
+            {/* Step 1 */}
+            <div className="mb-5">
+              <h3 className="text-sm font-medium text-teal-accent mb-2">
+                Passo 1 — Cole o script uma vez na página
+              </h3>
+              <div className="relative">
+                <pre className="bg-dark-lighter text-gray-300 text-xs p-3 rounded-lg overflow-x-auto border border-gray-700">
+                  <code>{`<script src="${window.location.origin}/widget.js"></script>`}</code>
+                </pre>
+                <button
+                  onClick={() => copyToClipboard(`<script src="${window.location.origin}/widget.js"></script>`)}
+                  className="absolute top-2 right-2 p-1.5 bg-dark-card rounded border border-gray-600 text-gray-400 hover:text-teal-accent transition-colors"
+                  title="Copiar"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Cole antes do {'</body>'} ou no rodapé do site.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="mb-5">
+              <h3 className="text-sm font-medium text-teal-accent mb-2">
+                Passo 2 — Adicione o atributo em qualquer botão
+              </h3>
+              <div className="relative">
+                <pre className="bg-dark-lighter text-gray-300 text-xs p-3 rounded-lg overflow-x-auto border border-gray-700">
+                  <code>{`<button data-ozi-form="${embedSlug}">Inscreva-se</button>`}</code>
+                </pre>
+                <button
+                  onClick={() => copyToClipboard(`data-ozi-form="${embedSlug}"`)}
+                  className="absolute top-2 right-2 p-1.5 bg-dark-card rounded border border-gray-600 text-gray-400 hover:text-teal-accent transition-colors"
+                  title="Copiar atributo"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Elementor tip */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-5">
+              <h4 className="text-xs font-medium text-blue-400 mb-1">💡 No Elementor</h4>
+              <p className="text-xs text-gray-400">
+                Clique no botão → Avançado → Atributos personalizados → cole:
+              </p>
+              <div className="relative mt-2">
+                <code className="block bg-dark-lighter text-blue-300 text-xs p-2 rounded border border-gray-700">
+                  data-ozi-form|{embedSlug}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(`data-ozi-form|${embedSlug}`)}
+                  className="absolute top-1 right-1 p-1 bg-dark-card rounded border border-gray-600 text-gray-400 hover:text-blue-400 transition-colors"
+                  title="Copiar"
+                >
+                  <Copy className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+
+            {/* JS API */}
+            <div className="bg-dark-lighter rounded-lg p-3 border border-gray-700">
+              <h4 className="text-xs font-medium text-gray-300 mb-1">⚡ Via JavaScript</h4>
+              <div className="relative">
+                <code className="block text-xs text-gray-400">
+                  OziWidget.open('{embedSlug}')
+                </code>
+                <button
+                  onClick={() => copyToClipboard(`OziWidget.open('${embedSlug}')`)}
+                  className="absolute top-0 right-0 p-1 text-gray-500 hover:text-teal-accent transition-colors"
+                  title="Copiar"
+                >
+                  <Copy className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
