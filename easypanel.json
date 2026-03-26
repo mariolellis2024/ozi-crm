@@ -8,7 +8,7 @@
                     "type": "image",
                     "image": "ghcr.io/mariolellis2024/ozi-crm:latest"
                 },
-                "env": "DATABASE_URL=postgresql://postgres:ozi_crm_2024@$(PROJECT_NAME)_ozi-crm-db:5432/$(PROJECT_NAME)\nJWT_SECRET=TROQUE_POR_CHAVE_SEGURA_64_CHARS\nNODE_ENV=production\nPORT=3001\nMINIO_ENDPOINT=http://$(PROJECT_NAME)_ozi-minio:9000\nMINIO_PUBLIC_URL=https://minio.crm.ozi.com.br\nMINIO_ACCESS_KEY=minioadmin\nMINIO_SECRET_KEY=TROQUE_POR_CHAVE_SEGURA\nMINIO_BUCKET=ozi-uploads",
+                "env": "DATABASE_URL=postgresql://postgres:ozi_crm_2024@$(PROJECT_NAME)_ozi-crm-db:5432/$(PROJECT_NAME)\nJWT_SECRET=TROQUE_POR_CHAVE_SEGURA_64_CHARS\nNODE_ENV=production\nPORT=3001\nMINIO_ENDPOINT=https://minio.crm.ozi.com.br\nMINIO_PUBLIC_URL=https://minio.crm.ozi.com.br\nMINIO_ACCESS_KEY=minioadmin\nMINIO_SECRET_KEY=TROQUE_POR_CHAVE_SEGURA\nMINIO_BUCKET=ozi-uploads",
                 "deploy": {
                     "replicas": 1,
                     "command": null,
