@@ -49,6 +49,14 @@ app.get('*', (req, res) => {
   res.sendFile(join(distPath, 'index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 OZI CRM Server running on port ${PORT}`);
+import { runMigrations } from './migrate.js';
+
+// Run database migrations then start server
+runMigrations().then(() => {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 OZI CRM Server running on port ${PORT}`);
+  });
+}).catch(err => {
+  console.error('Failed to run migrations:', err);
+  process.exit(1);
 });

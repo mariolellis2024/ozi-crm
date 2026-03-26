@@ -4,8 +4,16 @@
 -- =====================================================
 
 -- Create custom types
-CREATE TYPE period_type AS ENUM ('manha', 'tarde', 'noite');
-CREATE TYPE interest_status AS ENUM ('interested', 'enrolled', 'completed');
+-- Create custom types (idempotent)
+DO $$ BEGIN
+  CREATE TYPE period_type AS ENUM ('manha', 'tarde', 'noite');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE interest_status AS ENUM ('interested', 'enrolled', 'completed');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- =====================================================
 -- Users table (replaces Supabase auth.users)
