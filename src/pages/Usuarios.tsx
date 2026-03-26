@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { Pencil, Trash2, UserPlus, Mail, Lock, User } from 'lucide-react';
+import { Pencil, Trash2, UserPlus, Mail, Lock, User, ShieldCheck, Ban, ShieldOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 
@@ -9,6 +9,8 @@ interface UserData {
   id: string;
   email: string;
   full_name: string | null;
+  is_blocked: boolean;
+  is_super_admin: boolean;
   created_at: string;
 }
 
@@ -84,6 +86,17 @@ export function Usuarios() {
     }
   }
 
+  async function handleToggleBlock(user: UserData) {
+    try {
+      await api.put(`/api/users/${user.id}/block`, {});
+      const action = user.is_blocked ? 'desbloqueado' : 'bloqueado';
+      toast.success(`Usuário ${action} com sucesso!`);
+      loadUsers();
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao alterar bloqueio');
+    }
+  }
+
   async function handleConfirmDelete() {
     try {
       await api.delete(`/api/users/${confirmModal.userId}`);
@@ -118,15 +131,38 @@ export function Usuarios() {
               <tr className="border-b border-dark-lighter">
                 <th className="text-left py-4 px-6 text-gray-400 font-medium">Nome</th>
                 <th className="text-left py-4 px-6 text-gray-400 font-medium">Email</th>
+                <th className="text-left py-4 px-6 text-gray-400 font-medium">Status</th>
                 <th className="text-left py-4 px-6 text-gray-400 font-medium">Criado em</th>
                 <th className="text-right py-4 px-6 text-gray-400 font-medium">Ações</th>
               </tr>
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id} className="border-b border-dark-lighter/50 hover:bg-dark-lighter/30 transition-colors">
-                  <td className="py-4 px-6 text-white">{user.full_name || '—'}</td>
+                <tr key={user.id} className={`border-b border-dark-lighter/50 hover:bg-dark-lighter/30 transition-colors ${user.is_blocked ? 'opacity-60' : ''}`}>
+                  <td className="py-4 px-6">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white">{user.full_name || '—'}</span>
+                      {user.is_super_admin && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                          <ShieldCheck className="h-3 w-3" />
+                          Super Admin
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-4 px-6 text-gray-300">{user.email}</td>
+                  <td className="py-4 px-6">
+                    {user.is_blocked ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30">
+                        <Ban className="h-3 w-3" />
+                        Bloqueado
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        Ativo
+                      </span>
+                    )}
+                  </td>
                   <td className="py-4 px-6 text-gray-400">
                     {new Date(user.created_at).toLocaleDateString('pt-BR')}
                   </td>
@@ -139,20 +175,31 @@ export function Usuarios() {
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => setConfirmModal({ isOpen: true, userId: user.id, userName: user.email })}
-                        className="p-2 text-gray-400 hover:text-red-400 transition-colors"
-                        title="Excluir"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {!user.is_super_admin && (
+                        <>
+                          <button
+                            onClick={() => handleToggleBlock(user)}
+                            className={`p-2 transition-colors ${user.is_blocked ? 'text-emerald-400 hover:text-emerald-300' : 'text-gray-400 hover:text-amber-400'}`}
+                            title={user.is_blocked ? 'Desbloquear' : 'Bloquear'}
+                          >
+                            {user.is_blocked ? <ShieldOff className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                          </button>
+                          <button
+                            onClick={() => setConfirmModal({ isOpen: true, userId: user.id, userName: user.email })}
+                            className="p-2 text-gray-400 hover:text-red-400 transition-colors"
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center text-gray-500">
+                  <td colSpan={5} className="py-12 text-center text-gray-500">
                     Nenhum usuário cadastrado
                   </td>
                 </tr>
@@ -239,7 +286,7 @@ export function Usuarios() {
         onCancel={() => setConfirmModal({ isOpen: false, userId: '', userName: '' })}
         onConfirm={handleConfirmDelete}
         title="Excluir Usuário"
-        message={`Tem certeza que deseja excluir o usuário "${confirmModal.userName}"?`}
+        message={`Tem certeza que deseja excluir o usuário "${confirmModal.userName}"? Esta ação não pode ser desfeita.`}
       />
     </div>
   );

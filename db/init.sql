@@ -23,8 +23,19 @@ CREATE TABLE IF NOT EXISTS users (
   email text UNIQUE NOT NULL,
   password_hash text NOT NULL,
   full_name text,
+  is_blocked boolean DEFAULT false,
+  is_super_admin boolean DEFAULT false,
   created_at timestamptz DEFAULT now()
 );
+
+-- Add columns if they don't exist (for existing databases)
+DO $$ BEGIN
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked boolean DEFAULT false;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin boolean DEFAULT false;
+END $$;
+
+-- Set mario@ozi.com.br as super admin
+UPDATE users SET is_super_admin = true WHERE email = 'mario@ozi.com.br';
 
 -- =====================================================
 -- Core tables

@@ -51,7 +51,7 @@ router.post('/login', async (req, res) => {
     }
 
     const result = await pool.query(
-      'SELECT id, email, password_hash, full_name, created_at FROM users WHERE email = $1',
+      'SELECT id, email, password_hash, full_name, is_blocked, is_super_admin, created_at FROM users WHERE email = $1',
       [email]
     );
 
@@ -60,6 +60,11 @@ router.post('/login', async (req, res) => {
     }
 
     const user = result.rows[0];
+
+    if (user.is_blocked) {
+      return res.status(403).json({ error: 'Sua conta foi bloqueada. Contate o administrador.' });
+    }
+
     const validPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!validPassword) {
