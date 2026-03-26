@@ -7,6 +7,10 @@ const router = Router();
 // GET /api/turmas
 router.get('/', async (req, res) => {
   try {
+    const { unidade_id } = req.query;
+    const whereClause = unidade_id ? 'WHERE s.unidade_id = $1' : '';
+    const params = unidade_id ? [unidade_id] : [];
+    
     const turmasResult = await pool.query(
       `SELECT t.id, t.name, t.curso_id, t.sala_id, t.cadeiras, t.potencial_faturamento,
               t.period, t.start_date, t.end_date, t.imposto, t.investimento_anuncios, t.days_of_week, t.created_at,
@@ -17,7 +21,9 @@ router.get('/', async (req, res) => {
        LEFT JOIN cursos c ON c.id = t.curso_id
        LEFT JOIN salas s ON s.id = t.sala_id
        LEFT JOIN unidades un ON un.id = s.unidade_id
-       ORDER BY t.created_at DESC`
+       ${whereClause}
+       ORDER BY t.created_at DESC`,
+      params
     );
 
     // Load professors for all turmas

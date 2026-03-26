@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalTurma } from '../components/ModalTurma';
+import { useUnidade } from '../contexts/UnidadeContext';
 import { ModalAlunosInteressados } from '../components/ModalAlunosInteressados';
 import { ModalAlunosMatriculados } from '../components/ModalAlunosMatriculados';
 import { CalendarOcupacaoSalas } from '../components/CalendarOcupacaoSalas';
@@ -80,6 +81,7 @@ interface Professor {
 }
 
 export function Turmas() {
+  const { selectedUnidadeId } = useUnidade();
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [salas, setSalas] = useState<Sala[]>([]);
@@ -139,15 +141,16 @@ export function Turmas() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [selectedUnidadeId]);
 
   async function loadData() {
     try {
+      const unidadeParam = selectedUnidadeId ? `?unidade_id=${selectedUnidadeId}` : '';
       const [turmasData, cursosData, salasData, professoresData] = await Promise.all([
-        api.get('/api/turmas'),
+        api.get(`/api/turmas${unidadeParam}`),
         api.get('/api/cursos'),
         api.get('/api/salas'),
-        api.get('/api/professores')
+        api.get(`/api/professores${unidadeParam}`)
       ]);
 
       setTurmas(turmasData);

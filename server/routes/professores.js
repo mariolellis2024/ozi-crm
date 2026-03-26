@@ -6,12 +6,17 @@ const router = Router();
 // GET /api/professores
 router.get('/', async (req, res) => {
   try {
+    const { unidade_id } = req.query;
+    const whereClause = unidade_id ? 'WHERE p.unidade_id = $1' : '';
+    const params = unidade_id ? [unidade_id] : [];
+    
     const [professoresResult, turmasResult] = await Promise.all([
       pool.query(`SELECT p.id, p.nome, p.email, p.whatsapp, p.valor_hora, p.unidade_id, p.created_at,
                          u.nome as unidade_nome
                   FROM professores p
                   LEFT JOIN unidades u ON u.id = p.unidade_id
-                  ORDER BY p.created_at DESC`),
+                  ${whereClause}
+                  ORDER BY p.created_at DESC`, params),
       pool.query(
         `SELECT tp.professor_id, tp.hours, t.id as turma_id, t.start_date, t.end_date
          FROM turma_professores tp

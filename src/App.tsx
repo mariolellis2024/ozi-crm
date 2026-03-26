@@ -15,6 +15,7 @@ import { Pipeline } from './pages/Pipeline';
 import { Atividades } from './pages/Atividades';
 import { Pagamentos } from './pages/Pagamentos';
 import { Layout } from './components/Layout';
+import { UnidadeProvider } from './contexts/UnidadeContext';
 import { Toaster } from 'react-hot-toast';
 import { OrganicBackground } from './components/OrganicBackground';
 
@@ -63,6 +64,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <UnidadeProvider>
       <OrganicBackground />
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -80,6 +82,7 @@ export default function App() {
         <Route path="/pagamentos" element={<PrivateRoute><Pagamentos /></PrivateRoute>} />
       </Routes>
       <Toaster position="top-right" />
+      </UnidadeProvider>
     </BrowserRouter>
   );
 }

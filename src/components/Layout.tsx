@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { api } from '../lib/api';
-import { GraduationCap, User, LogOut, BookOpen, Home, DoorClosed, Activity, Users, BarChart3, CalendarDays, GitBranch, ClipboardList, Wallet, Building2 } from 'lucide-react';
+import { GraduationCap, User, LogOut, BookOpen, Home, DoorClosed, Activity, Users, BarChart3, CalendarDays, GitBranch, ClipboardList, Wallet, Building2, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PerformanceDashboard } from './PerformanceDashboard';
+import { useUnidade } from '../contexts/UnidadeContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false);
+  const { unidades, selectedUnidadeId, setSelectedUnidadeId, selectedUnidade } = useUnidade();
 
   const handleSignOut = async () => {
     try {
@@ -26,7 +28,8 @@ export function Layout({ children }: LayoutProps) {
     }
   };
 
-  const menuItems = [
+  // Pages that filter by unidade (above the separator)
+  const filteredMenuItems = [
     { icon: BarChart3, label: 'Dashboard', path: '/' },
     { icon: Home, label: 'Turmas', path: '/turmas' },
     { icon: User, label: 'Alunos', path: '/alunos' },
@@ -37,20 +40,64 @@ export function Layout({ children }: LayoutProps) {
     { icon: BookOpen, label: 'Cursos', path: '/cursos' },
     { icon: GraduationCap, label: 'Professores', path: '/professores' },
     { icon: DoorClosed, label: 'Salas', path: '/salas' },
+  ];
+
+  // Pages that are global (below the separator)
+  const globalMenuItems = [
     { icon: Building2, label: 'Unidades', path: '/unidades' },
     { icon: Users, label: 'Usuários', path: '/usuarios' },
   ];
 
   return (
     <div className="min-h-screen flex fade-in">
-      <aside className="w-64 bg-dark-lighter fixed h-full slide-in-left">
+      <aside className="w-64 bg-dark-lighter fixed h-full slide-in-left flex flex-col">
         <div className="px-6 pt-6 scale-in">
           <div className="flex items-center justify-center space-x-3">
             <img src="/icon.webp" alt="OZI CRM Logo" className="w-4/5 h-auto flex-shrink-0 rounded" />
           </div>
         </div>
-        <nav className="mt-6 scale-in-delay-1">
-          {menuItems.map((item, index) => (
+
+        {/* Unidade filter dropdown */}
+        {unidades.length > 0 && (
+          <div className="px-4 mt-4 scale-in">
+            <div className="relative">
+              <select
+                value={selectedUnidadeId}
+                onChange={(e) => setSelectedUnidadeId(e.target.value)}
+                className="w-full bg-dark-card text-white text-xs rounded-lg px-3 py-2 pr-8 border border-gray-600 focus:border-teal-accent outline-none appearance-none cursor-pointer"
+              >
+                <option value="">🌐 Todas as Unidades</option>
+                {unidades.map(u => (
+                  <option key={u.id} value={u.id}>📍 {u.nome}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+        )}
+
+        <nav className="mt-4 flex-1 overflow-y-auto scale-in-delay-1">
+          {/* Filtered pages */}
+          {filteredMenuItems.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => navigate(item.path)}
+              className={`w-full flex items-center px-6 py-3 text-gray-400 hover:text-white hover:bg-dark-card transition-all duration-200 hover:translate-x-1 text-sm ${
+                location.pathname === item.path ? 'bg-dark-card text-white' : ''
+              }`}
+            >
+              <item.icon className="h-4 w-4 flex-shrink-0" />
+              <span className="opacity-100 ml-3">
+                {item.label}
+              </span>
+            </button>
+          ))}
+
+          {/* Separator */}
+          <div className="mx-4 my-2 border-t border-gray-700" />
+
+          {/* Global pages */}
+          {globalMenuItems.map((item, index) => (
             <button
               key={index}
               onClick={() => navigate(item.path)}
@@ -65,7 +112,14 @@ export function Layout({ children }: LayoutProps) {
             </button>
           ))}
         </nav>
-        <div className="absolute bottom-0 w-full p-6 scale-in-delay-2">
+
+        <div className="p-6 scale-in-delay-2">
+          {selectedUnidade && (
+            <div className="text-xs text-teal-accent mb-3 px-1 truncate" title={selectedUnidade.nome}>
+              📍 {selectedUnidade.nome}
+            </div>
+          )}
+
           {import.meta.env.DEV && (
             <button
               onClick={() => setShowPerformanceDashboard(true)}

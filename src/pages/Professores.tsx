@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { formatCurrency, formatPhone } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalProfessor } from '../components/ModalProfessor';
+import { useUnidade } from '../contexts/UnidadeContext';
 
 interface Professor {
   id: string;
@@ -24,6 +25,7 @@ interface Unidade {
 }
 
 export function Professores() {
+  const { selectedUnidadeId } = useUnidade();
   const [professores, setProfessores] = useState<Professor[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -44,11 +46,12 @@ export function Professores() {
   useEffect(() => {
     loadProfessores();
     loadUnidades();
-  }, []);
+  }, [selectedUnidadeId]);
 
   async function loadProfessores() {
     try {
-      const data = await api.get('/api/professores');
+      const unidadeParam = selectedUnidadeId ? `?unidade_id=${selectedUnidadeId}` : '';
+      const data = await api.get(`/api/professores${unidadeParam}`);
       setProfessores(data);
     } catch (error) {
       toast.error('Erro ao carregar professores');
