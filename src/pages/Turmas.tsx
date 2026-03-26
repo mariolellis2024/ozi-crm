@@ -78,6 +78,7 @@ interface Professor {
   id: string;
   nome: string;
   valor_hora: number;
+  unidade_id?: string;
 }
 
 export function Turmas() {
@@ -150,7 +151,7 @@ export function Turmas() {
       const [turmasData, cursosData, salasData, professoresData] = await Promise.all([
         api.get(`/api/turmas${unidadeParam}`),
         api.get('/api/cursos'),
-        api.get('/api/salas'),
+        api.get(`/api/salas${unidadeParam}`),
         api.get(`/api/professores${unidadeParam}`)
       ]);
 

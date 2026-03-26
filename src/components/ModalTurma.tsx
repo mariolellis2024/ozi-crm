@@ -38,8 +38,8 @@ interface ModalTurmaProps {
     days_of_week: number[];
   }>>;
   cursos: Array<{ id: string; nome: string; carga_horaria: number }>;
-  salas: Array<{ id: string; nome: string; cadeiras: number; unidade_nome?: string }>;
-  professores: Array<{ id: string; nome: string; valor_hora: number }>;
+  salas: Array<{ id: string; nome: string; cadeiras: number; unidade_id?: string; unidade_nome?: string }>;
+  professores: Array<{ id: string; nome: string; valor_hora: number; unidade_id?: string }>;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
 }
@@ -490,18 +490,28 @@ export function ModalTurma({
                             required
                           >
                             <option value="">Selecione um professor</option>
-                            {professores
-                              .filter(prof => 
-                                !formData.professores.some((pa, i) => 
-                                  i !== index && pa.professor_id === prof.id
-                                )
-                              )
-                              .map(professor => (
-                                <option key={professor.id} value={professor.id}>
-                                  {professor.nome}
-                                </option>
-                              ))
-                            }
+                            {(() => {
+                              // Filter professors by the selected sala's unidade
+                              const selectedSala = salas.find(s => s.id === formData.sala_id);
+                              return professores
+                                .filter(prof => {
+                                  // Exclude already selected professors
+                                  const alreadySelected = formData.professores.some((pa, i) => 
+                                    i !== index && pa.professor_id === prof.id
+                                  );
+                                  if (alreadySelected) return false;
+                                  // Filter by unidade if a sala is selected
+                                  if (selectedSala?.unidade_id && prof.unidade_id) {
+                                    return prof.unidade_id === selectedSala.unidade_id;
+                                  }
+                                  return true;
+                                })
+                                .map(professor => (
+                                  <option key={professor.id} value={professor.id}>
+                                    {professor.nome}
+                                  </option>
+                                ));
+                            })()}
                           </select>
                         </div>
                         <div className="flex gap-2">
