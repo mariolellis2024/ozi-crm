@@ -89,14 +89,15 @@ router.get('/suggestions', async (req, res) => {
     const sugestoes = {};
     result.rows.forEach(row => {
       const cursoId = row.curso_id;
-      const periodos = row.available_periods && row.available_periods.length > 0
-        ? row.available_periods
+      const periodos = parsePgArray(row.available_periods);
+      const effectivePeriodos = periodos.length > 0
+        ? periodos
         : ['manha', 'tarde', 'noite'];
 
       if (!sugestoes[cursoId]) {
         sugestoes[cursoId] = { manha: 0, tarde: 0, noite: 0 };
       }
-      periodos.forEach(p => { sugestoes[cursoId][p]++; });
+      effectivePeriodos.forEach(p => { sugestoes[cursoId][p]++; });
     });
 
     res.json(sugestoes);

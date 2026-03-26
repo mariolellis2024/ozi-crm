@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import pool from '../db.js';
+import pool, { parsePgArray } from '../db.js';
 
 const router = Router();
 
@@ -44,7 +44,7 @@ router.get('/curso/:cursoId/interested', async (req, res) => {
        WHERE aci.curso_id = $1 AND aci.status = 'interested' AND aci.turma_id IS NULL`,
       [cursoId]
     );
-    res.json(result.rows);
+    res.json(result.rows.map(r => ({ ...r, available_periods: parsePgArray(r.available_periods) })));
   } catch (error) {
     console.error('Error loading interested students:', error);
     res.status(500).json({ error: 'Erro ao carregar alunos interessados' });
@@ -77,7 +77,7 @@ router.get('/turma/:turmaId/enrolled', async (req, res) => {
        WHERE aci.turma_id = $1 AND aci.status = 'enrolled'`,
       [turmaId]
     );
-    res.json(result.rows);
+    res.json(result.rows.map(r => ({ ...r, available_periods: parsePgArray(r.available_periods) })));
   } catch (error) {
     console.error('Error loading enrolled students:', error);
     res.status(500).json({ error: 'Erro ao carregar alunos matriculados' });
