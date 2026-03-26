@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import pool from '../db.js';
+import pool, { parsePgArray } from '../db.js';
 
 const router = Router();
 
@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
         [...params, parseInt(limit), offset]
       );
 
-      const alunos = dataResult.rows.map(a => ({ ...a, curso_interests: [] }));
+      const alunos = dataResult.rows.map(a => ({ ...a, available_periods: parsePgArray(a.available_periods), curso_interests: [] }));
       res.json({ data: alunos, count: parseInt(countResult.rows[0].count) });
 
     } else if (status && status !== 'all') {
@@ -78,7 +78,7 @@ router.get('/', async (req, res) => {
             email: row.email,
             whatsapp: row.whatsapp,
             empresa: row.empresa,
-            available_periods: row.available_periods,
+            available_periods: parsePgArray(row.available_periods),
             created_at: row.created_at,
             curso_interests: []
           });
@@ -162,6 +162,7 @@ router.get('/', async (req, res) => {
 
         const alunos = dataResult.rows.map(a => ({
           ...a,
+          available_periods: parsePgArray(a.available_periods),
           curso_interests: interestsByStudent[a.id] || []
         }));
 

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import pool from '../db.js';
+import pool, { parsePgArray } from '../db.js';
 
 const router = Router();
 
@@ -61,7 +61,7 @@ router.get('/', async (req, res) => {
       start_date: t.start_date instanceof Date ? t.start_date.toISOString().split('T')[0] : t.start_date,
       end_date: t.end_date instanceof Date ? t.end_date.toISOString().split('T')[0] : t.end_date,
       imposto: parseFloat(t.imposto),
-      days_of_week: t.days_of_week,
+      days_of_week: parsePgArray(t.days_of_week).map(Number),
       created_at: t.created_at,
       curso: t.c_id ? { id: t.c_id, nome: t.c_nome, preco: parseFloat(t.c_preco), carga_horaria: t.c_carga_horaria } : null,
       sala: t.s_id ? { id: t.s_id, nome: t.s_nome, cadeiras: t.s_cadeiras } : null,

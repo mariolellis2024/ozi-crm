@@ -14,4 +14,14 @@ pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
 });
 
+// Helper: parse PostgreSQL array string "{val1,val2}" into JS array
+export function parsePgArray(val) {
+  if (Array.isArray(val)) return val;
+  if (!val || val === '{}') return [];
+  if (typeof val === 'string' && val.startsWith('{') && val.endsWith('}')) {
+    return val.slice(1, -1).split(',').filter(Boolean);
+  }
+  return [];
+}
+
 export default pool;
