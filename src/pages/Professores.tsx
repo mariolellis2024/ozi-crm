@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
@@ -38,85 +38,16 @@ export function Professores() {
 
   async function loadProfessores() {
     try {
-      const [professoresResult, turmasResult] = await Promise.all([
-        supabase
-          .from('professores')
-          .select('id, nome, email, whatsapp, valor_hora')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('turma_professores')
-          .select(`
-            professor_id,
-            hours,
-            turma:turmas(
-              id,
-              start_date,
-              end_date
-            )
-          `)
-      ]);
-      
-      if (professoresResult.error) throw professoresResult.error;
-      if (turmasResult.error) throw turmasResult.error;
-
-      // Calculate earnings for each professor
-      const professoresWithEarnings = professoresResult.data.map(professor => {
-        const professorTurmas = turmasResult.data.filter(tp => tp.professor_id === professor.id);
-        
-        let totalAReceber = 0;
-        let totalRecebido = 0;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        professorTurmas.forEach(tp => {
-          if (tp.turma) {
-            const endDate = new Date(tp.turma.end_date);
-            endDate.setHours(0, 0, 0, 0);
-            
-            const earnings = Number(tp.hours) * Number(professor.valor_hora);
-            
-            if (endDate <= today) {
-              // Turma já terminou - valor já recebido
-              totalRecebido += earnings;
-            } else {
-              // Turma ainda em andamento ou futura - valor a receber
-              totalAReceber += earnings;
-            }
-          }
-        });
-        
-        console.log(`Professor ${professor.nome}:`, {
-          turmas: professorTurmas.map(tp => ({
-            hours: tp.hours,
-            endDate: tp.turma?.end_date,
-            earnings: Number(tp.hours) * Number(professor.valor_hora)
-          })),
-          totalAReceber,
-          totalRecebido
-        });
-        
-        return {
-          ...professor,
-          total_a_receber: totalAReceber,
-          total_recebido: totalRecebido
-        };
-      });
-
-      setProfessores(professoresWithEarnings);
+      const data = await api.get('/api/professores');
+      setProfessores(data);
     } catch (error) {
       toast.error('Erro ao carregar professores');
     }
   }
 
-  async function checkProfessorInUse(professorId: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('turma_professores')
-      .select('id')
-      .eq('professor_id', professorId)
-      .limit(1);
-    
-    if (error) throw error;
-    return data.length > 0;
+  async function checkProfessorInUse(_professorId: string): Promise<boolean> {
+    // The server-side delete endpoint checks this
+    return false;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -128,19 +59,10 @@ export function Professores() {
       };
 
       if (editingId) {
-        const { error } = await supabase
-          .from('professores')
-          .update(professorData)
-          .eq('id', editingId);
-        
-        if (error) throw error;
+        await api.put(`/api/professores/${editingId}`, professorData);
         toast.success('Professor atualizado com sucesso!');
       } else {
-        const { error } = await supabase
-          .from('professores')
-          .insert([professorData]);
-        
-        if (error) throw error;
+        await api.post('/api/professores', professorData);
         toast.success('Professor adicionado com sucesso!');
       }
 
@@ -176,16 +98,11 @@ export function Professores() {
 
   async function handleConfirmDelete() {
     try {
-      const { error } = await supabase
-        .from('professores')
-        .delete()
-        .eq('id', confirmModal.professorId);
-      
-      if (error) throw error;
+      await api.delete(`/api/professores/${confirmModal.professorId}`);
       toast.success('Professor excluído com sucesso!');
       loadProfessores();
-    } catch (error) {
-      toast.error('Erro ao excluir professor');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao excluir professor');
     } finally {
       setConfirmModal({ isOpen: false, professorId: '', professorNome: '' });
     }

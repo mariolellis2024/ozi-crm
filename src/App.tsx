@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { supabase } from './lib/supabase';
-import type { User } from '@supabase/supabase-js';
+import { api } from './lib/api';
 import { Login } from './components/Login';
 import { Professores } from './pages/Professores';
 import { Alunos } from './pages/Alunos';
@@ -12,24 +11,27 @@ import { Layout } from './components/Layout';
 import { Toaster } from 'react-hot-toast';
 import { OrganicBackground } from './components/OrganicBackground';
 
+interface User {
+  id: string;
+  email: string;
+  full_name?: string;
+}
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    async function checkAuth() {
+      if (!api.isAuthenticated()) {
+        setLoading(false);
+        return;
+      }
+      const userData = await api.getUser();
+      setUser(userData);
       setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    }
+    checkAuth();
   }, []);
 
   if (loading) {

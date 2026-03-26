@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Users, GraduationCap, BookOpen, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 
 interface DashboardProps {
-  user: User;
+  user: any;
 }
 
 interface Turma {
@@ -43,58 +42,30 @@ export function Dashboard({ user }: DashboardProps) {
 
   async function loadData() {
     try {
-      const [turmasResult, cursosResult, professoresResult, alunosResult] = await Promise.all([
-        supabase.from('turmas').select('id, curso_id, cadeiras, potencial_faturamento'),
-        supabase.from('cursos').select('id, nome, preco'),
-        supabase.from('professores').select('id, nome'),
-        supabase.from('alunos').select('id, nome')
+      const [turmasData, cursosData, professoresData, alunosData] = await Promise.all([
+        api.get('/turmas'),
+        api.get('/cursos/simple'),
+        api.get('/professores/simple'),
+        api.get('/alunos?limit=5')
       ]);
-
-      if (turmasResult.error) throw turmasResult.error;
-      if (cursosResult.error) throw cursosResult.error;
-      if (professoresResult.error) throw professoresResult.error;
-      if (alunosResult.error) throw alunosResult.error;
-
-      setTurmas(turmasResult.data);
-      setCursos(cursosResult.data);
-      setProfessores(professoresResult.data);
-      setAlunos(alunosResult.data);
+      setTurmas(turmasData);
+      setCursos(cursosData);
+      setProfessores(professoresData);
+      setAlunos(alunosData.data || []);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
     }
   }
 
   const totalFaturamento = turmas.reduce((acc, turma) => acc + turma.potencial_faturamento, 0);
-  const totalVagas = turmas.reduce((acc, turma) => acc + turma.cadeiras, 0);
-  // For now, we'll assume 0 occupied seats since we don't have enrollment data yet
   const vagasOcupadas = 0;
   const ocupacaoMedia = 0;
 
   const stats = [
-    {
-      label: 'Total de Turmas',
-      value: turmas.length,
-      icon: Users,
-      color: 'bg-purple-500'
-    },
-    {
-      label: 'Professores',
-      value: professores.length,
-      icon: GraduationCap,
-      color: 'bg-blue-500'
-    },
-    {
-      label: 'Cursos',
-      value: cursos.length,
-      icon: BookOpen,
-      color: 'bg-green-500'
-    },
-    {
-      label: 'Faturamento Potencial',
-      value: formatCurrency(totalFaturamento),
-      icon: TrendingUp,
-      color: 'bg-teal-accent'
-    }
+    { label: 'Total de Turmas', value: turmas.length, icon: Users, color: 'bg-purple-500' },
+    { label: 'Professores', value: professores.length, icon: GraduationCap, color: 'bg-blue-500' },
+    { label: 'Cursos', value: cursos.length, icon: BookOpen, color: 'bg-green-500' },
+    { label: 'Faturamento Potencial', value: formatCurrency(totalFaturamento), icon: TrendingUp, color: 'bg-teal-accent' }
   ];
 
   return (
@@ -104,9 +75,7 @@ export function Dashboard({ user }: DashboardProps) {
           <h1 className="text-3xl font-bold text-white">
             Bem-vindo, {user?.email?.split('@')[0]}
           </h1>
-          <p className="text-gray-400 mt-2">
-            Confira o resumo das suas turmas e atividades
-          </p>
+          <p className="text-gray-400 mt-2">Confira o resumo das suas turmas e atividades</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -135,29 +104,20 @@ export function Dashboard({ user }: DashboardProps) {
           <div className="space-y-4">
             {turmas.map((turma) => {
               const curso = cursos.find(c => c.id === turma.curso_id);
-              const ocupacao = 0; // For now, since we don't have enrollment data
-              
               return (
                 <div key={turma.id} className="bg-dark-lighter rounded-xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium text-white">{curso?.nome}</h3>
-                    <span className="text-gray-400 text-sm">
-                      0/{turma.cadeiras} vagas
-                    </span>
+                    <span className="text-gray-400 text-sm">0/{turma.cadeiras} vagas</span>
                   </div>
                   <div className="w-full bg-dark rounded-full h-2">
-                    <div
-                      className="bg-teal-accent h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${ocupacao}%` }}
-                    />
+                    <div className="bg-teal-accent h-2 rounded-full transition-all duration-300" style={{ width: '0%' }} />
                   </div>
                 </div>
               );
             })}
             {turmas.length === 0 && (
-              <div className="text-center text-gray-400 py-4">
-                Nenhuma turma cadastrada
-              </div>
+              <div className="text-center text-gray-400 py-4">Nenhuma turma cadastrada</div>
             )}
           </div>
         </div>
@@ -170,18 +130,14 @@ export function Dashboard({ user }: DashboardProps) {
                 <div key={aluno.id} className="flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="w-8 h-8 rounded-full bg-dark-lighter flex items-center justify-center">
-                      <span className="text-white text-sm">
-                        {aluno.nome.charAt(0).toUpperCase()}
-                      </span>
+                      <span className="text-white text-sm">{aluno.nome.charAt(0).toUpperCase()}</span>
                     </div>
                     <span className="ml-3 text-white">{aluno.nome}</span>
                   </div>
                 </div>
               ))}
               {alunos.length === 0 && (
-                <div className="text-center text-gray-400 py-4">
-                  Nenhum aluno cadastrado
-                </div>
+                <div className="text-center text-gray-400 py-4">Nenhum aluno cadastrado</div>
               )}
             </div>
           </div>
@@ -200,9 +156,7 @@ export function Dashboard({ user }: DashboardProps) {
                 </div>
               ))}
               {professores.length === 0 && (
-                <div className="text-center text-gray-400 py-4">
-                  Nenhum professor cadastrado
-                </div>
+                <div className="text-center text-gray-400 py-4">Nenhum professor cadastrado</div>
               )}
             </div>
           </div>

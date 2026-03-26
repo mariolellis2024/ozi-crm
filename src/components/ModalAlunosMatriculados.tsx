@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Search, Users, BookOpen, UserMinus, AlertTriangle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 
@@ -66,24 +66,8 @@ export function ModalAlunosMatriculados({
   async function loadAlunosMatriculados() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('aluno_curso_interests')
-        .select(`
-          aluno:alunos(
-            id,
-            nome,
-            email,
-            whatsapp,
-            empresa
-          )
-        `)
-        .eq('turma_id', turmaId)
-        .eq('status', 'enrolled');
-
-      if (error) throw error;
-
-      const alunosData = data.map(item => item.aluno);
-      setAlunosMatriculados(alunosData);
+      const data = await api.get(`/api/interests/turma/${turmaId}/enrolled`);
+      setAlunosMatriculados(data);
     } catch (error) {
       toast.error('Erro ao carregar alunos matriculados');
     } finally {
@@ -104,25 +88,15 @@ export function ModalAlunosMatriculados({
     setUnenrollingStudents(prev => new Set(prev).add(alunoId));
     
     try {
-      // Change status back to interested and remove turma_id
-      const { error } = await supabase
-        .from('aluno_curso_interests')
-        .update({ 
-          status: 'interested',
-          turma_id: null
-        })
-        .eq('aluno_id', alunoId)
-        .eq('curso_id', cursoId)
-        .eq('turma_id', turmaId);
-      
-      if (error) throw error;
+      await api.put('/api/interests/unenroll', {
+        aluno_id: alunoId,
+        curso_id: cursoId,
+        turma_id: turmaId
+      });
       
       toast.success('Aluno removido da turma com sucesso!');
       
-      // Remove the unenrolled student from the list
       setAlunosMatriculados(prev => prev.filter(aluno => aluno.id !== alunoId));
-      
-      // Notify parent component to refresh data
       onStudentUnenrolled();
     } catch (error) {
       toast.error('Erro ao remover aluno da turma');

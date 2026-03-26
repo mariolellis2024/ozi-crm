@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Plus, Pencil, Trash2, Users, Calendar, Clock, TrendingUp, BookOpen, UserCheck, AlertCircle, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
@@ -128,77 +128,21 @@ export function Turmas() {
 
   async function loadData() {
     try {
-      const [turmasResult, cursosResult, salasResult, professoresResult] = await Promise.all([
-        supabase
-          .from('turmas')
-          .select(`
-            id,
-            name,
-            curso_id,
-            sala_id,
-            cadeiras,
-            potencial_faturamento,
-            period,
-            start_date,
-            end_date,
-            imposto,
-            days_of_week,
-            created_at,
-            curso:cursos(id, nome, preco, carga_horaria),
-            sala:salas(id, nome, cadeiras),
-            professores:turma_professores(
-              id,
-              professor_id,
-              hours,
-              professor:professores(id, nome, valor_hora)
-            )
-          `)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('cursos')
-          .select('id, nome, preco, carga_horaria')
-          .order('nome'),
-        supabase
-          .from('salas')
-          .select('id, nome, cadeiras')
-          .order('nome'),
-        supabase
-          .from('professores')
-          .select('id, nome, valor_hora')
-          .order('nome')
+      const [turmasData, cursosData, salasData, professoresData] = await Promise.all([
+        api.get('/api/turmas'),
+        api.get('/api/cursos'),
+        api.get('/api/salas'),
+        api.get('/api/professores')
       ]);
 
-      if (turmasResult.error) throw turmasResult.error;
-      if (cursosResult.error) throw cursosResult.error;
-      if (salasResult.error) throw salasResult.error;
-      if (professoresResult.error) throw professoresResult.error;
-
-      // Get enrolled students count for each turma
-      const turmasWithEnrolledCount = await Promise.all(
-        turmasResult.data.map(async (turma) => {
-          const { data: enrolledStudents } = await supabase
-            .from('aluno_curso_interests')
-            .select(`
-              aluno:alunos(id, nome)
-            `)
-            .eq('turma_id', turma.id)
-            .eq('status', 'enrolled');
-
-          return {
-            ...turma,
-            alunos_enrolled: enrolledStudents?.map(item => item.aluno) || []
-          };
-        })
-      );
-
-      setTurmas(turmasWithEnrolledCount);
-      setCursos(cursosResult.data);
-      setSalas(salasResult.data);
-      setProfessores(professoresResult.data);
+      setTurmas(turmasData);
+      setCursos(cursosData);
+      setSalas(salasData);
+      setProfessores(professoresData);
 
       // Generate suggestions
       await generateSuggestions();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro detalhado ao carregar dados:', error);
       toast.error(`Erro ao carregar dados: ${error.message || 'Erro desconhecido'}`);
     }
@@ -206,60 +150,8 @@ export function Turmas() {
 
   async function generateSuggestions() {
     try {
-      const { data: interessesAlunos, error } = await supabase
-        .from('aluno_curso_interests')
-        .select(`
-          curso_id,
-          status,
-          aluno:alunos(available_periods)
-        `)
-        .eq('status', 'interested');
-
-      if (error) throw error;
-
-      // Group by course and period
-      const sugestoes = interessesAlunos.reduce((acc: any, interesse) => {
-        const cursoId = interesse.curso_id;
-        const periodos = interesse.aluno?.available_periods || ['manha', 'tarde', 'noite'];
-        
-        if (!acc[cursoId]) {
-          acc[cursoId] = { manha: 0, tarde: 0, noite: 0 };
-        }
-        
-        periodos.forEach((periodo: Period) => {
-          acc[cursoId][periodo]++;
-        });
-        
-        return acc;
-      }, {});
-
-      // Filter courses with sufficient demand (>= 3 interested students)
-      const cursosComDemanda = Object.entries(sugestoes)
-        .filter(([cursoId, demanda]: [string, any]) => {
-          const maxDemanda = Math.max(...Object.values(demanda));
-          return maxDemanda >= 3;
-        })
-        .map(([cursoId, demanda]: [string, any]) => {
-          const curso = cursos.find(c => c.id === cursoId);
-          if (!curso) return null;
-          
-          const melhorPeriodo = Object.entries(demanda)
-            .reduce((a: [string, number], b: [string, number]) => a[1] > b[1] ? a : b)[0] as Period;
-          const totalInteressados = Math.max(...Object.values(demanda));
-          
-          return {
-            cursoId,
-            cursoNome: curso.nome,
-            melhorPeriodo,
-            totalInteressados,
-            faturamentoPotencial: totalInteressados * curso.preco,
-            precoUnitario: curso.preco
-          };
-        })
-        .filter(item => item !== null) // Remove items where curso is undefined
-        .sort((a, b) => b.faturamentoPotencial - a.faturamentoPotencial); // Sort by potential revenue
-
-      setSuggestions(cursosComDemanda);
+      const data = await api.get('/api/turmas/suggestions');
+      setSuggestions(data || []);
     } catch (error) {
       console.error('Erro detalhado ao gerar sugestões:', error);
     }
@@ -267,10 +159,9 @@ export function Turmas() {
 
   async function checkConflicts(turmaData: any, editingId?: string): Promise<boolean> {
     try {
-      // Normaliza a data para o início do dia no fuso horário local
       const normalizeDate = (dateStr: string) => {
-        const date = new Date(dateStr + 'T00:00:00'); // Cria a data no fuso horário local
-        date.setHours(0, 0, 0, 0); // Garante que seja exatamente meia-noite local
+        const date = new Date(dateStr + 'T00:00:00');
+        date.setHours(0, 0, 0, 0);
         return date;
       };
 
@@ -280,41 +171,24 @@ export function Turmas() {
       const newSalaId = turmaData.sala_id;
       const newDaysOfWeek = turmaData.days_of_week || [];
 
-      let query = supabase
-        .from('turmas')
-        .select(`
-          *,
-          curso:cursos(nome),
-          sala:salas(nome),
-          professores:turma_professores(
-            professor_id,
-            hours,
-            professor:professores(nome)
-          )
-        `);
-
-      if (editingId) {
-        query = query.neq('id', editingId);
-      }
-
-      const { data: existingTurmas, error } = await query;
-      if (error) throw error;
+      const existingTurmas = await api.get('/api/turmas');
+      const filteredTurmas = editingId 
+        ? existingTurmas.filter((t: any) => t.id !== editingId)
+        : existingTurmas;
 
       // Verificação de conflitos de sala
       if (newSalaId) {
-        for (const turma of existingTurmas) {
+        for (const turma of filteredTurmas) {
           if (turma.sala_id === newSalaId && turma.period === newPeriod) {
             const existingStartDate = normalizeDate(turma.start_date);
             const existingEndDate = normalizeDate(turma.end_date);
 
-            // Verifica sobreposição de datas
             if (newStartDate <= existingEndDate && newEndDate >= existingStartDate) {
               const existingDaysOfWeek = turma.days_of_week || [];
               
-              // Se há sobreposição de dias da semana ou ambas são flexíveis
               if (newDaysOfWeek.length === 0 || existingDaysOfWeek.length === 0 || 
-                  newDaysOfWeek.some(day => existingDaysOfWeek.includes(day))) {
-                return true; // Conflito encontrado
+                  newDaysOfWeek.some((day: number) => existingDaysOfWeek.includes(day))) {
+                return true;
               }
             }
           }
@@ -326,12 +200,11 @@ export function Turmas() {
         for (const newProf of turmaData.professores) {
           if (!newProf.professor_id) continue;
 
-          for (const turma of existingTurmas) {
+          for (const turma of filteredTurmas) {
             if (turma.period === newPeriod) {
               const existingStartDate = normalizeDate(turma.start_date);
               const existingEndDate = normalizeDate(turma.end_date);
 
-              // Verifica sobreposição de datas
               if (newStartDate <= existingEndDate && newEndDate >= existingStartDate) {
                 const professorConflict = turma.professores?.find(
                   (tp: any) => tp.professor_id === newProf.professor_id
@@ -340,10 +213,9 @@ export function Turmas() {
                 if (professorConflict) {
                   const existingDaysOfWeek = turma.days_of_week || [];
                   
-                  // Se há sobreposição de dias da semana ou ambas são flexíveis
                   if (newDaysOfWeek.length === 0 || existingDaysOfWeek.length === 0 || 
-                      newDaysOfWeek.some(day => existingDaysOfWeek.includes(day))) {
-                    return true; // Conflito encontrado
+                      newDaysOfWeek.some((day: number) => existingDaysOfWeek.includes(day))) {
+                    return true;
                   }
                 }
               }
@@ -352,7 +224,7 @@ export function Turmas() {
         }
       }
 
-      return false; // Nenhum conflito encontrado
+      return false;
     } catch (error) {
       console.error('Erro detalhado ao verificar conflitos:', error);
       throw error;
@@ -392,35 +264,14 @@ export function Turmas() {
       return date.toLocaleDateString('pt-BR');
     };
 
-    let query = supabase
-      .from('turmas')
-      .select(`
-        id,
-        name,
-        period,
-        start_date,
-        end_date,
-        days_of_week,
-        sala_id,
-        curso:cursos(nome),
-        sala:salas(nome),
-        professores:turma_professores(
-          professor_id,
-          hours,
-          professor:professores(nome)
-        )
-      `);
-
-    if (editingId) {
-      query = query.neq('id', editingId);
-    }
-
-    const { data: existingTurmas, error } = await query;
-    if (error) throw error;
+    const existingTurmas = await api.get('/api/turmas');
+    const filteredTurmas = editingId 
+      ? existingTurmas.filter((t: any) => t.id !== editingId)
+      : existingTurmas;
 
     // Verificação de conflitos de sala
     if (newSalaId) {
-      for (const turma of existingTurmas) {
+      for (const turma of filteredTurmas) {
         if (turma.sala_id === newSalaId && turma.period === newPeriod) {
           const existingStartDate = normalizeDate(turma.start_date);
           const existingEndDate = normalizeDate(turma.end_date);
@@ -458,7 +309,7 @@ export function Turmas() {
       for (const newProf of newTurmaData.professores) {
         if (!newProf.professor_id) continue;
 
-        for (const turma of existingTurmas) {
+        for (const turma of filteredTurmas) {
           if (turma.period === newPeriod) {
             const existingStartDate = normalizeDate(turma.start_date);
             const existingEndDate = normalizeDate(turma.end_date);
@@ -537,52 +388,29 @@ export function Turmas() {
       let turmaId: string;
 
       if (editingId) {
-        const { error } = await supabase
-          .from('turmas')
-          .update(turmaData)
-          .eq('id', editingId);
-        
-        if (error) throw error;
+        await api.put(`/api/turmas/${editingId}`, {
+          ...turmaData,
+          professores: formData.professores
+            .filter((prof: any) => prof.professor_id && prof.professor_id.trim() !== '')
+            .map((prof: any) => ({
+              professor_id: prof.professor_id,
+              hours: prof.hours
+            }))
+        });
         turmaId = editingId;
         toast.success('Turma atualizada com sucesso!');
       } else {
-        const { data, error } = await supabase
-          .from('turmas')
-          .insert([turmaData])
-          .select()
-          .single();
-        
-        if (error) throw error;
-        turmaId = data.id;
+        const result = await api.post('/api/turmas', {
+          ...turmaData,
+          professores: formData.professores
+            .filter((prof: any) => prof.professor_id && prof.professor_id.trim() !== '')
+            .map((prof: any) => ({
+              professor_id: prof.professor_id,
+              hours: prof.hours
+            }))
+        });
+        turmaId = result.id;
         toast.success('Turma criada com sucesso!');
-      }
-
-      // Handle professor assignments
-      if (formData.professores.length > 0) {
-        // Remove existing assignments if editing
-        if (editingId) {
-          await supabase
-            .from('turma_professores')
-            .delete()
-            .eq('turma_id', editingId);
-        }
-
-        // Add new assignments - filter out empty professor_ids
-        const assignments = formData.professores
-          .filter(prof => prof.professor_id && prof.professor_id.trim() !== '')
-          .map(prof => ({
-          turma_id: turmaId,
-          professor_id: prof.professor_id,
-          hours: prof.hours
-        }));
-
-        if (assignments.length > 0) {
-          const { error: assignmentError } = await supabase
-            .from('turma_professores')
-            .insert(assignments);
-
-          if (assignmentError) throw assignmentError;
-        }
       }
 
       setIsModalOpen(false);
@@ -619,42 +447,11 @@ export function Turmas() {
 
   async function handleConfirmDelete() {
     try {
-      // Primeiro, verificar se há alunos matriculados na turma
-      const { data: alunosMatriculados, error: checkError } = await supabase
-        .from('aluno_curso_interests')
-        .select('id, aluno:alunos(nome)')
-        .eq('turma_id', confirmModal.turmaId)
-        .eq('status', 'enrolled');
+      // The server handles unenrolling students before deleting
+      const result = await api.delete(`/api/turmas/${confirmModal.turmaId}`);
       
-      if (checkError) throw checkError;
-      
-      // Se há alunos matriculados, alterar status para interessado
-      if (alunosMatriculados && alunosMatriculados.length > 0) {
-        const { error: updateError } = await supabase
-          .from('aluno_curso_interests')
-          .update({ 
-            status: 'interested',
-            turma_id: null
-          })
-          .eq('turma_id', confirmModal.turmaId)
-          .eq('status', 'enrolled');
-        
-        if (updateError) throw updateError;
-        
-        const alunosNomes = alunosMatriculados.map(a => a.aluno?.nome).join(', ');
-        console.log(`Alunos retornados para interessados: ${alunosNomes}`);
-      }
-      
-      // Depois deletar a turma
-      const { error } = await supabase
-        .from('turmas')
-        .delete()
-        .eq('id', confirmModal.turmaId);
-      
-      if (error) throw error;
-      
-      if (alunosMatriculados && alunosMatriculados.length > 0) {
-        toast.success(`Turma excluída com sucesso! ${alunosMatriculados.length} aluno${alunosMatriculados.length > 1 ? 's' : ''} retornado${alunosMatriculados.length > 1 ? 's' : ''} para interessado${alunosMatriculados.length > 1 ? 's' : ''}.`);
+      if (result.unenrolled_count && result.unenrolled_count > 0) {
+        toast.success(`Turma excluída com sucesso! ${result.unenrolled_count} aluno${result.unenrolled_count > 1 ? 's' : ''} retornado${result.unenrolled_count > 1 ? 's' : ''} para interessado${result.unenrolled_count > 1 ? 's' : ''}.`);
       } else {
         toast.success('Turma excluída com sucesso!');
       }

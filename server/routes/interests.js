@@ -1,0 +1,272 @@
+import { Router } from 'express';
+import pool from '../db.js';
+
+const router = Router();
+
+// GET /api/interests — interests by curso for a specific aluno
+router.get('/aluno/:alunoId', async (req, res) => {
+  try {
+    const { alunoId } = req.params;
+    const result = await pool.query(
+      `SELECT aci.id, aci.curso_id, aci.status, aci.turma_id, aci.created_at,
+              c.id as c_id, c.nome as c_nome, c.preco as c_preco
+       FROM aluno_curso_interests aci
+       LEFT JOIN cursos c ON c.id = aci.curso_id
+       WHERE aci.aluno_id = $1
+       ORDER BY aci.created_at DESC`,
+      [alunoId]
+    );
+
+    const interests = result.rows.map(r => ({
+      id: r.id,
+      curso_id: r.curso_id,
+      status: r.status,
+      turma_id: r.turma_id,
+      created_at: r.created_at,
+      curso: r.c_id ? { id: r.c_id, nome: r.c_nome, preco: parseFloat(r.c_preco) } : null
+    }));
+
+    res.json(interests);
+  } catch (error) {
+    console.error('Error loading interests:', error);
+    res.status(500).json({ error: 'Erro ao carregar interesses' });
+  }
+});
+
+// GET /api/interests/curso/:cursoId/interested — interested students for a course
+router.get('/curso/:cursoId/interested', async (req, res) => {
+  try {
+    const { cursoId } = req.params;
+    const result = await pool.query(
+      `SELECT a.id, a.nome, a.email, a.whatsapp, a.empresa, a.available_periods
+       FROM aluno_curso_interests aci
+       INNER JOIN alunos a ON a.id = aci.aluno_id
+       WHERE aci.curso_id = $1 AND aci.status = 'interested' AND aci.turma_id IS NULL`,
+      [cursoId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error loading interested students:', error);
+    res.status(500).json({ error: 'Erro ao carregar alunos interessados' });
+  }
+});
+
+// GET /api/interests/turma/:turmaId/enrolled — enrolled students count
+router.get('/turma/:turmaId/enrolled-count', async (req, res) => {
+  try {
+    const { turmaId } = req.params;
+    const result = await pool.query(
+      `SELECT COUNT(*) FROM aluno_curso_interests WHERE turma_id = $1 AND status = 'enrolled'`,
+      [turmaId]
+    );
+    res.json({ count: parseInt(result.rows[0].count) });
+  } catch (error) {
+    console.error('Error counting enrolled:', error);
+    res.status(500).json({ error: 'Erro ao contar matriculados' });
+  }
+});
+
+// GET /api/interests/turma/:turmaId/enrolled — enrolled students list
+router.get('/turma/:turmaId/enrolled', async (req, res) => {
+  try {
+    const { turmaId } = req.params;
+    const result = await pool.query(
+      `SELECT a.id, a.nome, a.email, a.whatsapp, a.empresa, a.available_periods, aci.id as interest_id
+       FROM aluno_curso_interests aci
+       INNER JOIN alunos a ON a.id = aci.aluno_id
+       WHERE aci.turma_id = $1 AND aci.status = 'enrolled'`,
+      [turmaId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error loading enrolled students:', error);
+    res.status(500).json({ error: 'Erro ao carregar alunos matriculados' });
+  }
+});
+
+// POST /api/interests — add interest
+router.post('/', async (req, res) => {
+  try {
+    const { aluno_id, curso_id, status } = req.body;
+    const result = await pool.query(
+      `INSERT INTO aluno_curso_interests (aluno_id, curso_id, status)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [aluno_id, curso_id, status || 'interested']
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Interesse já existe' });
+    }
+    console.error('Error creating interest:', error);
+    res.status(500).json({ error: 'Erro ao criar interesse' });
+  }
+});
+
+// POST /api/interests/bulk — bulk upsert interests
+router.post('/bulk', async (req, res) => {
+  try {
+    const { interests } = req.body; // [{ aluno_id, curso_id, status }]
+    for (const interest of interests) {
+      await pool.query(
+        `INSERT INTO aluno_curso_interests (aluno_id, curso_id, status)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (aluno_id, curso_id) DO NOTHING`,
+        [interest.aluno_id, interest.curso_id, interest.status || 'interested']
+      );
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error bulk creating interests:', error);
+    res.status(500).json({ error: 'Erro ao criar interesses em lote' });
+  }
+});
+
+// POST /api/interests/bulk-delete — bulk delete interests
+router.post('/bulk-delete', async (req, res) => {
+  try {
+    const { student_ids, curso_ids } = req.body;
+    await pool.query(
+      'DELETE FROM aluno_curso_interests WHERE aluno_id = ANY($1) AND curso_id = ANY($2)',
+      [student_ids, curso_ids]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error bulk deleting interests:', error);
+    res.status(500).json({ error: 'Erro ao excluir interesses em lote' });
+  }
+});
+
+// PUT /api/interests/enroll — enroll student in turma
+router.put('/enroll', async (req, res) => {
+  try {
+    const { aluno_id, curso_id, turma_id } = req.body;
+
+    // Check schedule conflicts
+    const newTurma = await pool.query('SELECT period, start_date, end_date FROM turmas WHERE id = $1', [turma_id]);
+    if (newTurma.rows.length === 0) {
+      return res.status(404).json({ error: 'Turma não encontrada' });
+    }
+
+    const enrolledTurmas = await pool.query(
+      `SELECT t.period, t.start_date, t.end_date
+       FROM aluno_curso_interests aci
+       INNER JOIN turmas t ON t.id = aci.turma_id
+       WHERE aci.aluno_id = $1 AND aci.status = 'enrolled' AND aci.turma_id IS NOT NULL`,
+      [aluno_id]
+    );
+
+    const nt = newTurma.rows[0];
+    for (const et of enrolledTurmas.rows) {
+      if (et.period === nt.period) {
+        const nStart = new Date(nt.start_date);
+        const nEnd = new Date(nt.end_date);
+        const eStart = new Date(et.start_date);
+        const eEnd = new Date(et.end_date);
+        if (nStart <= eEnd && nEnd >= eStart) {
+          return res.status(409).json({ error: 'Conflito de horário com outra turma' });
+        }
+      }
+    }
+
+    const result = await pool.query(
+      `UPDATE aluno_curso_interests SET status = 'enrolled', turma_id = $1
+       WHERE aluno_id = $2 AND curso_id = $3 RETURNING *`,
+      [turma_id, aluno_id, curso_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Interesse não encontrado' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error enrolling student:', error);
+    res.status(500).json({ error: 'Erro ao matricular aluno' });
+  }
+});
+
+// PUT /api/interests/unenroll — unenroll student from turma
+router.put('/unenroll', async (req, res) => {
+  try {
+    const { aluno_id, curso_id } = req.body;
+    const result = await pool.query(
+      `UPDATE aluno_curso_interests SET status = 'interested', turma_id = NULL
+       WHERE aluno_id = $1 AND curso_id = $2 RETURNING *`,
+      [aluno_id, curso_id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Interesse não encontrado' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error unenrolling student:', error);
+    res.status(500).json({ error: 'Erro ao desmatricular aluno' });
+  }
+});
+
+// PUT /api/interests/:id/status — update interest status
+router.put('/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const result = await pool.query(
+      'UPDATE aluno_curso_interests SET status = $1 WHERE id = $2 RETURNING *',
+      [status, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Interesse não encontrado' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating interest status:', error);
+    res.status(500).json({ error: 'Erro ao atualizar status' });
+  }
+});
+
+// DELETE /api/interests/:id
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM aluno_curso_interests WHERE id = $1 RETURNING id', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Interesse não encontrado' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting interest:', error);
+    res.status(500).json({ error: 'Erro ao excluir interesse' });
+  }
+});
+
+// DELETE /api/interests/by-aluno-curso
+router.delete('/by-aluno-curso/:alunoId/:cursoId', async (req, res) => {
+  try {
+    const { alunoId, cursoId } = req.params;
+    const result = await pool.query(
+      'DELETE FROM aluno_curso_interests WHERE aluno_id = $1 AND curso_id = $2 RETURNING id',
+      [alunoId, cursoId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Interesse não encontrado' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting interest:', error);
+    res.status(500).json({ error: 'Erro ao excluir interesse' });
+  }
+});
+
+// GET /api/interests/all — all interests (for dashboard)
+router.get('/all', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT curso_id, status FROM aluno_curso_interests'
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error loading all interests:', error);
+    res.status(500).json({ error: 'Erro ao carregar interesses' });
+  }
+});
+
+export default router;

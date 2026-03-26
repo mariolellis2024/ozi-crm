@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Users, Clock, BookOpen, Save, AlertCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 
 type Period = 'manha' | 'tarde' | 'noite';
@@ -53,13 +53,8 @@ export function ModalBulkEdit({
 
   async function loadSelectedStudents() {
     try {
-      const { data, error } = await supabase
-        .from('alunos')
-        .select('id, nome')
-        .in('id', selectedStudentIds);
-
-      if (error) throw error;
-      setSelectedStudents(data);
+      const data = await api.get(`/api/alunos?ids=${selectedStudentIds.join(',')}`);
+      setSelectedStudents(data.data || data);
     } catch (error) {
       toast.error('Erro ao carregar dados dos alunos selecionados');
     }
@@ -129,49 +124,30 @@ export function ModalBulkEdit({
     try {
       // Atualizar períodos disponíveis
       if (formData.updatePeriods) {
-        const { error: periodsError } = await supabase
-          .from('alunos')
-          .update({ available_periods: formData.periods })
-          .in('id', selectedStudentIds);
-
-        if (periodsError) throw periodsError;
+        // Update each student's periods via the API
+        for (const studentId of selectedStudentIds) {
+          await api.put(`/api/alunos/${studentId}`, { available_periods: formData.periods });
+        }
       }
 
       // Gerenciar interesses em cursos
       if (formData.updateInterests) {
         // Adicionar novos interesses
         if (formData.addInterests.length > 0) {
-          const newInterests = [];
-          for (const studentId of selectedStudentIds) {
-            for (const cursoId of formData.addInterests) {
-              newInterests.push({
-                aluno_id: studentId,
-                curso_id: cursoId,
-                status: 'interested' as const
-              });
-            }
-          }
-
-          // Usar upsert para evitar duplicatas
-          const { error: addError } = await supabase
-            .from('aluno_curso_interests')
-            .upsert(newInterests, { 
-              onConflict: 'aluno_id,curso_id',
-              ignoreDuplicates: true 
-            });
-
-          if (addError) throw addError;
+          await api.post('/api/interests/bulk', {
+            action: 'add',
+            aluno_ids: selectedStudentIds,
+            curso_ids: formData.addInterests
+          });
         }
 
         // Remover interesses existentes
         if (formData.removeInterests.length > 0) {
-          const { error: removeError } = await supabase
-            .from('aluno_curso_interests')
-            .delete()
-            .in('aluno_id', selectedStudentIds)
-            .in('curso_id', formData.removeInterests);
-
-          if (removeError) throw removeError;
+          await api.post('/api/interests/bulk', {
+            action: 'remove',
+            aluno_ids: selectedStudentIds,
+            curso_ids: formData.removeInterests
+          });
         }
       }
 

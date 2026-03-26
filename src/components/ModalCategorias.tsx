@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, Pencil, Trash2, Tag } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 
 interface Categoria {
@@ -29,12 +29,7 @@ export function ModalCategorias({ isOpen, onClose, onCategoriesUpdated }: ModalC
 
   async function loadCategorias() {
     try {
-      const { data, error } = await supabase
-        .from('categorias')
-        .select('id, nome')
-        .order('nome');
-      
-      if (error) throw error;
+      const data = await api.get('/api/categorias');
       setCategorias(data);
     } catch (error) {
       toast.error('Erro ao carregar categorias');
@@ -45,19 +40,10 @@ export function ModalCategorias({ isOpen, onClose, onCategoriesUpdated }: ModalC
     e.preventDefault();
     try {
       if (editingId) {
-        const { error } = await supabase
-          .from('categorias')
-          .update(formData)
-          .eq('id', editingId);
-        
-        if (error) throw error;
+        await api.put(`/api/categorias/${editingId}`, formData);
         toast.success('Categoria atualizada com sucesso!');
       } else {
-        const { error } = await supabase
-          .from('categorias')
-          .insert([formData]);
-        
-        if (error) throw error;
+        await api.post('/api/categorias', formData);
         toast.success('Categoria criada com sucesso!');
       }
 
@@ -73,31 +59,12 @@ export function ModalCategorias({ isOpen, onClose, onCategoriesUpdated }: ModalC
 
   async function handleDelete(id: string) {
     try {
-      // Check if category is being used
-      const { data: cursosUsingCategory, error: checkError } = await supabase
-        .from('cursos')
-        .select('id')
-        .eq('categoria_id', id)
-        .limit(1);
-
-      if (checkError) throw checkError;
-
-      if (cursosUsingCategory.length > 0) {
-        toast.error('Esta categoria não pode ser excluída pois está sendo usada por cursos');
-        return;
-      }
-
-      const { error } = await supabase
-        .from('categorias')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      await api.delete(`/api/categorias/${id}`);
       toast.success('Categoria excluída com sucesso!');
       loadCategorias();
       onCategoriesUpdated();
-    } catch (error) {
-      toast.error('Erro ao excluir categoria');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao excluir categoria');
     }
   }
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Plus, Pencil, Trash2, Search, Users, TrendingUp, Filter, CheckSquare, Square, Edit3 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
@@ -102,171 +102,16 @@ export function Alunos() {
   async function loadAlunos() {
     setLoading(true);
     try {
-      const offset = (currentPage - 1) * ITEMS_PER_PAGE;
-      
-      let alunosQuery;
-      let countQuery;
+      const params = new URLSearchParams();
+      params.set('page', String(currentPage));
+      params.set('limit', String(ITEMS_PER_PAGE));
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (cursoFilter) params.set('curso', cursoFilter);
+      if (searchTerm) params.set('search', searchTerm);
 
-      if (statusFilter === 'none') {
-        // Alunos sem nenhum interesse
-        alunosQuery = supabase
-          .from('alunos')
-          .select(`
-            id,
-            nome,
-            email,
-            whatsapp,
-            empresa,
-            available_periods,
-            created_at
-          `)
-          .filter('id', 'not.in', `(SELECT DISTINCT aluno_id FROM aluno_curso_interests)`);
-
-        countQuery = supabase
-          .from('alunos')
-          .select('*', { count: 'exact', head: true })
-          .filter('id', 'not.in', `(SELECT DISTINCT aluno_id FROM aluno_curso_interests)`);
-
-        if (searchTerm) {
-          alunosQuery = alunosQuery.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
-          countQuery = countQuery.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
-        }
-
-        alunosQuery = alunosQuery.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false });
-
-      } else if (statusFilter === 'all') {
-        // Todos os alunos com seus interesses
-        alunosQuery = supabase
-          .from('alunos')
-          .select(`
-            id,
-            nome,
-            email,
-            whatsapp,
-            empresa,
-            available_periods,
-            created_at,
-            curso_interests:aluno_curso_interests(
-              id,
-              curso_id,
-              status,
-              curso:cursos(id, nome, preco)
-            )
-          `);
-
-        countQuery = supabase
-          .from('alunos')
-          .select('*', { count: 'exact', head: true });
-
-        if (searchTerm) {
-          alunosQuery = alunosQuery.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
-          countQuery = countQuery.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,whatsapp.ilike.%${searchTerm}%`);
-        }
-
-        alunosQuery = alunosQuery.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false });
-
-      } else {
-        // Alunos com status específico de interesse
-        alunosQuery = supabase
-          .from('aluno_curso_interests')
-          .select(`
-            id,
-            curso_id,
-            status,
-            created_at,
-            aluno:alunos!inner(
-              id,
-              nome,
-              email,
-              whatsapp,
-              empresa,
-              available_periods,
-              created_at
-            ),
-            curso:cursos(id, nome, preco)
-          `)
-          .eq('status', statusFilter);
-
-        countQuery = supabase
-          .from('aluno_curso_interests')
-          .select(`
-            aluno_id,
-            aluno:alunos!inner(
-              id,
-              nome,
-              email,
-              whatsapp
-            )
-          `)
-          .eq('status', statusFilter);
-
-        if (cursoFilter) {
-          alunosQuery = alunosQuery.eq('curso_id', cursoFilter);
-          countQuery = countQuery.eq('curso_id', cursoFilter);
-        }
-
-        if (searchTerm) {
-          alunosQuery = alunosQuery.or(`aluno.nome.ilike.%${searchTerm}%,aluno.email.ilike.%${searchTerm}%,aluno.whatsapp.ilike.%${searchTerm}%`);
-          countQuery = countQuery.or(`aluno.nome.ilike.%${searchTerm}%,aluno.email.ilike.%${searchTerm}%,aluno.whatsapp.ilike.%${searchTerm}%`);
-        }
-
-        alunosQuery = alunosQuery.range(offset, offset + ITEMS_PER_PAGE - 1).order('created_at', { ascending: false });
-      }
-
-      // Executar as queries
-      const [alunosResult, countResult] = await Promise.all([
-        alunosQuery,
-        countQuery
-      ]);
-
-      if (alunosResult.error) throw alunosResult.error;
-      if (countResult.error) throw countResult.error;
-
-      // Processar resultados baseado no filtro
-      if (statusFilter === 'none') {
-        // Adicionar array vazio de interesses para consistência
-        const alunosData = (alunosResult.data || []).map(aluno => ({
-          ...aluno,
-          curso_interests: []
-        }));
-        setAlunos(alunosData);
-        setTotalCount(countResult.count || 0);
-
-      } else if (statusFilter === 'all') {
-        setAlunos(alunosResult.data || []);
-        setTotalCount(countResult.count || 0);
-
-      } else {
-        // Para filtros específicos, agrupar por aluno para evitar duplicatas
-        const studentsMap = new Map();
-        
-        (alunosResult.data || []).forEach((interest: any) => {
-          const aluno = interest.aluno;
-          if (!studentsMap.has(aluno.id)) {
-            studentsMap.set(aluno.id, {
-              ...aluno,
-              curso_interests: []
-            });
-          }
-          
-          studentsMap.get(aluno.id).curso_interests.push({
-            id: interest.id,
-            curso_id: interest.curso_id,
-            status: statusFilter,
-            curso: interest.curso
-          });
-        });
-
-        setAlunos(Array.from(studentsMap.values()));
-
-        // Contar alunos únicos dos resultados de contagem
-        const uniqueStudentIds = new Set();
-        (countResult.data || []).forEach((interest: any) => {
-          uniqueStudentIds.add(interest.aluno_id);
-        });
-        
-        setTotalCount(uniqueStudentIds.size);
-      }
+      const result = await api.get(`/alunos?${params.toString()}`);
+      setAlunos(result.data || []);
+      setTotalCount(result.count || 0);
     } catch (error) {
       console.error('Erro ao carregar alunos:', error);
       toast.error('Erro ao carregar alunos');
@@ -277,12 +122,7 @@ export function Alunos() {
 
   async function loadCursos() {
     try {
-      const { data, error } = await supabase
-        .from('cursos')
-        .select('id, nome, preco')
-        .order('nome');
-      
-      if (error) throw error;
+      const data = await api.get('/cursos/simple');
       setCursos(data);
     } catch (error) {
       toast.error('Erro ao carregar cursos');
@@ -321,19 +161,10 @@ export function Alunos() {
     e.preventDefault();
     try {
       if (editingId) {
-        const { error } = await supabase
-          .from('alunos')
-          .update(formData)
-          .eq('id', editingId);
-        
-        if (error) throw error;
+        await api.put(`/alunos/${editingId}`, formData);
         toast.success('Aluno atualizado com sucesso!');
       } else {
-        const { error } = await supabase
-          .from('alunos')
-          .insert([formData]);
-        
-        if (error) throw error;
+        await api.post('/alunos', formData);
         toast.success('Aluno adicionado com sucesso!');
       }
 
@@ -359,12 +190,7 @@ export function Alunos() {
 
   async function handleConfirmDelete() {
     try {
-      const { error } = await supabase
-        .from('alunos')
-        .delete()
-        .eq('id', confirmModal.alunoId);
-      
-      if (error) throw error;
+      await api.delete(`/alunos/${confirmModal.alunoId}`);
       toast.success('Aluno excluído com sucesso!');
       loadAlunos();
     } catch (error) {

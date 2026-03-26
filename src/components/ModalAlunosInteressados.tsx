@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Search, Users, BookOpen } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 
@@ -63,28 +63,8 @@ export function ModalAlunosInteressados({
   async function loadAlunosInteressados() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('aluno_curso_interests')
-        .select(`
-          aluno:alunos(
-            id,
-            nome,
-            email,
-            whatsapp,
-            empresa,
-            available_periods
-          )
-        `)
-        .eq('curso_id', cursoId)
-        .eq('status', 'interested')
-        .is('turma_id', null);
-
-      if (error) throw error;
-
-      // Show all students interested in the course, regardless of period availability
-      const alunosData = data.map(item => item.aluno);
-
-      setAlunosInteressados(alunosData);
+      const data = await api.get(`/api/interests/curso/${cursoId}/interested`);
+      setAlunosInteressados(data);
     } catch (error) {
       toast.error('Erro ao carregar alunos interessados');
     } finally {
@@ -94,24 +74,14 @@ export function ModalAlunosInteressados({
 
   async function loadTurmaInfo() {
     try {
-      const [turmaResult, enrolledResult] = await Promise.all([
-        supabase
-          .from('turmas')
-          .select('cadeiras')
-          .eq('id', turmaId)
-          .single(),
-        supabase
-          .from('aluno_curso_interests')
-          .select('id')
-          .eq('turma_id', turmaId)
-          .eq('status', 'enrolled')
-      ]);
-
-      if (turmaResult.error) throw turmaResult.error;
-      if (enrolledResult.error) throw enrolledResult.error;
-
-      setTurmaCapacity(turmaResult.data.cadeiras);
-      setEnrolledCount(enrolledResult.data.length);
+      const turmas = await api.get('/api/turmas');
+      const turma = turmas.find((t: any) => t.id === turmaId);
+      if (turma) {
+        setTurmaCapacity(turma.cadeiras);
+        // Count enrolled students from the enrolled list
+        const enrolledData = await api.get(`/api/interests/turma/${turmaId}/enrolled`);
+        setEnrolledCount(enrolledData.length || 0);
+      }
     } catch (error) {
       console.error('Erro ao carregar informações da turma:', error);
     }
@@ -148,16 +118,11 @@ export function ModalAlunosInteressados({
     setEnrollingStudents(prev => new Set(prev).add(alunoId));
     
     try {
-      const { error } = await supabase
-        .from('aluno_curso_interests')
-        .update({ 
-          status: 'enrolled',
-          turma_id: turmaId
-        })
-        .eq('aluno_id', alunoId)
-        .eq('curso_id', cursoId);
-      
-      if (error) throw error;
+      await api.post(`/api/interests/enroll`, {
+        aluno_id: alunoId,
+        curso_id: cursoId,
+        turma_id: turmaId
+      });
       
       toast.success('Aluno matriculado na turma!');
       
@@ -182,61 +147,11 @@ export function ModalAlunosInteressados({
 
   async function checkStudentScheduleConflict(alunoId: string, newTurmaId: string): Promise<boolean> {
     try {
-      // Buscar informações da nova turma
-      const { data: newTurma, error: newTurmaError } = await supabase
-        .from('turmas')
-        .select('period, start_date, end_date')
-        .eq('id', newTurmaId)
-        .single();
-
-      if (newTurmaError) throw newTurmaError;
-
-      // Buscar todas as turmas em que o aluno já está matriculado
-      const { data: enrolledTurmas, error: enrolledError } = await supabase
-        .from('aluno_curso_interests')
-        .select(`
-          turma:turmas(
-            id,
-            period,
-            start_date,
-            end_date
-          )
-        `)
-        .eq('aluno_id', alunoId)
-        .eq('status', 'enrolled')
-        .not('turma_id', 'is', null);
-
-      if (enrolledError) throw enrolledError;
-
-      // Verificar conflitos
-      const newStartDate = new Date(newTurma.start_date + 'T00:00:00');
-      const newEndDate = new Date(newTurma.end_date + 'T00:00:00');
-
-      for (const enrollment of enrolledTurmas) {
-        if (!enrollment.turma) continue;
-
-        const existingTurma = enrollment.turma;
-        
-        // Verificar se é o mesmo período
-        if (existingTurma.period === newTurma.period) {
-          // Verificar sobreposição de datas
-          const existingStartDate = new Date(existingTurma.start_date + 'T00:00:00');
-          const existingEndDate = new Date(existingTurma.end_date + 'T00:00:00');
-
-          const hasDateOverlap = (
-            (newStartDate <= existingEndDate && newEndDate >= existingStartDate)
-          );
-
-          if (hasDateOverlap) {
-            return true; // Conflito encontrado
-          }
-        }
-      }
-
-      return false; // Sem conflitos
+      const result = await api.get(`/api/interests/check-conflict?aluno_id=${alunoId}&turma_id=${newTurmaId}`);
+      return result.hasConflict || false;
     } catch (error) {
-      console.error('Erro ao verificar conflitos de horário:', error);
-      throw error;
+      console.error('Erro ao verificar conflitos:', error);
+      return false;
     }
   }
 

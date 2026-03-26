@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 import { AuthForm } from './AuthForm';
 import { useNavigate } from 'react-router-dom';
@@ -35,36 +35,19 @@ export function Login() {
           return;
         }
 
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: name,
-            },
-          },
-        });
-        if (error) throw error;
+        await api.signup(email, password, name);
         toast.success('Conta criada com sucesso!');
         setName('');
         setConfirmPassword('');
         setIsSignUp(false);
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+        await api.login(email, password);
         toast.success('Login realizado com sucesso!');
         navigate('/');
       }
     } catch (error: any) {
       console.error('Auth error:', error);
-      if (error.message?.includes('Failed to fetch')) {
-        toast.error('Erro de conexão com o servidor. Verifique sua conexão com a internet e as configurações do Supabase.');
-      } else {
-        toast.error(error.message || 'Erro ao realizar operação. Tente novamente.');
-      }
+      toast.error(error.message || 'Erro ao realizar operação. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +57,7 @@ export function Login() {
     <div className="min-h-screen bg-dark flex items-center justify-center p-4 fade-in">
       <div className="max-w-md w-full space-y-8 bg-dark-card p-8 rounded-2xl scale-in hover-lift">
         <div className="text-center scale-in-delay-1">
-          <img src="/icon.webp" alt="Pepper Heads Logo" className="mx-auto w-[44%] h-auto rounded" />
+          <img src="/icon.webp" alt="OZI CRM Logo" className="mx-auto w-[44%] h-auto rounded" />
           <p className="mt-2 text-sm text-gray-400">
             {isSignUp ? 'Comece sua jornada conosco' : 'Faça login na sua conta'}
           </p>

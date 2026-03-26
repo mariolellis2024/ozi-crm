@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Plus, Pencil, Trash2, Clock, TrendingUp, Users, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
@@ -50,42 +50,10 @@ export function Cursos() {
 
   async function loadCursos() {
     try {
-      const [cursosResult, interestsResult] = await Promise.all([
-        supabase
-          .from('cursos')
-          .select(`
-            id,
-            nome,
-            carga_horaria,
-            preco,
-            categoria_id,
-            categoria:categorias(nome)
-          `)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('aluno_curso_interests')
-          .select('curso_id, status')
-      ]);
-      
-      if (cursosResult.error) throw cursosResult.error;
-      if (interestsResult.error) throw interestsResult.error;
-
-      // Count interested students for each course
-      const interestCounts: { [cursoId: string]: number } = {};
-      interestsResult.data.forEach(interest => {
-        if (interest.status === 'interested') {
-          interestCounts[interest.curso_id] = (interestCounts[interest.curso_id] || 0) + 1;
-        }
-      });
-
-      // Add interest count to each course
-      const cursosWithInterests = cursosResult.data.map(curso => ({
-        ...curso,
-        interested_students_count: interestCounts[curso.id] || 0
-      }));
-
+      const data = await api.get('/api/cursos');
+      // The server returns cursos with categoria and interested_students_count
       // Group courses by category and sort
-      const cursosGrouped = cursosWithInterests.reduce((acc: { [key: string]: Curso[] }, curso) => {
+      const cursosGrouped = data.reduce((acc: { [key: string]: Curso[] }, curso: any) => {
         const categoryName = curso.categoria?.nome || 'Sem Categoria';
         if (!acc[categoryName]) {
           acc[categoryName] = [];
@@ -94,12 +62,11 @@ export function Cursos() {
         return acc;
       }, {});
 
-      // Sort categories alphabetically and courses within each category
       const sortedCursos: Curso[] = [];
       Object.keys(cursosGrouped)
-        .sort((a, b) => a.localeCompare(b))
+        .sort((a: string, b: string) => a.localeCompare(b))
         .forEach(categoryName => {
-          const cursosInCategory = cursosGrouped[categoryName].sort((a, b) => a.nome.localeCompare(b.nome));
+          const cursosInCategory = cursosGrouped[categoryName].sort((a: any, b: any) => a.nome.localeCompare(b.nome));
           sortedCursos.push(...cursosInCategory);
         });
 
@@ -111,12 +78,7 @@ export function Cursos() {
 
   async function loadCursosForUpdate() {
     try {
-      const { data, error } = await supabase
-        .from('cursos')
-        .select('id, nome, carga_horaria, preco, categoria_id')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
+      const data = await api.get('/api/cursos');
       setCursos(data);
     } catch (error) {
       toast.error('Erro ao carregar cursos');
@@ -125,23 +87,13 @@ export function Cursos() {
 
   async function updateTurmaNames(cursoId: string, newNome: string) {
     try {
-      const { data: turmas, error: fetchError } = await supabase
-        .from('turmas')
-        .select('id, name')
-        .eq('curso_id', cursoId);
+      const turmas = await api.get('/api/turmas');
+      const cursoTurmas = turmas.filter((t: any) => t.curso_id === cursoId);
 
-      if (fetchError) throw fetchError;
-
-      const updatePromises = turmas.map(async (turma) => {
-        const currentNumber = turma.name.split(' ').pop(); // Get the last part (number)
+      const updatePromises = cursoTurmas.map(async (turma: any) => {
+        const currentNumber = turma.name.split(' ').pop();
         const newName = `${newNome} ${currentNumber}`;
-        
-        const { error } = await supabase
-          .from('turmas')
-          .update({ name: newName })
-          .eq('id', turma.id);
-        
-        if (error) throw error;
+        await api.put(`/api/turmas/${turma.id}`, { name: newName });
       });
 
       await Promise.all(updatePromises);
@@ -161,20 +113,11 @@ export function Cursos() {
       };
 
       if (editingId) {
-        const { error } = await supabase
-          .from('cursos')
-          .update(cursoData)
-          .eq('id', editingId);
-        
-        if (error) throw error;
+        await api.put(`/api/cursos/${editingId}`, cursoData);
         await updateTurmaNames(editingId, cursoData.nome);
         toast.success('Curso atualizado com sucesso!');
       } else {
-        const { error } = await supabase
-          .from('cursos')
-          .insert([cursoData]);
-        
-        if (error) throw error;
+        await api.post('/api/cursos', cursoData);
         toast.success('Curso adicionado com sucesso!');
       }
 
@@ -200,12 +143,7 @@ export function Cursos() {
 
   async function handleConfirmDelete() {
     try {
-      const { error } = await supabase
-        .from('cursos')
-        .delete()
-        .eq('id', confirmModal.cursoId);
-      
-      if (error) throw error;
+      await api.delete(`/api/cursos/${confirmModal.cursoId}`);
       toast.success('Curso excluído com sucesso!');
       loadCursos();
     } catch (error) {

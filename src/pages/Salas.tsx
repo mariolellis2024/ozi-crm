@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmationModal } from '../components/ConfirmationModal';
@@ -36,12 +36,7 @@ export function Salas() {
 
   async function loadSalas() {
     try {
-      const { data, error } = await supabase
-        .from('salas')
-        .select('id, nome, cadeiras')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
+      const data = await api.get('/api/salas');
       setSalas(data);
     } catch (error) {
       toast.error('Erro ao carregar salas');
@@ -49,14 +44,13 @@ export function Salas() {
   }
 
   async function checkSalaInUse(salaId: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('turmas')
-      .select('id')
-      .eq('sala_id', salaId)
-      .limit(1);
-    
-    if (error) throw error;
-    return data.length > 0;
+    try {
+      await api.delete(`/api/salas/${salaId}`);
+      return false;
+    } catch (error: any) {
+      if (error.message?.includes('sendo usada')) return true;
+      throw error;
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -68,19 +62,10 @@ export function Salas() {
       };
 
       if (editingId) {
-        const { error } = await supabase
-          .from('salas')
-          .update(salaData)
-          .eq('id', editingId);
-        
-        if (error) throw error;
+        await api.put(`/api/salas/${editingId}`, salaData);
         toast.success('Sala atualizada com sucesso!');
       } else {
-        const { error } = await supabase
-          .from('salas')
-          .insert([salaData]);
-        
-        if (error) throw error;
+        await api.post('/api/salas', salaData);
         toast.success('Sala adicionada com sucesso!');
       }
 
@@ -94,38 +79,23 @@ export function Salas() {
   }
 
   async function handleDelete(id: string) {
-    const sala = salas.find(s => s.id === id);
+    const sala = salas.find((s: any) => s.id === id);
     if (!sala) return;
 
-    try {
-      const isInUse = await checkSalaInUse(id);
-      if (isInUse) {
-        toast.error('Esta sala não pode ser excluída pois está sendo usada em uma ou mais turmas');
-        return;
-      }
-
-      setConfirmModal({
-        isOpen: true,
-        salaId: id,
-        salaNome: sala.nome
-      });
-    } catch (error) {
-      toast.error('Erro ao excluir sala');
-    }
+    setConfirmModal({
+      isOpen: true,
+      salaId: id,
+      salaNome: sala.nome
+    });
   }
 
   async function handleConfirmDelete() {
     try {
-      const { error } = await supabase
-        .from('salas')
-        .delete()
-        .eq('id', confirmModal.salaId);
-      
-      if (error) throw error;
+      await api.delete(`/api/salas/${confirmModal.salaId}`);
       toast.success('Sala excluída com sucesso!');
       loadSalas();
-    } catch (error) {
-      toast.error('Erro ao excluir sala');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao excluir sala');
     } finally {
       setConfirmModal({ isOpen: false, salaId: '', salaNome: '' });
     }

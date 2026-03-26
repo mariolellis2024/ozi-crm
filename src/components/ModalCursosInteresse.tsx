@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, BookOpen, Plus, Trash2, Users, TrendingUp } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
 
@@ -46,27 +46,13 @@ export function ModalCursosInteresse({
   async function loadData() {
     setLoading(true);
     try {
-      const [cursosResult, interessesResult] = await Promise.all([
-        supabase
-          .from('cursos')
-          .select('id, nome, preco')
-          .order('nome'),
-        supabase
-          .from('aluno_curso_interests')
-          .select(`
-            id,
-            curso_id,
-            status,
-            curso:cursos(id, nome, preco)
-          `)
-          .eq('aluno_id', alunoId)
+      const [cursosData, interessesData] = await Promise.all([
+        api.get('/api/cursos'),
+        api.get(`/api/interests/aluno/${alunoId}`)
       ]);
 
-      if (cursosResult.error) throw cursosResult.error;
-      if (interessesResult.error) throw interessesResult.error;
-
-      setCursos(cursosResult.data);
-      setInteressesAtivos(interessesResult.data);
+      setCursos(cursosData);
+      setInteressesAtivos(interessesData);
     } catch (error) {
       toast.error('Erro ao carregar dados');
     } finally {
@@ -80,7 +66,6 @@ export function ModalCursosInteresse({
       return;
     }
 
-    // Check if interest already exists
     const existingInterest = interessesAtivos.find(i => i.curso_id === selectedCurso);
     if (existingInterest) {
       toast.error('Aluno já tem interesse neste curso');
@@ -89,24 +74,14 @@ export function ModalCursosInteresse({
 
     setAddingInterest(true);
     try {
-      const { data, error } = await supabase
-        .from('aluno_curso_interests')
-        .insert([{
-          aluno_id: alunoId,
-          curso_id: selectedCurso,
-          status: 'interested'
-        }])
-        .select(`
-          id,
-          curso_id,
-          status,
-          curso:cursos(id, nome, preco)
-        `)
-        .single();
+      const data = await api.post('/api/interests', {
+        aluno_id: alunoId,
+        curso_id: selectedCurso,
+        status: 'interested'
+      });
 
-      if (error) throw error;
-
-      setInteressesAtivos(prev => [...prev, data]);
+      // Reload to get full data with curso join
+      await loadData();
       setSelectedCurso('');
       toast.success('Interesse adicionado com sucesso!');
     } catch (error) {
@@ -118,13 +93,7 @@ export function ModalCursosInteresse({
 
   async function handleRemoveInterest(interesseId: string) {
     try {
-      const { error } = await supabase
-        .from('aluno_curso_interests')
-        .delete()
-        .eq('id', interesseId);
-
-      if (error) throw error;
-
+      await api.delete(`/api/interests/${interesseId}`);
       setInteressesAtivos(prev => prev.filter(i => i.id !== interesseId));
       toast.success('Interesse removido com sucesso!');
     } catch (error) {
@@ -134,13 +103,7 @@ export function ModalCursosInteresse({
 
   async function handleChangeStatus(interesseId: string, newStatus: 'interested' | 'enrolled' | 'completed') {
     try {
-      const { error } = await supabase
-        .from('aluno_curso_interests')
-        .update({ status: newStatus })
-        .eq('id', interesseId);
-
-      if (error) throw error;
-
+      await api.put(`/api/interests/${interesseId}/status`, { status: newStatus });
       setInteressesAtivos(prev => 
         prev.map(i => 
           i.id === interesseId 

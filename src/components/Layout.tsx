@@ -1,74 +1,31 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { GraduationCap, User, LogOut, BookOpen, Home, ChevronLeft, ChevronRight, DoorClosed, Activity } from 'lucide-react';
+import { api } from '../lib/api';
+import { GraduationCap, User, LogOut, BookOpen, Home, DoorClosed, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PerformanceDashboard } from './PerformanceDashboard';
 
-/**
- * Props do componente Layout
- */
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-/**
- * Componente Layout Principal
- * 
- * Responsável por:
- * - Renderizar a estrutura base da aplicação (sidebar + conteúdo)
- * - Gerenciar navegação entre páginas
- * - Controlar logout do usuário
- * - Fornecer feedback visual de navegação ativa
- * 
- * @param children - Conteúdo a ser renderizado na área principal
- */
 export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false);
-  
-  /**
-   * Gerencia o logout do usuário
-   * 
-   * Trata diferentes cenários de erro:
-   * - Sessão já expirada
-   * - Erros de rede
-   * - Outros erros inesperados
-   */
+
   const handleSignOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        // Handle specific session not found error
-        if (error.message.includes('Session from session_id claim in JWT does not exist') || 
-            error.message.includes('session_not_found')) {
-          toast.success('Sessão já expirada - desconectado com sucesso');
-        } else {
-          console.warn('Logout warning:', error.message);
-          toast.error('Erro ao desconectar, mas você foi redirecionado');
-        }
-      } else {
-        toast.success('Desconectado com sucesso');
-      }
+      api.logout();
+      toast.success('Desconectado com sucesso');
       navigate('/login');
     } catch (error: any) {
-      // Handle network or other unexpected errors
-      if (error.message && (error.message.includes('Session from session_id claim in JWT does not exist') || 
-          error.message.includes('session_not_found'))) {
-        toast.success('Sessão já expirada - desconectado com sucesso');
-      } else {
-        console.warn('Logout error:', error.message);
-        toast.error('Erro ao desconectar, mas você foi redirecionado');
-      }
+      console.warn('Logout error:', error.message);
+      toast.error('Erro ao desconectar, mas você foi redirecionado');
       navigate('/login');
     }
   };
 
-  /**
-   * Configuração dos itens do menu de navegação
-   * Cada item contém ícone, label e rota correspondente
-   */
   const menuItems = [
     { icon: Home, label: 'Turmas', path: '/' },
     { icon: User, label: 'Alunos', path: '/alunos' },
@@ -82,7 +39,7 @@ export function Layout({ children }: LayoutProps) {
       <aside className="w-64 bg-dark-lighter fixed h-full slide-in-left">
         <div className="px-6 pt-6 scale-in">
           <div className="flex items-center justify-center space-x-3">
-            <img src="/icon.webp" alt="Pepper Heads Logo" className="w-4/5 h-auto flex-shrink-0 rounded" />
+            <img src="/icon.webp" alt="OZI CRM Logo" className="w-4/5 h-auto flex-shrink-0 rounded" />
           </div>
         </div>
         <nav className="mt-6 scale-in-delay-1">
@@ -102,7 +59,6 @@ export function Layout({ children }: LayoutProps) {
           ))}
         </nav>
         <div className="absolute bottom-0 w-full p-6 scale-in-delay-2">
-          {/* Botão de Performance (apenas em desenvolvimento) */}
           {import.meta.env.DEV && (
             <button
               onClick={() => setShowPerformanceDashboard(true)}
@@ -115,7 +71,7 @@ export function Layout({ children }: LayoutProps) {
               </span>
             </button>
           )}
-          
+
           <button
             onClick={handleSignOut}
             className="w-full flex items-center text-gray-400 hover:text-white transition-all duration-200 hover:translate-x-1"
@@ -130,8 +86,8 @@ export function Layout({ children }: LayoutProps) {
       <main className="ml-64 w-full fade-in-delay-1">
         {children}
       </main>
-      
-      <PerformanceDashboard 
+
+      <PerformanceDashboard
         isOpen={showPerformanceDashboard}
         onClose={() => setShowPerformanceDashboard(false)}
       />
