@@ -1,11 +1,9 @@
 {
-  "$schema": "https://schemas.easypanel.io/v1/schema.json",
   "services": [
     {
       "type": "app",
       "data": {
-        "projectName": "ozi-crm",
-        "serviceName": "app",
+        "serviceName": "ozi-crm",
         "source": {
           "type": "github",
           "owner": "mariolellis2024",
@@ -13,37 +11,30 @@
           "ref": "main",
           "path": "/"
         },
-        "build": {
-          "type": "dockerfile",
-          "file": "Dockerfile"
-        },
-        "env": "DATABASE_URL=postgresql://ozi_user:$(POSTGRES_PASSWORD)@ozi-crm-postgres:5432/ozi_crm\nJWT_SECRET=$(JWT_SECRET)\nPORT=3001\nNODE_ENV=production",
+        "env": "DATABASE_URL=postgresql://ozi_user:ozi_crm_2024@$(PROJECT_NAME)_ozi-crm-db:5432/$(PROJECT_NAME)\nJWT_SECRET=TROQUE_POR_CHAVE_SEGURA_64_CHARS\nPORT=3001\nNODE_ENV=production",
         "deploy": {
           "replicas": 1,
-          "resources": {
-            "memoryReservation": 256,
-            "memoryLimit": 512,
-            "cpuReservation": 100,
-            "cpuLimit": 500
-          }
+          "command": null,
+          "zeroDowntime": true
         },
         "domains": [
           {
             "host": "$(EASYPANEL_DOMAIN)",
-            "port": 3001
+            "https": true,
+            "port": 3001,
+            "path": "/"
           }
-        ]
+        ],
+        "mounts": [],
+        "ports": []
       }
     },
     {
       "type": "postgres",
       "data": {
-        "projectName": "ozi-crm",
-        "serviceName": "postgres",
+        "serviceName": "ozi-crm-db",
         "image": "postgres:16-alpine",
-        "password": "$(POSTGRES_PASSWORD)",
-        "database": "ozi_crm",
-        "user": "ozi_user"
+        "password": "ozi_crm_2024"
       }
     }
   ]

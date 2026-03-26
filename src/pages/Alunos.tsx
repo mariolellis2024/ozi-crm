@@ -122,7 +122,7 @@ export function Alunos() {
 
   async function loadCursos() {
     try {
-      const data = await api.get('/cursos/simple');
+      const data = await api.get('/api/cursos');
       setCursos(data);
     } catch (error) {
       toast.error('Erro ao carregar cursos');
@@ -164,7 +164,7 @@ export function Alunos() {
         await api.put(`/alunos/${editingId}`, formData);
         toast.success('Aluno atualizado com sucesso!');
       } else {
-        await api.post('/alunos', formData);
+        await api.post('/api/alunos', formData);
         toast.success('Aluno adicionado com sucesso!');
       }
 

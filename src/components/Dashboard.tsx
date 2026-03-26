@@ -43,15 +43,15 @@ export function Dashboard({ user }: DashboardProps) {
   async function loadData() {
     try {
       const [turmasData, cursosData, professoresData, alunosData] = await Promise.all([
-        api.get('/turmas'),
-        api.get('/cursos/simple'),
-        api.get('/professores/simple'),
-        api.get('/alunos?limit=5')
+        api.get('/api/turmas'),
+        api.get('/api/cursos'),
+        api.get('/api/professores'),
+        api.get('/api/alunos')
       ]);
       setTurmas(turmasData);
       setCursos(cursosData);
       setProfessores(professoresData);
-      setAlunos(alunosData.data || []);
+      setAlunos(Array.isArray(alunosData) ? alunosData : alunosData.data || []);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
     }
