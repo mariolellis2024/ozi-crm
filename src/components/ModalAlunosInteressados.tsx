@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Search, Users, BookOpen } from 'lucide-react';
 import { api } from '../lib/api';
@@ -23,6 +23,7 @@ interface ModalAlunosInteressadosProps {
   cursoNome: string;
   cursoPreco: number;
   onStudentEnrolled: () => void;
+  onPaymentRequested?: (alunoId: string, alunoNome: string, cursoId: string, cursoPreco: number, turmaId: string) => void;
 }
 
 export function ModalAlunosInteressados({ 
@@ -33,7 +34,8 @@ export function ModalAlunosInteressados({
   turmaPeriod,
   cursoNome,
   cursoPreco,
-  onStudentEnrolled
+  onStudentEnrolled,
+  onPaymentRequested
 }: ModalAlunosInteressadosProps) {
   const [alunosInteressados, setAlunosInteressados] = useState<AlunoInteressado[]>([]);
   const [filteredAlunos, setFilteredAlunos] = useState<AlunoInteressado[]>([]);
@@ -134,6 +136,11 @@ export function ModalAlunosInteressados({
       
       // Notify parent component to refresh data
       onStudentEnrolled();
+
+      // Open payment modal for the enrolled student
+      if (onPaymentRequested) {
+        onPaymentRequested(alunoId, aluno.nome, cursoId, cursoPreco, turmaId);
+      }
     } catch (error) {
       toast.error('Erro ao matricular aluno');
     } finally {

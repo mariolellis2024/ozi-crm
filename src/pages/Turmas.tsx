@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Plus, Pencil, Trash2, Users, Calendar, Clock, TrendingUp, BookOpen, UserCheck, AlertCircle, MapPin } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, Calendar, Clock, TrendingUp, BookOpen, UserCheck, AlertCircle, MapPin, X, DollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { createPortal } from 'react-dom';
 import { formatCurrency } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalTurma } from '../components/ModalTurma';
@@ -95,6 +96,17 @@ export function Turmas() {
     cursoId: '',
     cursoNome: '',
     cursoPreco: 0
+  });
+  const [paymentModal, setPaymentModal] = useState({
+    isOpen: false,
+    alunoId: '',
+    alunoNome: '',
+    cursoId: '',
+    cursoPreco: 0,
+    turmaId: '',
+    totalParcelas: '1',
+    valorTotal: '',
+    firstDueDate: new Date().toISOString().split('T')[0]
   });
   const [formData, setFormData] = useState({
     name: '',
@@ -560,6 +572,38 @@ export function Turmas() {
     loadData(); // Reload data to update enrolled count
   }
 
+  function handlePaymentRequested(alunoId: string, alunoNome: string, cursoId: string, cursoPreco: number, turmaId: string) {
+    setPaymentModal({
+      isOpen: true,
+      alunoId,
+      alunoNome,
+      cursoId,
+      cursoPreco,
+      turmaId,
+      totalParcelas: '1',
+      valorTotal: String(cursoPreco),
+      firstDueDate: new Date().toISOString().split('T')[0]
+    });
+  }
+
+  async function handleGeneratePayment(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      await api.post('/api/pagamentos/generate', {
+        aluno_id: paymentModal.alunoId,
+        curso_id: paymentModal.cursoId,
+        turma_id: paymentModal.turmaId,
+        total_parcelas: parseInt(paymentModal.totalParcelas),
+        valor_total: parseFloat(paymentModal.valorTotal),
+        first_due_date: paymentModal.firstDueDate,
+      });
+      toast.success(`${paymentModal.totalParcelas} parcela(s) gerada(s) para ${paymentModal.alunoNome}!`);
+      setPaymentModal(prev => ({ ...prev, isOpen: false }));
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao gerar parcelas');
+    }
+  }
+
   function getPeriodIcon(period: Period) {
     return null; // Removido - usando apenas cores
   }
@@ -1008,6 +1052,7 @@ export function Turmas() {
           cursoNome={alunosInteressadosModal.cursoNome}
           cursoPreco={alunosInteressadosModal.cursoPreco}
           onStudentEnrolled={handleStudentEnrolled}
+          onPaymentRequested={handlePaymentRequested}
         />
 
         <ModalAlunosMatriculados
@@ -1019,6 +1064,58 @@ export function Turmas() {
           cursoPreco={alunosMatriculadosModal.cursoPreco}
           onStudentUnenrolled={handleStudentUnenrolled}
         />
+
+        {/* Payment Generation Modal */}
+        {paymentModal.isOpen && createPortal(
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10001] p-4 fade-in">
+            <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md scale-in" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                  <DollarSign className="h-6 w-6 text-teal-accent" />
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Gerar Parcelas</h2>
+                    <p className="text-gray-400 text-sm">{paymentModal.alunoNome}</p>
+                  </div>
+                </div>
+                <button onClick={() => setPaymentModal(prev => ({ ...prev, isOpen: false }))} className="text-gray-400 hover:text-white">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <form onSubmit={handleGeneratePayment} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Nº Parcelas</label>
+                    <input type="number" min="1" max="24" required value={paymentModal.totalParcelas}
+                      onChange={e => setPaymentModal(prev => ({ ...prev, totalParcelas: e.target.value }))}
+                      className="w-full bg-dark-lighter text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-teal-accent outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Valor Total</label>
+                    <input type="number" step="0.01" min="0" required value={paymentModal.valorTotal}
+                      onChange={e => setPaymentModal(prev => ({ ...prev, valorTotal: e.target.value }))}
+                      className="w-full bg-dark-lighter text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-teal-accent outline-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">1º Vencimento</label>
+                  <input type="date" required value={paymentModal.firstDueDate}
+                    onChange={e => setPaymentModal(prev => ({ ...prev, firstDueDate: e.target.value }))}
+                    className="w-full bg-dark-lighter text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-teal-accent outline-none" />
+                </div>
+                {parseInt(paymentModal.totalParcelas) > 0 && parseFloat(paymentModal.valorTotal) > 0 && (
+                  <div className="bg-dark-lighter rounded-xl p-3 text-sm">
+                    <p className="text-gray-400">{paymentModal.totalParcelas}x de <span className="text-white font-medium">{formatCurrency(parseFloat(paymentModal.valorTotal) / parseInt(paymentModal.totalParcelas))}</span></p>
+                  </div>
+                )}
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setPaymentModal(prev => ({ ...prev, isOpen: false }))} className="flex-1 py-3 rounded-xl bg-dark-lighter text-gray-400 hover:text-white transition-colors">Pular</button>
+                  <button type="submit" className="flex-1 py-3 rounded-xl bg-teal-accent text-dark font-medium hover:bg-teal-400 transition-colors">Gerar Parcelas</button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
       </div>
     </div>
   );
