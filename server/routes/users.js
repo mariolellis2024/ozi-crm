@@ -13,7 +13,26 @@ router.get('/', async (req, res) => {
     const result = await pool.query(
       'SELECT id, email, full_name, is_blocked, is_super_admin, created_at FROM users ORDER BY created_at DESC'
     );
-    res.json(result.rows);
+    
+    // Load unidade assignments for all users
+    const unidadesResult = await pool.query(
+      `SELECT uu.user_id, uu.unidade_id, u.nome as unidade_nome
+       FROM user_unidades uu
+       JOIN unidades u ON u.id = uu.unidade_id`
+    );
+    
+    const unidadesByUser = {};
+    unidadesResult.rows.forEach(row => {
+      if (!unidadesByUser[row.user_id]) unidadesByUser[row.user_id] = [];
+      unidadesByUser[row.user_id].push({ id: row.unidade_id, nome: row.unidade_nome });
+    });
+    
+    const users = result.rows.map(u => ({
+      ...u,
+      unidades: unidadesByUser[u.id] || []
+    }));
+    
+    res.json(users);
   } catch (error) {
     console.error('Error loading users:', error);
     res.status(500).json({ error: 'Erro ao carregar usuários' });
@@ -46,12 +65,24 @@ router.post('/', async (req, res) => {
     );
 
     const newUser = result.rows[0];
+    
+    // Assign unidades if provided
+    const { unidade_ids } = req.body;
+    if (unidade_ids && unidade_ids.length > 0) {
+      for (const unidadeId of unidade_ids) {
+        await pool.query(
+          'INSERT INTO user_unidades (user_id, unidade_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+          [newUser.id, unidadeId]
+        );
+      }
+    }
+    
     logActivity({
       userId: req.user?.id, userEmail: req.user?.email,
       action: 'create', entityType: 'user',
       entityId: newUser.id, entityName: email
     });
-    res.status(201).json(newUser);
+    res.status(201).json({ ...newUser, unidades: [] });
   } catch (error) {
     console.error('Error creating user:', error);
     res.status(500).json({ error: 'Erro ao criar usuário' });
@@ -97,6 +128,21 @@ router.put('/:id', async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
+    
+    // Update unidades if provided
+    const { unidade_ids } = req.body;
+    if (unidade_ids !== undefined) {
+      await pool.query('DELETE FROM user_unidades WHERE user_id = $1', [id]);
+      if (unidade_ids && unidade_ids.length > 0) {
+        for (const unidadeId of unidade_ids) {
+          await pool.query(
+            'INSERT INTO user_unidades (user_id, unidade_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [id, unidadeId]
+          );
+        }
+      }
+    }
+    
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating user:', error);

@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { Pencil, Trash2, UserPlus, Mail, Lock, User, ShieldCheck, Ban, ShieldOff } from 'lucide-react';
+import { Pencil, Trash2, UserPlus, Mail, Lock, User, ShieldCheck, Ban, ShieldOff, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+
+interface Unidade {
+  id: string;
+  nome: string;
+}
 
 interface UserData {
   id: string;
@@ -12,6 +17,7 @@ interface UserData {
   is_blocked: boolean;
   is_super_admin: boolean;
   created_at: string;
+  unidades: Unidade[];
 }
 
 export function Usuarios() {
@@ -21,6 +27,7 @@ export function Usuarios() {
     email: '',
     full_name: '',
     password: '',
+    unidade_ids: [] as string[],
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({
@@ -28,9 +35,11 @@ export function Usuarios() {
     userId: '',
     userName: '',
   });
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
 
   useEffect(() => {
     loadUsers();
+    loadUnidades();
   }, []);
 
   async function loadUsers() {
@@ -42,20 +51,37 @@ export function Usuarios() {
     }
   }
 
+  async function loadUnidades() {
+    try {
+      const data = await api.get('/api/unidades');
+      setUnidades(data);
+    } catch { /* ignore */ }
+  }
+
   function handleEdit(user: UserData) {
     setEditingId(user.id);
     setFormData({
       email: user.email,
       full_name: user.full_name || '',
       password: '',
+      unidade_ids: user.unidades.map(u => u.id),
     });
     setIsModalOpen(true);
   }
 
   function handleNew() {
     setEditingId(null);
-    setFormData({ email: '', full_name: '', password: '' });
+    setFormData({ email: '', full_name: '', password: '', unidade_ids: [] });
     setIsModalOpen(true);
+  }
+
+  function toggleUnidade(unidadeId: string) {
+    setFormData(prev => ({
+      ...prev,
+      unidade_ids: prev.unidade_ids.includes(unidadeId)
+        ? prev.unidade_ids.filter(id => id !== unidadeId)
+        : [...prev.unidade_ids, unidadeId]
+    }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -131,6 +157,7 @@ export function Usuarios() {
               <tr className="border-b border-dark-lighter">
                 <th className="text-left py-4 px-6 text-gray-400 font-medium">Nome</th>
                 <th className="text-left py-4 px-6 text-gray-400 font-medium">Email</th>
+                <th className="text-left py-4 px-6 text-gray-400 font-medium">Unidades</th>
                 <th className="text-left py-4 px-6 text-gray-400 font-medium">Status</th>
                 <th className="text-left py-4 px-6 text-gray-400 font-medium">Criado em</th>
                 <th className="text-right py-4 px-6 text-gray-400 font-medium">Ações</th>
@@ -151,6 +178,21 @@ export function Usuarios() {
                     </div>
                   </td>
                   <td className="py-4 px-6 text-gray-300">{user.email}</td>
+                  <td className="py-4 px-6">
+                    <div className="flex flex-wrap gap-1">
+                      {user.is_super_admin ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">Todas</span>
+                      ) : user.unidades.length > 0 ? (
+                        user.unidades.map(u => (
+                          <span key={u.id} className="text-xs px-2 py-0.5 rounded-full bg-teal-accent/10 text-teal-accent border border-teal-accent/20">
+                            📍 {u.nome}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-gray-500">Nenhuma</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-4 px-6">
                     {user.is_blocked ? (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30">
@@ -260,6 +302,31 @@ export function Usuarios() {
                   />
                 </div>
               </div>
+
+              {/* Unidade access checkboxes */}
+              {unidades.length > 0 && (
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">
+                    <Building2 className="inline h-4 w-4 mr-1" />
+                    Acesso a Unidades
+                  </label>
+                  <div className="space-y-2">
+                    {unidades.map(u => (
+                      <label key={u.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-dark-lighter/50 cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={formData.unidade_ids.includes(u.id)}
+                          onChange={() => toggleUnidade(u.id)}
+                          className="w-4 h-4 text-teal-accent bg-dark border-gray-600 rounded focus:ring-teal-accent"
+                        />
+                        <span className="text-white text-sm">📍 {u.nome}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Sem seleção = acesso a todas</p>
+                </div>
+              )}
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"

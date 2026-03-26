@@ -41,6 +41,11 @@ interface Curso {
   preco: number;
 }
 
+interface Unidade {
+  id: string;
+  nome: string;
+}
+
 const ITEMS_PER_PAGE = 20;
 
 export function Alunos() {
@@ -48,6 +53,7 @@ export function Alunos() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -65,7 +71,8 @@ export function Alunos() {
     email: '',
     whatsapp: '',
     empresa: '',
-    available_periods: [] as Period[]
+    available_periods: [] as Period[],
+    unidade_id: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({
@@ -100,7 +107,7 @@ export function Alunos() {
   }, [searchTerm, statusFilter, cursoFilter, currentPage, selectedUnidadeId]);
 
   async function loadData() {
-    await Promise.all([loadAlunos(), loadCursos()]);
+    await Promise.all([loadAlunos(), loadCursos(), loadUnidades()]);
   }
 
   async function loadAlunos() {
@@ -132,6 +139,13 @@ export function Alunos() {
     } catch (error) {
       toast.error('Erro ao carregar cursos');
     }
+  }
+
+  async function loadUnidades() {
+    try {
+      const data = await api.get('/api/unidades');
+      setUnidades(data);
+    } catch { /* ignore */ }
   }
 
   function handleStatusFilter(status: 'all' | InterestStatus | 'none') {
@@ -174,7 +188,7 @@ export function Alunos() {
       }
 
       setIsModalOpen(false);
-      setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [] });
+      setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [], unidade_id: '' });
       setEditingId(null);
       loadAlunos();
     } catch (error) {
@@ -215,7 +229,8 @@ export function Alunos() {
       email: aluno.email || '',
       whatsapp: aluno.whatsapp,
       empresa: aluno.empresa || '',
-      available_periods: aluno.available_periods || []
+      available_periods: aluno.available_periods || [],
+      unidade_id: aluno.unidade_id || ''
     });
     setEditingId(aluno.id);
     setIsModalOpen(true);
@@ -223,7 +238,7 @@ export function Alunos() {
 
   function handleCloseModal() {
     setIsModalOpen(false);
-    setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [] });
+    setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [], unidade_id: '' });
     setEditingId(null);
   }
 
@@ -594,6 +609,11 @@ export function Alunos() {
                           {aluno.empresa && (
                             <div className="text-gray-400 text-sm">{aluno.empresa}</div>
                           )}
+                          {aluno.unidade_nome && (
+                            <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-teal-accent/10 text-teal-accent border border-teal-accent/20">
+                              📍 {aluno.unidade_nome}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -749,6 +769,7 @@ export function Alunos() {
           onSubmit={handleSubmit}
           onClose={handleCloseModal}
           togglePeriod={togglePeriod}
+          unidades={unidades}
         />
 
         <ModalCursosInteresse

@@ -74,6 +74,13 @@ CREATE TABLE IF NOT EXISTS unidades (
   created_at timestamptz DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS user_unidades (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  unidade_id uuid NOT NULL REFERENCES unidades(id) ON DELETE CASCADE,
+  UNIQUE(user_id, unidade_id)
+);
+
 CREATE TABLE IF NOT EXISTS salas (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   nome text NOT NULL,
