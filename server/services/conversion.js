@@ -7,9 +7,11 @@ import crypto from 'crypto';
  * @param {string} params.accessToken - Meta CAPI access token
  * @param {string} params.nome - Lead name
  * @param {string} params.whatsapp - Lead phone
+ * @param {string} [params.cidade] - Lead city
+ * @param {string} [params.estado] - Lead state
  * @param {string} params.sourceUrl - The form URL
  */
-export async function sendMetaConversion({ pixelId, accessToken, nome, whatsapp, sourceUrl }) {
+export async function sendMetaConversion({ pixelId, accessToken, nome, whatsapp, cidade, estado, sourceUrl }) {
   if (!pixelId || !accessToken) return;
 
   try {
@@ -21,18 +23,30 @@ export async function sendMetaConversion({ pixelId, accessToken, nome, whatsapp,
     if (phone.startsWith('0')) phone = '55' + phone.slice(1);
     if (!phone.startsWith('55')) phone = '55' + phone;
 
+    const userData = {
+      fn: hashSha256(nome.split(' ')[0]),
+      ln: nome.split(' ').length > 1 ? hashSha256(nome.split(' ').slice(1).join(' ')) : undefined,
+      ph: hashSha256(phone),
+      country: hashSha256('br'),
+    };
+
+    // Add city if available
+    if (cidade) {
+      userData.ct = hashSha256(cidade);
+    }
+
+    // Add state if available
+    if (estado) {
+      userData.st = hashSha256(estado);
+    }
+
     const eventData = {
       data: [{
         event_name: 'Lead',
         event_time: Math.floor(Date.now() / 1000),
         event_source_url: sourceUrl,
         action_source: 'website',
-        user_data: {
-          fn: hashSha256(nome.split(' ')[0]),
-          ln: nome.split(' ').length > 1 ? hashSha256(nome.split(' ').slice(1).join(' ')) : undefined,
-          ph: hashSha256(phone),
-          country: hashSha256('br'),
-        }
+        user_data: userData
       }]
     };
 

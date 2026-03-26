@@ -73,7 +73,7 @@ router.post('/:slug/register', async (req, res) => {
     // Get form data
     const formResult = await pool.query(
       `SELECT f.id, f.curso_id, f.unidade_id,
-              u.meta_pixel_id, u.meta_capi_token
+              u.meta_pixel_id, u.meta_capi_token, u.cidade as unidade_cidade
        FROM formularios f
        JOIN unidades u ON u.id = f.unidade_id
        WHERE f.slug = $1 AND f.ativo = true`,
@@ -131,11 +131,18 @@ router.post('/:slug/register', async (req, res) => {
 
     // Send Meta Conversions API event (server-side)
     const sourceUrl = `${req.protocol}://${req.get('host')}/f/${slug}`;
+    // Extract city and state from unidade_cidade (e.g. "São Paulo" or "Brasília - DF")
+    const cidadeParts = (form.unidade_cidade || '').split(' - ');
+    const cidade = cidadeParts[0]?.trim() || '';
+    const estado = cidadeParts[1]?.trim() || '';
+
     await sendMetaConversion({
       pixelId: form.meta_pixel_id,
       accessToken: form.meta_capi_token,
       nome,
       whatsapp: normalizedWhatsapp,
+      cidade,
+      estado,
       sourceUrl
     });
 
