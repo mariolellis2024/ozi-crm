@@ -201,6 +201,22 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PUT /api/alunos/bulk/periods
+// IMPORTANT: Must come BEFORE /:id routes to avoid Express matching 'bulk' as :id
+router.put('/bulk/periods', async (req, res) => {
+  try {
+    const { student_ids, available_periods } = req.body;
+    await pool.query(
+      `UPDATE alunos SET available_periods = $1 WHERE id = ANY($2)`,
+      [available_periods, student_ids]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error bulk updating periods:', error);
+    res.status(500).json({ error: 'Erro ao atualizar períodos' });
+  }
+});
+
 // PUT /api/alunos/:id
 router.put('/:id', async (req, res) => {
   try {
@@ -218,21 +234,6 @@ router.put('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error updating aluno:', error);
     res.status(500).json({ error: 'Erro ao atualizar aluno' });
-  }
-});
-
-// PUT /api/alunos/bulk/periods
-router.put('/bulk/periods', async (req, res) => {
-  try {
-    const { student_ids, available_periods } = req.body;
-    await pool.query(
-      `UPDATE alunos SET available_periods = $1 WHERE id = ANY($2)`,
-      [available_periods, student_ids]
-    );
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error bulk updating periods:', error);
-    res.status(500).json({ error: 'Erro ao atualizar períodos' });
   }
 });
 

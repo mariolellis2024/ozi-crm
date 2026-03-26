@@ -11,11 +11,6 @@ interface Sala {
   cadeiras: number;
 }
 
-interface Turma {
-  id: string;
-  sala_id: string;
-}
-
 export function Salas() {
   const [salas, setSalas] = useState<Sala[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,15 +38,7 @@ export function Salas() {
     }
   }
 
-  async function checkSalaInUse(salaId: string): Promise<boolean> {
-    try {
-      await api.delete(`/api/salas/${salaId}`);
-      return false;
-    } catch (error: any) {
-      if (error.message?.includes('sendo usada')) return true;
-      throw error;
-    }
-  }
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

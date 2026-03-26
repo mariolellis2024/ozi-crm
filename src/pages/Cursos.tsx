@@ -20,11 +20,7 @@ interface Curso {
   };
 }
 
-interface Turma {
-  id: string;
-  name: string;
-  curso_id: string;
-}
+
 
 export function Cursos() {
   const navigate = useNavigate();
@@ -76,14 +72,7 @@ export function Cursos() {
     }
   }
 
-  async function loadCursosForUpdate() {
-    try {
-      const data = await api.get('/api/cursos');
-      setCursos(data);
-    } catch (error) {
-      toast.error('Erro ao carregar cursos');
-    }
-  }
+
 
 
 
