@@ -1,35 +1,66 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { existsSync, mkdirSync } from 'fs';
-import { extname, join, dirname } from 'path';
 import crypto from 'crypto';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { extname } from 'path';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 const router = Router();
 
-// Ensure uploads directory exists — use /app/uploads in Docker, or ./uploads locally
-const UPLOADS_DIR = existsSync('/app') ? '/app/uploads' : join(__dirname, '..', '..', 'uploads');
-if (!existsSync(UPLOADS_DIR)) {
-  mkdirSync(UPLOADS_DIR, { recursive: true });
+// S3/MinIO client configuration
+const s3 = new S3Client({
+  endpoint: process.env.MINIO_ENDPOINT || 'http://localhost:9000',
+  region: 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.MINIO_ACCESS_KEY || 'minioadmin',
+    secretAccessKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
+  },
+  forcePathStyle: true, // Required for MinIO
+});
+
+const BUCKET = process.env.MINIO_BUCKET || 'ozi-uploads';
+
+// Ensure bucket exists on startup
+async function ensureBucket() {
+  try {
+    const { ListBucketsCommand, CreateBucketCommand, PutBucketPolicyCommand } = await import('@aws-sdk/client-s3');
+    const { Buckets } = await s3.send(new ListBucketsCommand({}));
+    const exists = Buckets?.some(b => b.Name === BUCKET);
+
+    if (!exists) {
+      await s3.send(new CreateBucketCommand({ Bucket: BUCKET }));
+      console.log(`✅ MinIO bucket "${BUCKET}" created`);
+    }
+
+    // Set public read policy so images are accessible without auth
+    const policy = {
+      Version: '2012-10-17',
+      Statement: [{
+        Sid: 'PublicRead',
+        Effect: 'Allow',
+        Principal: '*',
+        Action: ['s3:GetObject'],
+        Resource: [`arn:aws:s3:::${BUCKET}/*`]
+      }]
+    };
+    await s3.send(new PutBucketPolicyCommand({
+      Bucket: BUCKET,
+      Policy: JSON.stringify(policy)
+    }));
+  } catch (error) {
+    console.error('MinIO bucket setup error:', error.message);
+  }
 }
 
-// Export for use in index.js
-export { UPLOADS_DIR };
+ensureBucket();
 
-// Configure multer storage
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, UPLOADS_DIR);
-  },
-  filename: (_req, file, cb) => {
-    const uniqueId = crypto.randomUUID().slice(0, 8);
-    const ext = extname(file.originalname).toLowerCase();
-    cb(null, `${Date.now()}-${uniqueId}${ext}`);
-  }
-});
+// Generate the public URL for a MinIO object
+function getPublicUrl(key) {
+  const endpoint = process.env.MINIO_PUBLIC_URL || process.env.MINIO_ENDPOINT || 'http://localhost:9000';
+  return `${endpoint}/${BUCKET}/${key}`;
+}
+
+// Multer memory storage (store in RAM, then upload to MinIO)
+const storage = multer.memoryStorage();
 
 // File filter: only images
 const fileFilter = (_req, file, cb) => {
@@ -47,18 +78,47 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB max
 });
 
-// POST /api/upload — upload a single image
-router.post('/', upload.single('image'), (req, res) => {
+// POST /api/upload — upload a single image to MinIO
+router.post('/', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     }
 
-    const url = `/uploads/${req.file.filename}`;
-    res.json({ url, filename: req.file.filename });
+    const uniqueId = crypto.randomUUID().slice(0, 8);
+    const ext = extname(req.file.originalname).toLowerCase();
+    const key = `cursos/${Date.now()}-${uniqueId}${ext}`;
+
+    await s3.send(new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype,
+    }));
+
+    const url = getPublicUrl(key);
+    res.json({ url, key });
   } catch (error) {
     console.error('Error uploading file:', error);
     res.status(500).json({ error: 'Erro ao fazer upload' });
+  }
+});
+
+// DELETE /api/upload — delete an image from MinIO
+router.delete('/', async (req, res) => {
+  try {
+    const { key } = req.body;
+    if (!key) return res.status(400).json({ error: 'Key é obrigatório' });
+
+    await s3.send(new DeleteObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+    }));
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    res.status(500).json({ error: 'Erro ao excluir arquivo' });
   }
 });
 

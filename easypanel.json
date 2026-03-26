@@ -8,7 +8,7 @@
                     "type": "image",
                     "image": "ghcr.io/mariolellis2024/ozi-crm:latest"
                 },
-                "env": "DATABASE_URL=postgresql://postgres:ozi_crm_2024@$(PROJECT_NAME)_ozi-crm-db:5432/$(PROJECT_NAME)\nJWT_SECRET=TROQUE_POR_CHAVE_SEGURA_64_CHARS\nNODE_ENV=production\nPORT=3001",
+                "env": "DATABASE_URL=postgresql://postgres:ozi_crm_2024@$(PROJECT_NAME)_ozi-crm-db:5432/$(PROJECT_NAME)\nJWT_SECRET=TROQUE_POR_CHAVE_SEGURA_64_CHARS\nNODE_ENV=production\nPORT=3001\nMINIO_ENDPOINT=http://$(PROJECT_NAME)_ozi-minio:9000\nMINIO_PUBLIC_URL=https://minio.crm.ozi.com.br\nMINIO_ACCESS_KEY=minioadmin\nMINIO_SECRET_KEY=TROQUE_POR_CHAVE_SEGURA\nMINIO_BUCKET=ozi-uploads",
                 "deploy": {
                     "replicas": 1,
                     "command": null,
@@ -32,6 +32,38 @@
                 "serviceName": "ozi-crm-db",
                 "image": "postgres:16-alpine",
                 "password": "ozi_crm_2024"
+            }
+        },
+        {
+            "type": "app",
+            "data": {
+                "serviceName": "ozi-minio",
+                "source": {
+                    "type": "image",
+                    "image": "minio/minio:latest"
+                },
+                "env": "MINIO_ROOT_USER=minioadmin\nMINIO_ROOT_PASSWORD=TROQUE_POR_CHAVE_SEGURA",
+                "deploy": {
+                    "replicas": 1,
+                    "command": "server /data --console-address ':9001'",
+                    "zeroDowntime": false
+                },
+                "domains": [
+                    {
+                        "host": "minio.crm.ozi.com.br",
+                        "https": true,
+                        "port": 9000,
+                        "path": "/"
+                    }
+                ],
+                "mounts": [
+                    {
+                        "type": "volume",
+                        "name": "minio-data",
+                        "mountPath": "/data"
+                    }
+                ],
+                "ports": []
             }
         }
     ]

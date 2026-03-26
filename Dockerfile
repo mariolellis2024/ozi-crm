@@ -29,15 +29,9 @@ COPY db/ ./db/
 # Copy built frontend from build stage
 COPY --from=frontend-build /app/dist ./dist
 
-# Create uploads directory
-RUN mkdir -p /app/uploads
-
 # Environment
 ENV NODE_ENV=production
 ENV PORT=3001
-
-# Volume for persistent uploads
-VOLUME /app/uploads
 
 EXPOSE 3001
 
