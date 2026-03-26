@@ -21,7 +21,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import pipelineRoutes from './routes/pipeline.js';
 import certificatesRoutes from './routes/certificates.js';
 import pagamentosRoutes from './routes/pagamentos.js';
-import uploadRoutes from './routes/upload.js';
+import uploadRoutes, { UPLOADS_DIR } from './routes/upload.js';
 import formulariosRoutes from './routes/formularios.js';
 import formsPublicRoutes from './routes/forms-public.js';
 
@@ -36,7 +36,7 @@ app.use(cors());
 app.use(express.json());
 
 // Serve uploaded files publicly (no auth needed for external pages)
-app.use('/uploads', express.static('/app/uploads'));
+app.use('/uploads', express.static(UPLOADS_DIR));
 
 // Public routes
 app.use('/api/auth', authRoutes);

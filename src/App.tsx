@@ -66,27 +66,31 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <UnidadeProvider>
       <OrganicBackground />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/f/:slug" element={<FormularioPublico />} />
-        <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
-        <Route path="/turmas" element={<PrivateRoute><Turmas /></PrivateRoute>} />
-        <Route path="/alunos" element={<PrivateRoute><Alunos /></PrivateRoute>} />
-        <Route path="/cursos" element={<PrivateRoute><Cursos /></PrivateRoute>} />
-        <Route path="/professores" element={<PrivateRoute><Professores /></PrivateRoute>} />
-        <Route path="/salas" element={<PrivateRoute><Salas /></PrivateRoute>} />
-        <Route path="/unidades" element={<PrivateRoute><Unidades /></PrivateRoute>} />
-        <Route path="/usuarios" element={<PrivateRoute><Usuarios /></PrivateRoute>} />
-        <Route path="/calendario" element={<PrivateRoute><Calendario /></PrivateRoute>} />
-        <Route path="/pipeline" element={<PrivateRoute><Pipeline /></PrivateRoute>} />
-        <Route path="/atividades" element={<PrivateRoute><Atividades /></PrivateRoute>} />
-        <Route path="/pagamentos" element={<PrivateRoute><Pagamentos /></PrivateRoute>} />
-        <Route path="/formularios" element={<PrivateRoute><Formularios /></PrivateRoute>} />
+        <Route path="*" element={
+          <UnidadeProvider>
+            <Routes>
+              <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+              <Route path="/turmas" element={<PrivateRoute><Turmas /></PrivateRoute>} />
+              <Route path="/alunos" element={<PrivateRoute><Alunos /></PrivateRoute>} />
+              <Route path="/cursos" element={<PrivateRoute><Cursos /></PrivateRoute>} />
+              <Route path="/professores" element={<PrivateRoute><Professores /></PrivateRoute>} />
+              <Route path="/salas" element={<PrivateRoute><Salas /></PrivateRoute>} />
+              <Route path="/unidades" element={<PrivateRoute><Unidades /></PrivateRoute>} />
+              <Route path="/usuarios" element={<PrivateRoute><Usuarios /></PrivateRoute>} />
+              <Route path="/calendario" element={<PrivateRoute><Calendario /></PrivateRoute>} />
+              <Route path="/pipeline" element={<PrivateRoute><Pipeline /></PrivateRoute>} />
+              <Route path="/atividades" element={<PrivateRoute><Atividades /></PrivateRoute>} />
+              <Route path="/pagamentos" element={<PrivateRoute><Pagamentos /></PrivateRoute>} />
+              <Route path="/formularios" element={<PrivateRoute><Formularios /></PrivateRoute>} />
+            </Routes>
+            <Toaster position="top-right" />
+          </UnidadeProvider>
+        } />
       </Routes>
-      <Toaster position="top-right" />
-      </UnidadeProvider>
     </BrowserRouter>
   );
 }

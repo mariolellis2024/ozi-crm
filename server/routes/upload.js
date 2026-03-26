@@ -1,16 +1,23 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { existsSync, mkdirSync } from 'fs';
-import { extname } from 'path';
+import { extname, join, dirname } from 'path';
 import crypto from 'crypto';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const router = Router();
 
-// Ensure uploads directory exists
-const UPLOADS_DIR = '/app/uploads';
+// Ensure uploads directory exists — use /app/uploads in Docker, or ./uploads locally
+const UPLOADS_DIR = existsSync('/app') ? '/app/uploads' : join(__dirname, '..', '..', 'uploads');
 if (!existsSync(UPLOADS_DIR)) {
   mkdirSync(UPLOADS_DIR, { recursive: true });
 }
+
+// Export for use in index.js
+export { UPLOADS_DIR };
 
 // Configure multer storage
 const storage = multer.diskStorage({
