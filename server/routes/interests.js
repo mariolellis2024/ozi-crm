@@ -14,6 +14,7 @@ async function firePurchaseEvent(alunoId, cursoId) {
       SELECT 
         a.nome, a.whatsapp, a.email, a.meta_fbc, a.meta_fbp,
         a.meta_client_ip, a.meta_user_agent,
+        a.genero, a.data_nascimento, a.cep,
         c.nome as curso_nome, c.preco, c.id as curso_id,
         u.meta_pixel_id, u.meta_capi_token, u.cidade as unidade_cidade
       FROM alunos a
@@ -45,7 +46,10 @@ async function firePurchaseEvent(alunoId, cursoId) {
       clientUserAgent: r.meta_user_agent || '',
       fbc: r.meta_fbc || '',
       fbp: r.meta_fbp || '',
-      externalId: alunoId
+      externalId: alunoId,
+      genero: r.genero || '',
+      dataNascimento: r.data_nascimento || '',
+      cep: r.cep || ''
     });
   } catch (err) {
     console.error('Error firing Purchase event:', err);
@@ -234,7 +238,15 @@ router.get('/check-conflict', async (req, res) => {
 // POST /api/interests/enroll — enroll student in turma
 router.post('/enroll', async (req, res) => {
   try {
-    const { aluno_id, curso_id, turma_id } = req.body;
+    const { aluno_id, curso_id, turma_id, genero, data_nascimento, cep } = req.body;
+
+    // Save enrollment data (genero, data_nascimento, cep) to aluno
+    if (genero || data_nascimento || cep) {
+      await pool.query(
+        `UPDATE alunos SET genero = COALESCE($2, genero), data_nascimento = COALESCE($3, data_nascimento), cep = COALESCE($4, cep) WHERE id = $1`,
+        [aluno_id, genero || null, data_nascimento || null, cep || null]
+      );
+    }
 
     // Check schedule conflicts
     const newTurma = await pool.query('SELECT period, start_date, end_date FROM turmas WHERE id = $1', [turma_id]);

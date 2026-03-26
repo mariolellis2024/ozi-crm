@@ -280,3 +280,6 @@ ALTER TABLE alunos ADD COLUMN IF NOT EXISTS meta_fbc text;
 ALTER TABLE alunos ADD COLUMN IF NOT EXISTS meta_fbp text;
 ALTER TABLE alunos ADD COLUMN IF NOT EXISTS meta_client_ip text;
 ALTER TABLE alunos ADD COLUMN IF NOT EXISTS meta_user_agent text;
+ALTER TABLE alunos ADD COLUMN IF NOT EXISTS genero text;
+ALTER TABLE alunos ADD COLUMN IF NOT EXISTS data_nascimento date;
+ALTER TABLE alunos ADD COLUMN IF NOT EXISTS cep text;

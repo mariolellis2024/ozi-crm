@@ -239,7 +239,8 @@ export async function sendMetaConversion({
 export async function sendMetaPurchase({
   pixelId, accessToken, nome, whatsapp, email,
   cidade, estado, value, cursoNome, cursoId, sourceUrl,
-  clientIp, clientUserAgent, fbc, fbp, externalId
+  clientIp, clientUserAgent, fbc, fbp, externalId,
+  genero, dataNascimento, cep
 }) {
   if (!pixelId || !accessToken) return;
 
@@ -261,6 +262,30 @@ export async function sendMetaPurchase({
     if (stateCode) userData.st = hashSha256(stateCode);
     userData.country = hashSha256('br');
     if (externalId) userData.external_id = hashSha256(externalId);
+
+    // Gender: Meta expects 'f' or 'm', lowercase, hashed
+    if (genero) {
+      const g = genero.trim().toLowerCase().charAt(0); // 'f' or 'm'
+      if (g === 'f' || g === 'm') userData.ge = hashSha256(g);
+    }
+
+    // Date of birth: Meta expects YYYYMMDD format, hashed
+    if (dataNascimento) {
+      // dataNascimento comes as ISO date: '1997-02-16' or '1997-02-16T...'
+      const d = new Date(dataNascimento);
+      if (!isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate() + 1).padStart(2, '0');
+        userData.db = hashSha256(`${year}${month}${day}`);
+      }
+    }
+
+    // CEP/Zip: Meta expects digits only, hashed
+    if (cep) {
+      const zipClean = cep.replace(/\D/g, '');
+      if (zipClean) userData.zp = hashSha256(zipClean);
+    }
 
     // Reuse stored tracking data from the original Lead visit
     if (clientIp) userData.client_ip_address = clientIp;

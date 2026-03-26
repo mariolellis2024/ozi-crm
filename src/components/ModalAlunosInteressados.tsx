@@ -47,6 +47,16 @@ export function ModalAlunosInteressados({
   const [enrolledCount, setEnrolledCount] = useState(0);
   const [turmaCapacity, setTurmaCapacity] = useState(0);
 
+  // Enrollment form state (gender, DOB, CEP)
+  const [enrollForm, setEnrollForm] = useState<{
+    isOpen: boolean;
+    alunoId: string;
+    alunoNome: string;
+    genero: string;
+    dataNascimento: string;
+    cep: string;
+  }>({ isOpen: false, alunoId: '', alunoNome: '', genero: '', dataNascimento: '', cep: '' });
+
   useEffect(() => {
     if (isOpen) {
       loadAlunosInteressados();
@@ -92,41 +102,71 @@ export function ModalAlunosInteressados({
     }
   }
 
-  async function handleEnrollStudent(alunoId: string) {
+  // Step 1: Open enrollment form with required fields
+  async function handleEnrollClick(alunoId: string) {
     const aluno = alunosInteressados.find(a => a.id === alunoId);
     if (!aluno) return;
-    
-    // Verificar se o aluno está disponível no período da turma
+
     if (!isStudentAvailableForPeriod(aluno)) {
-      toast.error('Este aluno não está disponível no período desta turma. Você pode matriculá-lo mesmo assim, mas haverá conflito de horário.');
-      // Permitir matrícula mesmo com conflito, mas com aviso
+      toast.error('Este aluno não está disponível no período desta turma.');
     }
-    
-    // Verificar se ainda há vagas disponíveis
+
     if (enrolledCount >= turmaCapacity) {
       toast.error('Turma lotada! Não há mais vagas disponíveis.');
       return;
     }
 
-    // Verificar conflitos de horário
     try {
       const hasConflict = await checkStudentScheduleConflict(alunoId, turmaId);
       if (hasConflict) {
-        toast.error('Conflito de horário! O aluno já está matriculado em outra turma no mesmo período e com datas sobrepostas.');
+        toast.error('Conflito de horário! O aluno já está matriculado em outra turma no mesmo período.');
         return;
       }
-    } catch (error) {
+    } catch {
       toast.error('Erro ao verificar conflitos de horário');
       return;
     }
 
+    // Open the enrollment form
+    setEnrollForm({
+      isOpen: true,
+      alunoId,
+      alunoNome: aluno.nome,
+      genero: '',
+      dataNascimento: '',
+      cep: ''
+    });
+  }
+
+  // CEP mask: 00000-000
+  function formatCep(value: string) {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  }
+
+  // Step 2: After form submit, proceed with enrollment
+  async function handleConfirmEnroll() {
+    const { alunoId, genero, dataNascimento, cep } = enrollForm;
+    if (!genero || !dataNascimento || !cep || cep.replace(/\D/g, '').length < 8) {
+      toast.error('Preencha todos os campos obrigatórios (Gênero, Data de Nascimento e CEP)');
+      return;
+    }
+
+    const aluno = alunosInteressados.find(a => a.id === alunoId);
+    if (!aluno) return;
+
+    setEnrollForm(prev => ({ ...prev, isOpen: false }));
     setEnrollingStudents(prev => new Set(prev).add(alunoId));
-    
+
     try {
       await api.post(`/api/interests/enroll`, {
         aluno_id: alunoId,
         curso_id: cursoId,
-        turma_id: turmaId
+        turma_id: turmaId,
+        genero,
+        data_nascimento: dataNascimento,
+        cep: cep.replace(/\D/g, '')
       });
       
       toast.success('Aluno matriculado na turma!');
@@ -281,7 +321,7 @@ export function ModalAlunosInteressados({
                       </div>
                     </div>
                     <button
-                      onClick={() => handleEnrollStudent(aluno.id)}
+                      onClick={() => handleEnrollClick(aluno.id)}
                       disabled={enrollingStudents.has(aluno.id) || enrolledCount >= turmaCapacity || !isStudentAvailableForPeriod(aluno)}
                       className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
                         enrolledCount >= turmaCapacity
@@ -358,6 +398,73 @@ export function ModalAlunosInteressados({
           </div>
         )}
       </div>
+
+      {/* Enrollment Form Sub-Modal */}
+      {enrollForm.isOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center">
+          <div className="bg-dark-card rounded-2xl border border-dark-lighter p-6 w-full max-w-md mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold text-white mb-1">Completar Matrícula</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              Preencha os dados de <strong className="text-white">{enrollForm.alunoNome}</strong> para concluir a matrícula.
+            </p>
+
+            <div className="space-y-4">
+              {/* Gender */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Gênero *</label>
+                <select
+                  value={enrollForm.genero}
+                  onChange={(e) => setEnrollForm(prev => ({ ...prev, genero: e.target.value }))}
+                  className="w-full bg-dark-lighter border border-gray-700 rounded-lg text-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                >
+                  <option value="">Selecione...</option>
+                  <option value="m">Masculino</option>
+                  <option value="f">Feminino</option>
+                </select>
+              </div>
+
+              {/* Date of Birth */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Data de Nascimento *</label>
+                <input
+                  type="date"
+                  value={enrollForm.dataNascimento}
+                  onChange={(e) => setEnrollForm(prev => ({ ...prev, dataNascimento: e.target.value }))}
+                  className="w-full bg-dark-lighter border border-gray-700 rounded-lg text-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                />
+              </div>
+
+              {/* CEP */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">CEP *</label>
+                <input
+                  type="text"
+                  value={enrollForm.cep}
+                  onChange={(e) => setEnrollForm(prev => ({ ...prev, cep: formatCep(e.target.value) }))}
+                  placeholder="00000-000"
+                  maxLength={9}
+                  className="w-full bg-dark-lighter border border-gray-700 rounded-lg text-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-accent placeholder-gray-600"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setEnrollForm(prev => ({ ...prev, isOpen: false }))}
+                className="flex-1 px-4 py-2.5 border border-gray-600 text-gray-300 rounded-lg hover:bg-dark-lighter transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmEnroll}
+                className="flex-1 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+              >
+                ✅ Confirmar Matrícula
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     ) : null,
     document.body
