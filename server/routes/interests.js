@@ -137,8 +137,46 @@ router.post('/bulk-delete', async (req, res) => {
   }
 });
 
-// PUT /api/interests/enroll — enroll student in turma
-router.put('/enroll', async (req, res) => {
+// GET /api/interests/check-conflict — check schedule conflict before enrolling
+router.get('/check-conflict', async (req, res) => {
+  try {
+    const { aluno_id, turma_id } = req.query;
+
+    const newTurma = await pool.query('SELECT period, start_date, end_date, days_of_week FROM turmas WHERE id = $1', [turma_id]);
+    if (newTurma.rows.length === 0) {
+      return res.json({ hasConflict: false });
+    }
+
+    const enrolledTurmas = await pool.query(
+      `SELECT t.period, t.start_date, t.end_date, t.days_of_week
+       FROM aluno_curso_interests aci
+       INNER JOIN turmas t ON t.id = aci.turma_id
+       WHERE aci.aluno_id = $1 AND aci.status = 'enrolled' AND aci.turma_id IS NOT NULL AND aci.turma_id != $2`,
+      [aluno_id, turma_id]
+    );
+
+    const nt = newTurma.rows[0];
+    for (const et of enrolledTurmas.rows) {
+      if (et.period === nt.period) {
+        const nStart = new Date(nt.start_date);
+        const nEnd = new Date(nt.end_date);
+        const eStart = new Date(et.start_date);
+        const eEnd = new Date(et.end_date);
+        if (nStart <= eEnd && nEnd >= eStart) {
+          return res.json({ hasConflict: true });
+        }
+      }
+    }
+
+    res.json({ hasConflict: false });
+  } catch (error) {
+    console.error('Error checking conflict:', error);
+    res.json({ hasConflict: false });
+  }
+});
+
+// POST /api/interests/enroll — enroll student in turma
+router.post('/enroll', async (req, res) => {
   try {
     const { aluno_id, curso_id, turma_id } = req.body;
 
@@ -168,6 +206,27 @@ router.put('/enroll', async (req, res) => {
         }
       }
     }
+
+    const result = await pool.query(
+      `UPDATE aluno_curso_interests SET status = 'enrolled', turma_id = $1
+       WHERE aluno_id = $2 AND curso_id = $3 RETURNING *`,
+      [turma_id, aluno_id, curso_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Interesse não encontrado' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error enrolling student:', error);
+    res.status(500).json({ error: 'Erro ao matricular aluno' });
+  }
+});
+
+// PUT /api/interests/enroll — enroll student (legacy, keep for compatibility)
+router.put('/enroll', async (req, res) => {
+  try {
+    const { aluno_id, curso_id, turma_id } = req.body;
 
     const result = await pool.query(
       `UPDATE aluno_curso_interests SET status = 'enrolled', turma_id = $1
