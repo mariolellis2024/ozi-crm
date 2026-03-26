@@ -17,7 +17,7 @@ interface Unidade {
 export function Unidades() {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ nome: '', cidade: '', endereco: '' });
+  const [formData, setFormData] = useState({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: '', nome: '' });
 
@@ -41,21 +41,26 @@ export function Unidades() {
         toast.success('Unidade criada!');
       }
       setIsModalOpen(false);
-      setFormData({ nome: '', cidade: '', endereco: '' });
+      setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '' });
       setEditingId(null);
       loadUnidades();
     } catch { toast.error('Erro ao salvar unidade'); }
   }
 
   function handleEdit(u: Unidade) {
-    setFormData({ nome: u.nome, cidade: u.cidade || '', endereco: u.endereco || '' });
+    setFormData({
+      nome: u.nome, cidade: u.cidade || '', endereco: u.endereco || '',
+      meta_pixel_id: (u as any).meta_pixel_id || '',
+      meta_capi_token: (u as any).meta_capi_token || '',
+      google_analytics_id: (u as any).google_analytics_id || ''
+    });
     setEditingId(u.id);
     setIsModalOpen(true);
   }
 
   function handleCloseModal() {
     setIsModalOpen(false);
-    setFormData({ nome: '', cidade: '', endereco: '' });
+    setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '' });
     setEditingId(null);
   }
 
@@ -164,6 +169,40 @@ export function Unidades() {
                     className="w-full bg-dark-lighter text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-teal-accent outline-none"
                     placeholder="Rua, número, bairro..."
                   />
+                </div>
+
+                {/* Tracking Pixels */}
+                <div className="border-t border-gray-700 pt-4 mt-4">
+                  <h3 className="text-sm font-medium text-gray-300 mb-3">🎯 Tracking & Pixels</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Meta Pixel ID</label>
+                      <input
+                        value={formData.meta_pixel_id}
+                        onChange={e => setFormData({ ...formData, meta_pixel_id: e.target.value })}
+                        className="w-full bg-dark-lighter text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-teal-accent outline-none text-sm"
+                        placeholder="Ex: 1234567890"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Meta CAPI Token</label>
+                      <input
+                        value={formData.meta_capi_token}
+                        onChange={e => setFormData({ ...formData, meta_capi_token: e.target.value })}
+                        className="w-full bg-dark-lighter text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-teal-accent outline-none text-sm"
+                        placeholder="Token da API de Conversões"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Google Analytics ID</label>
+                      <input
+                        value={formData.google_analytics_id}
+                        onChange={e => setFormData({ ...formData, google_analytics_id: e.target.value })}
+                        className="w-full bg-dark-lighter text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-teal-accent outline-none text-sm"
+                        placeholder="Ex: G-XXXXXXXXXX"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <button type="submit" className="w-full bg-teal-accent text-dark py-2 rounded-lg font-medium hover:bg-teal-accent/90 transition-colors">
                   {editingId ? 'Atualizar' : 'Criar'}

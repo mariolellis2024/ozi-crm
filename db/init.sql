@@ -72,6 +72,20 @@ CREATE TABLE IF NOT EXISTS unidades (
   nome text NOT NULL,
   cidade text,
   endereco text,
+  meta_pixel_id text,
+  meta_capi_token text,
+  google_analytics_id text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS formularios (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug text UNIQUE NOT NULL,
+  curso_id uuid NOT NULL REFERENCES cursos(id) ON DELETE CASCADE,
+  unidade_id uuid NOT NULL REFERENCES unidades(id) ON DELETE CASCADE,
+  titulo text,
+  descricao text,
+  ativo boolean DEFAULT true,
   created_at timestamptz DEFAULT now()
 );
 

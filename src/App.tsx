@@ -14,6 +14,8 @@ import { Calendario } from './pages/Calendario';
 import { Pipeline } from './pages/Pipeline';
 import { Atividades } from './pages/Atividades';
 import { Pagamentos } from './pages/Pagamentos';
+import { Formularios } from './pages/Formularios';
+import { FormularioPublico } from './pages/FormularioPublico';
 import { Layout } from './components/Layout';
 import { UnidadeProvider } from './contexts/UnidadeContext';
 import { Toaster } from 'react-hot-toast';
@@ -68,6 +70,7 @@ export default function App() {
       <OrganicBackground />
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/f/:slug" element={<FormularioPublico />} />
         <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
         <Route path="/turmas" element={<PrivateRoute><Turmas /></PrivateRoute>} />
         <Route path="/alunos" element={<PrivateRoute><Alunos /></PrivateRoute>} />
@@ -80,6 +83,7 @@ export default function App() {
         <Route path="/pipeline" element={<PrivateRoute><Pipeline /></PrivateRoute>} />
         <Route path="/atividades" element={<PrivateRoute><Atividades /></PrivateRoute>} />
         <Route path="/pagamentos" element={<PrivateRoute><Pagamentos /></PrivateRoute>} />
+        <Route path="/formularios" element={<PrivateRoute><Formularios /></PrivateRoute>} />
       </Routes>
       <Toaster position="top-right" />
       </UnidadeProvider>

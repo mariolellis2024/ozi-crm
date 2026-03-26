@@ -22,6 +22,8 @@ import pipelineRoutes from './routes/pipeline.js';
 import certificatesRoutes from './routes/certificates.js';
 import pagamentosRoutes from './routes/pagamentos.js';
 import uploadRoutes from './routes/upload.js';
+import formulariosRoutes from './routes/formularios.js';
+import formsPublicRoutes from './routes/forms-public.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -38,6 +40,7 @@ app.use('/uploads', express.static('/app/uploads'));
 
 // Public routes
 app.use('/api/auth', authRoutes);
+app.use('/api/public/forms', formsPublicRoutes);
 
 // Protected routes
 app.use('/api/alunos', authenticateToken, alunosRoutes);
@@ -55,6 +58,7 @@ app.use('/api/pipeline', authenticateToken, pipelineRoutes);
 app.use('/api/certificates', authenticateToken, certificatesRoutes);
 app.use('/api/pagamentos', authenticateToken, pagamentosRoutes);
 app.use('/api/upload', authenticateToken, uploadRoutes);
+app.use('/api/formularios', authenticateToken, formulariosRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
