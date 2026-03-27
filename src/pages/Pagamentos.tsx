@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { DollarSign, Check, Clock, AlertTriangle, Filter, Plus, Undo2, X, Trash2, AlertCircle } from 'lucide-react';
+import { DollarSign, Check, Clock, AlertTriangle, Filter, Plus, Undo2, X, Trash2, AlertCircle, Search } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import toast from 'react-hot-toast';
 import { useUnidade } from '../contexts/UnidadeContext';
@@ -62,6 +62,8 @@ export function Pagamentos() {
   });
   const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; id: string }>({ isOpen: false, id: '' });
   const [missingPayments, setMissingPayments] = useState<MissingPayment[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [cursoFilter, setCursoFilter] = useState('');
 
   useEffect(() => { loadData(); }, [filter, selectedUnidadeId]);
 
@@ -155,6 +157,29 @@ export function Pagamentos() {
   }
 
   const selectedCurso = cursos.find(c => c.id === form.curso_id);
+
+  // Client-side filtering for search and curso
+  const filteredPagamentos = useMemo(() => {
+    let result = pagamentos;
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(p =>
+        p.aluno_nome.toLowerCase().includes(term) ||
+        p.aluno_whatsapp.includes(term)
+      );
+    }
+    if (cursoFilter) {
+      result = result.filter(p => p.curso_id === cursoFilter);
+    }
+    return result;
+  }, [pagamentos, searchTerm, cursoFilter]);
+
+  // Get unique cursos from loaded pagamentos
+  const cursosFromPagamentos = useMemo(() => {
+    const map = new Map<string, string>();
+    pagamentos.forEach(p => map.set(p.curso_id, p.curso_nome));
+    return Array.from(map.entries()).map(([id, nome]) => ({ id, nome }));
+  }, [pagamentos]);
 
   return (
     <div className="p-8 fade-in">
@@ -253,17 +278,51 @@ export function Pagamentos() {
           </div>
         )}
         {/* Filters */}
-        <div className="flex items-center gap-2 mb-6">
-          <Filter className="h-4 w-4 text-gray-400" />
-          {['', 'pendente', 'pago', 'atrasado'].map(s => (
-            <button key={s} onClick={() => setFilter(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                filter === s ? 'bg-teal-accent text-dark' : 'bg-dark-lighter text-gray-400 hover:text-white'
-              }`}
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-gray-400" />
+            {['', 'pendente', 'pago', 'atrasado'].map(s => (
+              <button key={s} onClick={() => setFilter(s)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  filter === s ? 'bg-teal-accent text-dark' : 'bg-dark-lighter text-gray-400 hover:text-white'
+                }`}
+              >
+                {s === '' ? 'Todos' : STATUS_CONFIG[s]?.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1 min-w-[200px] max-w-sm">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Buscar por nome ou WhatsApp..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 bg-dark-lighter border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-accent/50 placeholder-gray-500"
+              />
+            </div>
+          </div>
+
+          {cursosFromPagamentos.length > 1 && (
+            <select
+              value={cursoFilter}
+              onChange={(e) => setCursoFilter(e.target.value)}
+              className="px-3 py-1.5 bg-dark-lighter border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-accent/50"
             >
-              {s === '' ? 'Todos' : STATUS_CONFIG[s]?.label}
-            </button>
-          ))}
+              <option value="">Todos os cursos</option>
+              {cursosFromPagamentos.map(c => (
+                <option key={c.id} value={c.id}>{c.nome}</option>
+              ))}
+            </select>
+          )}
+
+          {(searchTerm || cursoFilter) && (
+            <span className="text-xs text-gray-500">
+              {filteredPagamentos.length} resultado{filteredPagamentos.length !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
 
         {/* Table */}
@@ -281,7 +340,7 @@ export function Pagamentos() {
               </tr>
             </thead>
             <tbody>
-              {pagamentos.map(p => {
+              {filteredPagamentos.map(p => {
                 const overdue = isOverdue(p.due_date, p.status);
                 const cfg = STATUS_CONFIG[overdue ? 'atrasado' : p.status] || STATUS_CONFIG.pendente;
                 const StatusIcon = cfg.icon;
