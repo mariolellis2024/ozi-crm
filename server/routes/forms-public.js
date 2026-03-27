@@ -64,7 +64,7 @@ router.get('/:slug', async (req, res) => {
 router.post('/:slug/register', async (req, res) => {
   try {
     const { slug } = req.params;
-    const { nome, whatsapp, available_periods, email, fbc, fbp } = req.body;
+    const { nome, whatsapp, available_periods, email, fbc, fbp, utm_source, utm_campaign, utm_medium, utm_content, fbclid } = req.body;
 
     if (!nome || !whatsapp) {
       return res.status(400).json({ error: 'Nome e WhatsApp são obrigatórios' });
@@ -110,19 +110,25 @@ router.post('/:slug/register', async (req, res) => {
         `UPDATE alunos SET nome = $1, available_periods = $2,
          email = COALESCE($4, email),
          meta_fbc = COALESCE($5, meta_fbc), meta_fbp = COALESCE($6, meta_fbp),
-         meta_client_ip = COALESCE($7, meta_client_ip), meta_user_agent = COALESCE($8, meta_user_agent)
+         meta_client_ip = COALESCE($7, meta_client_ip), meta_user_agent = COALESCE($8, meta_user_agent),
+         utm_source = COALESCE($9, utm_source), utm_campaign = COALESCE($10, utm_campaign),
+         utm_medium = COALESCE($11, utm_medium), utm_content = COALESCE($12, utm_content),
+         fbclid = COALESCE($13, fbclid)
          WHERE id = $3`,
         [nome, available_periods && available_periods.length > 0 ? `{${available_periods.join(',')}}` : null,
-         alunoId, email || null, fbc || null, fbp || null, clientIp || null, clientUserAgent || null]
+         alunoId, email || null, fbc || null, fbp || null, clientIp || null, clientUserAgent || null,
+         utm_source || null, utm_campaign || null, utm_medium || null, utm_content || null, fbclid || null]
       );
     } else {
-      // Create new aluno with email and tracking data
+      // Create new aluno with email, tracking and UTM data
       const alunoResult = await pool.query(
-        `INSERT INTO alunos (nome, whatsapp, unidade_id, available_periods, email, meta_fbc, meta_fbp, meta_client_ip, meta_user_agent)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+        `INSERT INTO alunos (nome, whatsapp, unidade_id, available_periods, email, meta_fbc, meta_fbp, meta_client_ip, meta_user_agent,
+         utm_source, utm_campaign, utm_medium, utm_content, fbclid)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
         [nome, normalizedWhatsapp, form.unidade_id,
          available_periods && available_periods.length > 0 ? `{${available_periods.join(',')}}` : null,
-         email || null, fbc || null, fbp || null, clientIp || null, clientUserAgent || null]
+         email || null, fbc || null, fbp || null, clientIp || null, clientUserAgent || null,
+         utm_source || null, utm_campaign || null, utm_medium || null, utm_content || null, fbclid || null]
       );
       alunoId = alunoResult.rows[0].id;
     }

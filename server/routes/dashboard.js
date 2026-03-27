@@ -126,4 +126,47 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/campaigns — campaign attribution stats
+router.get('/campaigns', async (req, res) => {
+  try {
+    const { unidade_id } = req.query;
+    const params = unidade_id ? [unidade_id] : [];
+    const unidadeFilter = unidade_id ? 'AND a.unidade_id = $1' : '';
+
+    const result = await pool.query(`
+      SELECT 
+        COALESCE(a.utm_campaign, 'Direto / Orgânico') as campaign,
+        COALESCE(a.utm_source, '-') as source,
+        COALESCE(a.utm_medium, '-') as medium,
+        COUNT(DISTINCT a.id) as total_leads,
+        COUNT(DISTINCT CASE WHEN aci.status = 'enrolled' THEN a.id END) as enrolled,
+        COUNT(DISTINCT CASE WHEN aci.status = 'completed' THEN a.id END) as completed,
+        SUM(CASE WHEN aci.status = 'enrolled' THEN c.preco ELSE 0 END) as receita
+      FROM alunos a
+      LEFT JOIN aluno_curso_interests aci ON aci.aluno_id = a.id
+      LEFT JOIN cursos c ON c.id = aci.curso_id
+      WHERE 1=1 ${unidadeFilter}
+      GROUP BY a.utm_campaign, a.utm_source, a.utm_medium
+      ORDER BY total_leads DESC
+      LIMIT 20
+    `, params);
+
+    res.json(result.rows.map(r => ({
+      campaign: r.campaign,
+      source: r.source,
+      medium: r.medium,
+      totalLeads: parseInt(r.total_leads),
+      enrolled: parseInt(r.enrolled),
+      completed: parseInt(r.completed),
+      receita: parseFloat(r.receita || 0),
+      conversionRate: parseInt(r.total_leads) > 0 
+        ? ((parseInt(r.enrolled) / parseInt(r.total_leads)) * 100).toFixed(1)
+        : '0.0'
+    })));
+  } catch (error) {
+    console.error('Error loading campaign stats:', error);
+    res.status(500).json({ error: 'Erro ao carregar campanhas' });
+  }
+});
+
 export default router;
