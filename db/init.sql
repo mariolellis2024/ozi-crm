@@ -283,14 +283,3 @@ ALTER TABLE alunos ADD COLUMN IF NOT EXISTS meta_user_agent text;
 ALTER TABLE alunos ADD COLUMN IF NOT EXISTS genero text;
 ALTER TABLE alunos ADD COLUMN IF NOT EXISTS data_nascimento date;
 ALTER TABLE alunos ADD COLUMN IF NOT EXISTS cep text;
-
--- UTM tracking columns for campaign attribution
-ALTER TABLE alunos ADD COLUMN IF NOT EXISTS utm_source text;
-ALTER TABLE alunos ADD COLUMN IF NOT EXISTS utm_campaign text;
-ALTER TABLE alunos ADD COLUMN IF NOT EXISTS utm_medium text;
-ALTER TABLE alunos ADD COLUMN IF NOT EXISTS utm_content text;
-ALTER TABLE alunos ADD COLUMN IF NOT EXISTS fbclid text;
-
--- Meta Ads account for Marketing API
-ALTER TABLE unidades ADD COLUMN IF NOT EXISTS meta_ad_account_id text;
-

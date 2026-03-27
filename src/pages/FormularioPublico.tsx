@@ -135,16 +135,6 @@ export function FormularioPublico() {
         }
       }
 
-      // Read UTM params from URL for campaign attribution
-      const urlParams = new URLSearchParams(window.location.search);
-      const utmData = {
-        utm_source: urlParams.get('utm_source') || undefined,
-        utm_campaign: urlParams.get('utm_campaign') || undefined,
-        utm_medium: urlParams.get('utm_medium') || undefined,
-        utm_content: urlParams.get('utm_content') || undefined,
-        fbclid: urlParams.get('fbclid') || undefined
-      };
-
       const response = await fetch(`/api/public/forms/${slug}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -154,8 +144,7 @@ export function FormularioPublico() {
           email: email.trim() || undefined,
           available_periods: periods,
           fbc,
-          fbp,
-          ...utmData
+          fbp
         })
       });
 

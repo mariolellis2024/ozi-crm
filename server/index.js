@@ -24,7 +24,6 @@ import pagamentosRoutes from './routes/pagamentos.js';
 import uploadRoutes from './routes/upload.js';
 import formulariosRoutes from './routes/formularios.js';
 import formsPublicRoutes from './routes/forms-public.js';
-import facebookAdsRoutes from './routes/facebook-ads.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -58,7 +57,6 @@ app.use('/api/certificates', authenticateToken, certificatesRoutes);
 app.use('/api/pagamentos', authenticateToken, pagamentosRoutes);
 app.use('/api/upload', authenticateToken, uploadRoutes);
 app.use('/api/formularios', authenticateToken, formulariosRoutes);
-app.use('/api/facebook-ads', authenticateToken, facebookAdsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

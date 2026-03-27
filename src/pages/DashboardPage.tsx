@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Users, TrendingUp, Target, BarChart3, DollarSign, ArrowUpRight, Megaphone } from 'lucide-react';
+import { Users, TrendingUp, Target, BarChart3, DollarSign, ArrowUpRight } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { useUnidade } from '../contexts/UnidadeContext';
 
@@ -19,17 +19,6 @@ interface DashboardStats {
   recentActivity: { id: string; user_email: string; action: string; entity_type: string; entity_name: string; created_at: string }[];
 }
 
-interface CampaignStats {
-  campaign: string;
-  source: string;
-  medium: string;
-  totalLeads: number;
-  enrolled: number;
-  completed: number;
-  receita: number;
-  conversionRate: string;
-}
-
 const PERIOD_LABELS: Record<string, string> = {
   manha: 'Manhã',
   tarde: 'Tarde',
@@ -39,7 +28,6 @@ const PERIOD_LABELS: Record<string, string> = {
 export function DashboardPage() {
   const { selectedUnidadeId } = useUnidade();
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [campaigns, setCampaigns] = useState<CampaignStats[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,12 +37,8 @@ export function DashboardPage() {
   async function loadStats() {
     try {
       const unidadeParam = selectedUnidadeId ? `?unidade_id=${selectedUnidadeId}` : '';
-      const [data, campaignData] = await Promise.all([
-        api.get(`/api/dashboard/stats${unidadeParam}`),
-        api.get(`/api/dashboard/campaigns${unidadeParam}`)
-      ]);
+      const data = await api.get(`/api/dashboard/stats${unidadeParam}`);
       setStats(data);
-      setCampaigns(campaignData);
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);
     } finally {
@@ -234,59 +218,6 @@ export function DashboardPage() {
             )}
           </div>
         </div>
-
-        {/* Campaign Attribution */}
-        {campaigns.length > 0 && (
-          <div className="bg-dark-card rounded-2xl p-6 mt-6">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Megaphone className="h-5 w-5 text-orange-400" />
-              Atribuição por Campanha
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-gray-400 text-left">
-                    <th className="pb-3 font-medium">Campanha</th>
-                    <th className="pb-3 font-medium">Fonte</th>
-                    <th className="pb-3 font-medium text-center">Leads</th>
-                    <th className="pb-3 font-medium text-center">Matrículas</th>
-                    <th className="pb-3 font-medium text-center">Conversão</th>
-                    <th className="pb-3 font-medium text-right">Receita</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700/50">
-                  {campaigns.map((c, i) => (
-                    <tr key={i} className="hover:bg-dark-lighter/30 transition-colors">
-                      <td className="py-3">
-                        <span className="text-white font-medium">{c.campaign}</span>
-                      </td>
-                      <td className="py-3">
-                        <span className="text-gray-400">{c.source}</span>
-                        {c.medium !== '-' && (
-                          <span className="text-gray-500 ml-1">/ {c.medium}</span>
-                        )}
-                      </td>
-                      <td className="py-3 text-center">
-                        <span className="text-amber-400 font-medium">{c.totalLeads}</span>
-                      </td>
-                      <td className="py-3 text-center">
-                        <span className="text-emerald-400 font-medium">{c.enrolled}</span>
-                      </td>
-                      <td className="py-3 text-center">
-                        <span className={`font-medium ${parseFloat(c.conversionRate) > 20 ? 'text-emerald-400' : parseFloat(c.conversionRate) > 10 ? 'text-amber-400' : 'text-gray-400'}`}>
-                          {c.conversionRate}%
-                        </span>
-                      </td>
-                      <td className="py-3 text-right">
-                        <span className="text-white font-medium">{formatCurrency(c.receita)}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -17,7 +17,7 @@ interface Unidade {
 export function Unidades() {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '', meta_ad_account_id: '' });
+  const [formData, setFormData] = useState({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: '', nome: '' });
 
@@ -41,7 +41,7 @@ export function Unidades() {
         toast.success('Unidade criada!');
       }
       setIsModalOpen(false);
-      setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '', meta_ad_account_id: '' });
+      setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '' });
       setEditingId(null);
       loadUnidades();
     } catch { toast.error('Erro ao salvar unidade'); }
@@ -52,8 +52,7 @@ export function Unidades() {
       nome: u.nome, cidade: u.cidade || '', endereco: u.endereco || '',
       meta_pixel_id: (u as any).meta_pixel_id || '',
       meta_capi_token: (u as any).meta_capi_token || '',
-      google_analytics_id: (u as any).google_analytics_id || '',
-      meta_ad_account_id: (u as any).meta_ad_account_id || ''
+      google_analytics_id: (u as any).google_analytics_id || ''
     });
     setEditingId(u.id);
     setIsModalOpen(true);
@@ -61,7 +60,7 @@ export function Unidades() {
 
   function handleCloseModal() {
     setIsModalOpen(false);
-    setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '', meta_ad_account_id: '' });
+    setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '' });
     setEditingId(null);
   }
 
@@ -233,15 +232,6 @@ export function Unidades() {
                         onChange={e => setFormData({ ...formData, google_analytics_id: e.target.value })}
                         className="w-full bg-dark-lighter text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-teal-accent outline-none text-sm"
                         placeholder="Ex: G-XXXXXXXXXX"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Meta Ad Account ID</label>
-                      <input
-                        value={formData.meta_ad_account_id}
-                        onChange={e => setFormData({ ...formData, meta_ad_account_id: e.target.value })}
-                        className="w-full bg-dark-lighter text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-teal-accent outline-none text-sm"
-                        placeholder="Ex: act_1234567890"
                       />
                     </div>
                   </div>
