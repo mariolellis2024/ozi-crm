@@ -16,6 +16,7 @@ import { Atividades } from './pages/Atividades';
 import { Pagamentos } from './pages/Pagamentos';
 import { Formularios } from './pages/Formularios';
 import { FormularioPublico } from './pages/FormularioPublico';
+import { Integracoes } from './pages/Integracoes';
 import { Layout } from './components/Layout';
 import { UnidadeProvider } from './contexts/UnidadeContext';
 import { Toaster } from 'react-hot-toast';
@@ -86,6 +87,7 @@ export default function App() {
               <Route path="/atividades" element={<PrivateRoute><Atividades /></PrivateRoute>} />
               <Route path="/pagamentos" element={<PrivateRoute><Pagamentos /></PrivateRoute>} />
               <Route path="/formularios" element={<PrivateRoute><Formularios /></PrivateRoute>} />
+              <Route path="/integracoes" element={<PrivateRoute><Integracoes /></PrivateRoute>} />
             </Routes>
             <Toaster position="top-right" />
           </UnidadeProvider>
