@@ -212,7 +212,6 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Move enrolled students back to interested
     const enrolled = await pool.query(
       `SELECT aci.id, a.nome FROM aluno_curso_interests aci
        INNER JOIN alunos a ON a.id = aci.aluno_id
@@ -221,11 +220,10 @@ router.delete('/:id', async (req, res) => {
     );
 
     if (enrolled.rows.length > 0) {
-      await pool.query(
-        `UPDATE aluno_curso_interests SET status = 'interested', turma_id = NULL
-         WHERE turma_id = $1 AND status = 'enrolled'`,
-        [id]
-      );
+      const names = enrolled.rows.map(r => r.nome).join(', ');
+      return res.status(409).json({ 
+        error: `Não é possível excluir esta turma. Existem ${enrolled.rows.length} aluno(s) matriculado(s): ${names}. Desmatricule-os primeiro.` 
+      });
     }
 
     const result = await pool.query('DELETE FROM turmas WHERE id = $1 RETURNING id', [id]);

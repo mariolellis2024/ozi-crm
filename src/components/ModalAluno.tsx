@@ -19,6 +19,9 @@ interface ModalAlunoProps {
     empresa: string;
     available_periods: Period[];
     unidade_id: string;
+    genero: string;
+    dataNascimento: string;
+    cep: string;
   };
   setFormData: React.Dispatch<React.SetStateAction<{
     nome: string;
@@ -27,6 +30,9 @@ interface ModalAlunoProps {
     empresa: string;
     available_periods: Period[];
     unidade_id: string;
+    genero: string;
+    dataNascimento: string;
+    cep: string;
   }>>;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
@@ -146,6 +152,54 @@ export function ModalAluno({
                 <option key={u.id} value={u.id}>{u.nome}</option>
               ))}
             </select>
+          </div>
+
+          {/* Gender */}
+          <div>
+            <label htmlFor="genero" className="block text-sm font-medium text-gray-400 mb-1">
+              Gênero
+            </label>
+            <select
+              id="genero"
+              value={formData.genero}
+              onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
+              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+            >
+              <option value="">Não informado</option>
+              <option value="feminino">Feminino</option>
+              <option value="masculino">Masculino</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+
+          {/* Data de Nascimento */}
+          <div>
+            <label htmlFor="dataNascimento" className="block text-sm font-medium text-gray-400 mb-1">
+              Data de Nascimento
+            </label>
+            <input
+              type="date"
+              id="dataNascimento"
+              value={formData.dataNascimento}
+              onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
+              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+            />
+          </div>
+
+          {/* CEP */}
+          <div>
+            <label htmlFor="cep" className="block text-sm font-medium text-gray-400 mb-1">
+              CEP
+            </label>
+            <input
+              type="text"
+              id="cep"
+              value={formData.cep}
+              onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
+              placeholder="00000-000"
+              maxLength={9}
+              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+            />
           </div>
 
           <div>

@@ -268,11 +268,13 @@ router.put('/bulk/periods', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, email, whatsapp, empresa, available_periods, unidade_id } = req.body;
+    const { nome, email, whatsapp, empresa, available_periods, unidade_id, genero, dataNascimento, cep } = req.body;
     const result = await pool.query(
-      `UPDATE alunos SET nome = $1, email = $2, whatsapp = $3, empresa = $4, available_periods = $5, unidade_id = $6
+      `UPDATE alunos SET nome = $1, email = $2, whatsapp = $3, empresa = $4, available_periods = $5, unidade_id = $6,
+       genero = COALESCE($8, genero), data_nascimento = COALESCE($9, data_nascimento), cep = COALESCE($10, cep)
        WHERE id = $7 RETURNING *`,
-      [nome, email || null, whatsapp, empresa || null, available_periods || [], unidade_id || null, id]
+      [nome, email || null, whatsapp, empresa || null, available_periods || [], unidade_id || null, id, 
+       genero || null, dataNascimento || null, cep || null]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Aluno não encontrado' });

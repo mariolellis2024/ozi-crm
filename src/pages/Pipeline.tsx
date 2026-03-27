@@ -12,6 +12,7 @@ interface Interest {
   aluno_nome: string;
   aluno_email: string;
   aluno_whatsapp: string;
+  aluno_unidade_id: string | null;
   curso_id: string;
   curso_nome: string;
   status: string;
@@ -92,8 +93,15 @@ export function Pipeline() {
   }
 
   async function openEnrollModal(interest: Interest) {
-    // Find turmas for this curso
-    const availableTurmas = allTurmas.filter(t => t.curso_id === interest.curso_id);
+    // Find turmas for this curso AND this student's unidade
+    const availableTurmas = allTurmas.filter(t => {
+      if (t.curso_id !== interest.curso_id) return false;
+      // Filter by student's unidade if available
+      if (interest.aluno_unidade_id && (t as any).sala?.unidade_id) {
+        if ((t as any).sala.unidade_id !== interest.aluno_unidade_id) return false;
+      }
+      return true;
+    });
 
     if (availableTurmas.length === 0) {
       toast.error('Nenhuma turma aberta para este curso. Crie uma turma primeiro.');

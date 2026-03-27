@@ -72,7 +72,10 @@ export function Alunos() {
     whatsapp: '',
     empresa: '',
     available_periods: [] as Period[],
-    unidade_id: ''
+    unidade_id: '',
+    genero: '',
+    dataNascimento: '',
+    cep: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({
@@ -188,7 +191,7 @@ export function Alunos() {
       }
 
       setIsModalOpen(false);
-      setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [], unidade_id: '' });
+      setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [], unidade_id: '', genero: '', dataNascimento: '', cep: '' });
       setEditingId(null);
       loadAlunos();
     } catch (error) {
@@ -224,21 +227,41 @@ export function Alunos() {
   }
 
   function handleEdit(aluno: Aluno) {
-    setFormData({
-      nome: aluno.nome,
-      email: aluno.email || '',
-      whatsapp: aluno.whatsapp,
-      empresa: aluno.empresa || '',
-      available_periods: aluno.available_periods || [],
-      unidade_id: aluno.unidade_id || ''
+    // Fetch full aluno data including genero, DOB, CEP
+    api.get(`/api/alunos/${aluno.id}`).then((data: any) => {
+      setFormData({
+        nome: data.nome || '',
+        email: data.email || '',
+        whatsapp: data.whatsapp || '',
+        empresa: data.empresa || '',
+        available_periods: data.available_periods || [],
+        unidade_id: data.unidade_id || '',
+        genero: data.genero || '',
+        dataNascimento: data.data_nascimento ? new Date(data.data_nascimento).toISOString().split('T')[0] : '',
+        cep: data.cep || ''
+      });
+      setEditingId(aluno.id);
+      setIsModalOpen(true);
+    }).catch(() => {
+      setFormData({
+        nome: aluno.nome,
+        email: aluno.email || '',
+        whatsapp: aluno.whatsapp,
+        empresa: aluno.empresa || '',
+        available_periods: aluno.available_periods || [],
+        unidade_id: aluno.unidade_id || '',
+        genero: '',
+        dataNascimento: '',
+        cep: ''
+      });
+      setEditingId(aluno.id);
+      setIsModalOpen(true);
     });
-    setEditingId(aluno.id);
-    setIsModalOpen(true);
   }
 
   function handleCloseModal() {
     setIsModalOpen(false);
-    setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [], unidade_id: '' });
+    setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [], unidade_id: '', genero: '', dataNascimento: '', cep: '' });
     setEditingId(null);
   }
 
