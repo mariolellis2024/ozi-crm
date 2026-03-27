@@ -209,6 +209,23 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/alunos
+// GET /api/alunos/:id — single aluno details
+router.get('/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, nome, email, whatsapp, empresa, available_periods, unidade_id, genero, data_nascimento, cep, created_at
+       FROM alunos WHERE id = $1`,
+      [req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Aluno não encontrado' });
+    const row = result.rows[0];
+    row.available_periods = parsePgArray(row.available_periods);
+    res.json(row);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/', async (req, res) => {
   try {
     const { nome, email, whatsapp, empresa, available_periods, unidade_id } = req.body;

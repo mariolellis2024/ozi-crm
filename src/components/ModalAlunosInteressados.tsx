@@ -127,14 +127,22 @@ export function ModalAlunosInteressados({
       return;
     }
 
-    // Open the enrollment form
+    // Open the enrollment form — pre-fill from existing data
+    let genero = '', dataNascimento = '', cep = '';
+    try {
+      const alunoData = await api.get(`/api/alunos/${alunoId}`);
+      genero = alunoData.genero || '';
+      dataNascimento = alunoData.data_nascimento ? new Date(alunoData.data_nascimento).toISOString().split('T')[0] : '';
+      cep = alunoData.cep || '';
+    } catch { /* ignore */ }
+
     setEnrollForm({
       isOpen: true,
       alunoId,
       alunoNome: aluno.nome,
-      genero: '',
-      dataNascimento: '',
-      cep: ''
+      genero,
+      dataNascimento,
+      cep
     });
   }
 
