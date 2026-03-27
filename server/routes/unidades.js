@@ -78,4 +78,57 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// POST /api/unidades/:id/test-capi — send test event to verify Meta pixel + token
+router.post('/:id/test-capi', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT nome, meta_pixel_id, meta_capi_token FROM unidades WHERE id = $1', [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Unidade não encontrada' });
+
+    const { nome, meta_pixel_id, meta_capi_token } = result.rows[0];
+    if (!meta_pixel_id || !meta_capi_token) {
+      return res.status(400).json({ error: 'Pixel ID ou CAPI Token não configurados para esta unidade' });
+    }
+
+    const payload = JSON.stringify({
+      data: [{
+        event_name: 'PageView',
+        event_time: Math.floor(Date.now() / 1000),
+        action_source: 'website',
+        user_data: { client_ip_address: '127.0.0.1', client_user_agent: 'OZI-CRM-Test' }
+      }],
+      test_event_code: 'TEST_OZI_CRM'
+    });
+
+    const response = await fetch(
+      `https://graph.facebook.com/v21.0/${meta_pixel_id}/events?access_token=${meta_capi_token}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }
+    );
+
+    const data = await response.json();
+
+    if (response.ok && data.events_received) {
+      res.json({ 
+        success: true, 
+        message: `✅ CAPI OK — ${data.events_received} evento(s) recebido(s) pelo Facebook`,
+        pixel_id: meta_pixel_id,
+        fbtrace_id: data.fbtrace_id,
+        unidade: nome
+      });
+    } else {
+      res.json({ 
+        success: false, 
+        message: `❌ Erro do Facebook: ${data.error?.message || JSON.stringify(data)}`,
+        pixel_id: meta_pixel_id,
+        error_code: data.error?.code,
+        error_subcode: data.error?.error_subcode,
+        unidade: nome
+      });
+    }
+  } catch (error) {
+    console.error('Error testing CAPI:', error);
+    res.status(500).json({ error: 'Erro ao testar CAPI: ' + error.message });
+  }
+});
+
 export default router;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { Plus, Pencil, Trash2, MapPin, Building2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, MapPin, Building2, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 
@@ -20,6 +20,25 @@ export function Unidades() {
   const [formData, setFormData] = useState({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: '', nome: '' });
+  const [testingCapi, setTestingCapi] = useState<string | null>(null);
+  const [capiResult, setCapiResult] = useState<Record<string, { success: boolean; message: string } | null>>({});
+
+  async function testCapi(unidadeId: string) {
+    setTestingCapi(unidadeId);
+    setCapiResult(prev => ({ ...prev, [unidadeId]: null }));
+    try {
+      const result = await api.post(`/api/unidades/${unidadeId}/test-capi`, {});
+      setCapiResult(prev => ({ ...prev, [unidadeId]: { success: result.success, message: result.message } }));
+      if (result.success) toast.success(result.message);
+      else toast.error(result.message);
+    } catch (err: any) {
+      const msg = err.message || 'Erro ao testar CAPI';
+      setCapiResult(prev => ({ ...prev, [unidadeId]: { success: false, message: msg } }));
+      toast.error(msg);
+    } finally {
+      setTestingCapi(null);
+    }
+  }
 
   useEffect(() => { loadUnidades(); }, []);
 
@@ -154,6 +173,29 @@ export function Unidades() {
                   Analytics
                 </span>
               </div>
+
+              {/* CAPI Test Button */}
+              {(u as any).meta_pixel_id && (u as any).meta_capi_token && (
+                <div className="mt-3">
+                  <button
+                    onClick={() => testCapi(u.id)}
+                    disabled={testingCapi === u.id}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-50"
+                  >
+                    <Zap className="h-3 w-3" />
+                    {testingCapi === u.id ? 'Testando...' : 'Testar CAPI'}
+                  </button>
+                  {capiResult[u.id] && (
+                    <p className={`text-[10px] mt-1.5 px-2 py-1 rounded-lg ${
+                      capiResult[u.id]!.success
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                    }`}>
+                      {capiResult[u.id]!.message}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           ))}
           {unidades.length === 0 && (
