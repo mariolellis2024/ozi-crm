@@ -27,6 +27,8 @@ async function firePurchaseEvent(alunoId, cursoId) {
     const r = result.rows[0];
     if (!r.meta_pixel_id || !r.meta_capi_token) return;
 
+    console.log('[Purchase CAPI] Firing for aluno:', alunoId, '| pixel:', r.meta_pixel_id, '| token ends:', r.meta_capi_token?.slice(-8));
+
     const cidadeParts = (r.unidade_cidade || '').split(' - ');
     const cidade = cidadeParts[0]?.trim() || '';
     const estado = cidadeParts[1]?.trim() || '';
