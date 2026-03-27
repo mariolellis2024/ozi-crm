@@ -26,10 +26,10 @@ router.get('/', async (req, res) => {
 // POST /api/unidades
 router.post('/', async (req, res) => {
   try {
-    const { nome, cidade, endereco } = req.body;
+    const { nome, cidade, endereco, meta_pixel_id, meta_capi_token, google_analytics_id, meta_ad_account_id } = req.body;
     const result = await pool.query(
-      'INSERT INTO unidades (nome, cidade, endereco) VALUES ($1, $2, $3) RETURNING *',
-      [nome, cidade || null, endereco || null]
+      'INSERT INTO unidades (nome, cidade, endereco, meta_pixel_id, meta_capi_token, google_analytics_id, meta_ad_account_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [nome, cidade || null, endereco || null, meta_pixel_id || null, meta_capi_token || null, google_analytics_id || null, meta_ad_account_id || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -42,12 +42,12 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, cidade, endereco, meta_pixel_id, meta_capi_token, google_analytics_id } = req.body;
+    const { nome, cidade, endereco, meta_pixel_id, meta_capi_token, google_analytics_id, meta_ad_account_id } = req.body;
     const result = await pool.query(
       `UPDATE unidades SET nome = $1, cidade = $2, endereco = $3,
-       meta_pixel_id = $4, meta_capi_token = $5, google_analytics_id = $6
-       WHERE id = $7 RETURNING *`,
-      [nome, cidade || null, endereco || null, meta_pixel_id || null, meta_capi_token || null, google_analytics_id || null, id]
+       meta_pixel_id = $4, meta_capi_token = $5, google_analytics_id = $6, meta_ad_account_id = $7
+       WHERE id = $8 RETURNING *`,
+      [nome, cidade || null, endereco || null, meta_pixel_id || null, meta_capi_token || null, google_analytics_id || null, meta_ad_account_id || null, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Unidade não encontrada' });

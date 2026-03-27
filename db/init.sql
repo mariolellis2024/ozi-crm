@@ -291,3 +291,6 @@ ALTER TABLE alunos ADD COLUMN IF NOT EXISTS utm_medium text;
 ALTER TABLE alunos ADD COLUMN IF NOT EXISTS utm_content text;
 ALTER TABLE alunos ADD COLUMN IF NOT EXISTS fbclid text;
 
+-- Meta Ads account for Marketing API
+ALTER TABLE unidades ADD COLUMN IF NOT EXISTS meta_ad_account_id text;
+
