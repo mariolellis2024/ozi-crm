@@ -24,6 +24,8 @@ interface ModalTurmaProps {
     start_date: string;
     end_date: string;
     imposto: string;
+    investimento_anuncios: string;
+    investimento_anuncios_realizado: string;
     professores: ProfessorAssignment[];
     days_of_week: number[];
   };
@@ -36,6 +38,8 @@ interface ModalTurmaProps {
     start_date: string;
     end_date: string;
     imposto: string;
+    investimento_anuncios: string;
+    investimento_anuncios_realizado: string;
     professores: ProfessorAssignment[];
     days_of_week: number[];
   }>>;
@@ -303,6 +307,38 @@ export function ModalTurma({
                   max="100"
                   step="0.01"
                   required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="investimento_anuncios" className="block text-sm font-medium text-gray-400 mb-1">
+                  Investimento Ads Previsto (R$)
+                </label>
+                <input
+                  type="number"
+                  id="investimento_anuncios"
+                  value={formData.investimento_anuncios}
+                  onChange={(e) => setFormData({ ...formData, investimento_anuncios: e.target.value })}
+                  className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                  min="0"
+                  step="100"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="investimento_anuncios_realizado" className="block text-sm font-medium text-gray-400 mb-1">
+                  Investimento Ads Realizado (R$)
+                </label>
+                <input
+                  type="number"
+                  id="investimento_anuncios_realizado"
+                  value={formData.investimento_anuncios_realizado}
+                  onChange={(e) => setFormData({ ...formData, investimento_anuncios_realizado: e.target.value })}
+                  className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                  min="0"
+                  step="100"
+                  placeholder="0"
                 />
               </div>
 

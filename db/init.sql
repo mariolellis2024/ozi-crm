@@ -298,3 +298,17 @@ CREATE INDEX IF NOT EXISTS idx_form_visits_formulario ON form_visits(formulario_
 
 ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS formulario_id uuid REFERENCES formularios(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_interests_formulario ON aluno_curso_interests(formulario_id) WHERE formulario_id IS NOT NULL;
+
+-- =====================================================
+-- Investimento em Ads: previsto (existing) + realizado (new)
+-- The existing column investimento_anuncios stores the planned/previsto budget.
+-- We add a new column for actual/realizado spend.
+-- =====================================================
+ALTER TABLE turmas ADD COLUMN IF NOT EXISTS investimento_anuncios_realizado NUMERIC(10,2) NOT NULL DEFAULT 0;
+
+-- =====================================================
+-- Track which user closed each enrollment (for sales/commission tracking)
+-- =====================================================
+ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS enrolled_by uuid REFERENCES users(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_interests_enrolled_by ON aluno_curso_interests(enrolled_by) WHERE enrolled_by IS NOT NULL;
+

@@ -30,6 +30,7 @@ interface Turma {
   end_date: string;
   imposto: number;
   investimento_anuncios: number;
+  investimento_anuncios_realizado: number;
   days_of_week?: number[];
   created_at: string;
   curso?: {
@@ -124,6 +125,8 @@ export function Turmas() {
     start_date: '',
     end_date: '',
     imposto: '',
+    investimento_anuncios: '',
+    investimento_anuncios_realizado: '',
     professores: [] as ProfessorAssignment[],
     days_of_week: [] as number[]
   });
@@ -390,6 +393,8 @@ export function Turmas() {
         end_date: formData.end_date,
         potencial_faturamento: curso.preco * Number(formData.cadeiras),
         imposto: Number(formData.imposto),
+        investimento_anuncios: Number(formData.investimento_anuncios) || 0,
+        investimento_anuncios_realizado: Number(formData.investimento_anuncios_realizado) || 0,
         days_of_week: formData.days_of_week
       };
 
@@ -443,6 +448,8 @@ export function Turmas() {
         start_date: '',
         end_date: '',
         imposto: '',
+        investimento_anuncios: '',
+        investimento_anuncios_realizado: '',
         professores: [],
         days_of_week: []
       });
@@ -499,6 +506,8 @@ export function Turmas() {
       start_date: turma.start_date,
       end_date: turma.end_date,
       imposto: turma.imposto.toString(),
+      investimento_anuncios: (turma.investimento_anuncios || 0).toString(),
+      investimento_anuncios_realizado: (turma.investimento_anuncios_realizado || 0).toString(),
       professores: turma.professores?.map(tp => ({
         professor_id: tp.professor_id,
         hours: tp.hours
@@ -520,6 +529,8 @@ export function Turmas() {
       start_date: '',
       end_date: '',
       imposto: '',
+      investimento_anuncios: '',
+      investimento_anuncios_realizado: '',
       professores: [],
       days_of_week: []
     });
@@ -893,8 +904,9 @@ export function Turmas() {
                     const comissaoVendedor = (faturamentoRealizado * percentualComissao) / 100;
                     
                     // Resultado final
-                    const investAnuncios = turma.investimento_anuncios || 0;
-                    const resultadoFinal = faturamentoRealizado - custoProfessores - impostos - comissaoVendedor - investAnuncios;
+                    const investAnunciosPrevisto = turma.investimento_anuncios || 0;
+                    const investAnunciosRealizado = turma.investimento_anuncios_realizado || 0;
+                    const resultadoFinal = faturamentoRealizado - custoProfessores - impostos - comissaoVendedor - investAnunciosRealizado;
                     const margemLucro = faturamentoRealizado > 0 ? (resultadoFinal / faturamentoRealizado) * 100 : 0;
                     
                     return (
@@ -937,10 +949,13 @@ export function Turmas() {
                             </span>
                           </div>
                           
-                          <div className="flex justify-between items-center group">
-                            <span className="text-gray-400">Anúncios:</span>
+                          {/* Ads — previsto vs realizado */}
+                          <div className="flex justify-between items-center mt-1">
+                            <div>
+                              <span className="text-gray-400">Ads Previsto:</span>
+                            </div>
                             <span
-                              className="text-red-400 font-medium cursor-pointer hover:underline"
+                              className="text-gray-500 font-medium cursor-pointer hover:underline"
                               onClick={(e) => {
                                 const span = e.currentTarget;
                                 const currentVal = turma.investimento_anuncios || 0;
@@ -949,7 +964,7 @@ export function Turmas() {
                                 input.value = String(currentVal);
                                 input.min = '0';
                                 input.step = '100';
-                                input.className = 'w-20 bg-dark-lighter border border-teal-accent rounded px-1.5 py-0.5 text-red-400 text-xs text-right focus:ring-1 focus:ring-teal-accent outline-none font-medium';
+                                input.className = 'w-20 bg-dark-lighter border border-teal-accent rounded px-1.5 py-0.5 text-gray-400 text-xs text-right focus:ring-1 focus:ring-teal-accent outline-none font-medium';
                                 const save = async () => {
                                   const val = parseFloat(input.value) || 0;
                                   if (val !== currentVal) {
@@ -970,9 +985,51 @@ export function Turmas() {
                               }}
                               title="Clique para editar"
                             >
-                              -{formatCurrency(investAnuncios)}
+                              {formatCurrency(investAnunciosPrevisto)}
                             </span>
                           </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400">Ads Realizado:</span>
+                            <span
+                              className="text-red-400 font-medium cursor-pointer hover:underline"
+                              onClick={(e) => {
+                                const span = e.currentTarget;
+                                const currentVal = turma.investimento_anuncios_realizado || 0;
+                                const input = document.createElement('input');
+                                input.type = 'number';
+                                input.value = String(currentVal);
+                                input.min = '0';
+                                input.step = '100';
+                                input.className = 'w-20 bg-dark-lighter border border-teal-accent rounded px-1.5 py-0.5 text-red-400 text-xs text-right focus:ring-1 focus:ring-teal-accent outline-none font-medium';
+                                const save = async () => {
+                                  const val = parseFloat(input.value) || 0;
+                                  if (val !== currentVal) {
+                                    try {
+                                      await api.patch(`/api/turmas/${turma.id}/investimento`, { investimento_anuncios_realizado: val });
+                                      loadData();
+                                    } catch { toast.error('Erro ao salvar investimento'); }
+                                  }
+                                  span.style.display = '';
+                                  input.remove();
+                                };
+                                input.onblur = save;
+                                input.onkeydown = (ev) => { if (ev.key === 'Enter') input.blur(); if (ev.key === 'Escape') { span.style.display = ''; input.remove(); } };
+                                span.style.display = 'none';
+                                span.parentElement!.appendChild(input);
+                                input.focus();
+                                input.select();
+                              }}
+                              title="Clique para editar"
+                            >
+                              -{formatCurrency(investAnunciosRealizado)}
+                            </span>
+                          </div>
+                          {investAnunciosRealizado > investAnunciosPrevisto && investAnunciosPrevisto > 0 && (
+                            <div className="text-[10px] text-red-400 text-right">
+                              ⚠️ Acima do previsto em {formatCurrency(investAnunciosRealizado - investAnunciosPrevisto)}
+                            </div>
+                          )}
                         </div>
                         
                         {/* Resultado Final */}
@@ -1001,7 +1058,7 @@ export function Turmas() {
                           // Revenue per student after variable costs (taxes + commission at base 2%)
                           const totalVariableRate = turma.imposto + 2; // imposto% + vendedor base 2%
                           const netRevenuePerStudent = precoUnitario * (1 - totalVariableRate / 100);
-                          const fixedCosts = custoProfessores + investAnuncios;
+                          const fixedCosts = custoProfessores + investAnunciosRealizado;
                           const pontoEquilibrio = netRevenuePerStudent > 0 
                             ? Math.ceil(fixedCosts / netRevenuePerStudent) 
                             : 0;
