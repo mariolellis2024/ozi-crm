@@ -78,6 +78,27 @@ router.get('/stats', async (req, res) => {
       `, params)
     ]);
 
+    // Capacity-based potential from unidades
+    const capacityResult = await pool.query(`
+      SELECT 
+        u.id, u.nome, u.horas_disponiveis_dia, u.valor_hora_aluno,
+        COALESCE(SUM(s.cadeiras), 0) as total_cadeiras
+      FROM unidades u
+      LEFT JOIN salas s ON s.unidade_id = u.id
+      ${unidade_id ? 'WHERE u.id = $1' : ''}
+      GROUP BY u.id, u.nome, u.horas_disponiveis_dia, u.valor_hora_aluno
+    `, params);
+    
+    const capacidadeUnidades = capacityResult.rows.map(u => ({
+      id: u.id,
+      nome: u.nome,
+      totalCadeiras: parseInt(u.total_cadeiras),
+      horasDisponivelDia: parseFloat(u.horas_disponiveis_dia || 0),
+      valorHoraAluno: parseFloat(u.valor_hora_aluno || 0),
+      potencialMensal: parseInt(u.total_cadeiras) * parseFloat(u.horas_disponiveis_dia || 0) * 22 * parseFloat(u.valor_hora_aluno || 0)
+    }));
+    const potencialCapacidade = capacidadeUnidades.reduce((sum, u) => sum + u.potencialMensal, 0);
+
     // Also update overdue payments before reporting
     await pool.query(
       `UPDATE pagamentos SET status = 'atrasado'
@@ -190,6 +211,8 @@ router.get('/stats', async (req, res) => {
       custoImpostos,
       investimentoAnunciosPrevisto,
       investimentoAnunciosRealizado,
+      potencialCapacidade,
+      capacidadeUnidades,
       topCursos: cursosResult.rows.map(c => ({
         id: c.id,
         nome: c.nome,

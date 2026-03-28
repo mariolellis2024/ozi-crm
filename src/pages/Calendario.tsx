@@ -7,6 +7,7 @@ interface Sala {
   id: string;
   nome: string;
   cadeiras: number;
+  unidade_nome?: string;
 }
 
 interface Turma {

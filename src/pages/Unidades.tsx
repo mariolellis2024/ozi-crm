@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { Plus, Pencil, Trash2, MapPin, Building2, Zap } from 'lucide-react';
+import { Plus, Pencil, Trash2, MapPin, Building2, Zap, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { formatCurrency } from '../utils/format';
 
 interface Unidade {
   id: string;
@@ -11,13 +12,17 @@ interface Unidade {
   cidade: string;
   endereco: string;
   total_salas: number;
+  total_cadeiras: number;
   total_turmas: number;
+  horas_disponiveis_dia: number;
+  valor_hora_aluno: number;
+  potencial_mensal: number;
 }
 
 export function Unidades() {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '' });
+  const [formData, setFormData] = useState({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '', horas_disponiveis_dia: '', valor_hora_aluno: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: '', nome: '' });
   const [testingCapi, setTestingCapi] = useState<string | null>(null);
@@ -60,7 +65,7 @@ export function Unidades() {
         toast.success('Unidade criada!');
       }
       setIsModalOpen(false);
-      setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '' });
+      setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '', horas_disponiveis_dia: '', valor_hora_aluno: '' });
       setEditingId(null);
       loadUnidades();
     } catch { toast.error('Erro ao salvar unidade'); }
@@ -71,7 +76,9 @@ export function Unidades() {
       nome: u.nome, cidade: u.cidade || '', endereco: u.endereco || '',
       meta_pixel_id: (u as any).meta_pixel_id || '',
       meta_capi_token: (u as any).meta_capi_token || '',
-      google_analytics_id: (u as any).google_analytics_id || ''
+      google_analytics_id: (u as any).google_analytics_id || '',
+      horas_disponiveis_dia: (u.horas_disponiveis_dia || 0).toString(),
+      valor_hora_aluno: (u.valor_hora_aluno || 0).toString()
     });
     setEditingId(u.id);
     setIsModalOpen(true);
@@ -79,7 +86,7 @@ export function Unidades() {
 
   function handleCloseModal() {
     setIsModalOpen(false);
-    setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '' });
+    setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '', horas_disponiveis_dia: '', valor_hora_aluno: '' });
     setEditingId(null);
   }
 
@@ -137,6 +144,10 @@ export function Unidades() {
                   <p className="text-gray-400 text-xs">Salas</p>
                 </div>
                 <div className="text-center">
+                  <span className="text-white font-bold text-lg">{u.total_cadeiras || 0}</span>
+                  <p className="text-gray-400 text-xs">Cadeiras</p>
+                </div>
+                <div className="text-center">
                   <span className="text-white font-bold text-lg">{parseInt(String(u.total_turmas))}</span>
                   <p className="text-gray-400 text-xs">Turmas</p>
                 </div>
@@ -145,6 +156,23 @@ export function Unidades() {
                   <p className="text-gray-400 text-xs">Forms</p>
                 </div>
               </div>
+
+              {/* Capacity Info */}
+              {(u.horas_disponiveis_dia > 0 || u.valor_hora_aluno > 0) && (
+                <div className="mt-3 p-3 bg-dark-lighter rounded-xl space-y-1">
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <TrendingUp className="h-3 w-3 text-emerald-400" />
+                    <span>Capacidade</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500">{u.horas_disponiveis_dia}h/dia · {formatCurrency(u.valor_hora_aluno)}/h/aluno</span>
+                  </div>
+                  <p className="text-emerald-400 font-bold text-sm">
+                    Potencial: {formatCurrency(u.potencial_mensal)}/mês
+                  </p>
+                  <p className="text-[10px] text-gray-600">{u.total_cadeiras} cadeiras × {u.horas_disponiveis_dia}h × 22 dias</p>
+                </div>
+              )}
 
               {/* Tracking Status */}
               <div className="flex flex-wrap gap-2 mt-3">
@@ -274,6 +302,38 @@ export function Unidades() {
                         onChange={e => setFormData({ ...formData, google_analytics_id: e.target.value })}
                         className="w-full bg-dark-lighter text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-teal-accent outline-none text-sm"
                         placeholder="Ex: G-XXXXXXXXXX"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Capacity Planning */}
+                <div className="border-t border-gray-700 pt-4 mt-4">
+                  <h3 className="text-sm font-medium text-gray-300 mb-3">📊 Capacidade & Faturamento</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Horas Disponíveis por Dia (por sala)</label>
+                      <input
+                        type="number"
+                        value={formData.horas_disponiveis_dia}
+                        onChange={e => setFormData({ ...formData, horas_disponiveis_dia: e.target.value })}
+                        className="w-full bg-dark-lighter text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-teal-accent outline-none text-sm"
+                        placeholder="Ex: 8"
+                        min="0"
+                        max="24"
+                        step="0.5"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Valor por Hora/Aula por Aluno (R$)</label>
+                      <input
+                        type="number"
+                        value={formData.valor_hora_aluno}
+                        onChange={e => setFormData({ ...formData, valor_hora_aluno: e.target.value })}
+                        className="w-full bg-dark-lighter text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-teal-accent outline-none text-sm"
+                        placeholder="Ex: 25.00"
+                        min="0"
+                        step="0.50"
                       />
                     </div>
                   </div>

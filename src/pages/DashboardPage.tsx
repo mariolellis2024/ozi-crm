@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { TrendingUp, Target, BarChart3, DollarSign, ArrowUpRight, AlertTriangle, Wallet, Trophy, Megaphone } from 'lucide-react';
+import { TrendingUp, Target, BarChart3, DollarSign, ArrowUpRight, AlertTriangle, Wallet, Trophy, Megaphone, Building2 } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { useUnidade } from '../contexts/UnidadeContext';
 
@@ -24,6 +24,8 @@ interface DashboardStats {
   custoImpostos: number;
   investimentoAnunciosPrevisto: number;
   investimentoAnunciosRealizado: number;
+  potencialCapacidade: number;
+  capacidadeUnidades: { id: string; nome: string; totalCadeiras: number; horasDisponivelDia: number; valorHoraAluno: number; potencialMensal: number }[];
   topCursos: { id: string; nome: string; preco: number; interested: number; enrolled: number }[];
   topSellers: { id: string; email: string; nome: string; totalMatriculas: number; receitaGerada: number }[];
   turmasComVagas: { id: string; name: string; curso: string; sala: string; period: string; enrolled: number; cadeiras: number; start_date: string; end_date: string }[];
@@ -85,16 +87,28 @@ export function DashboardPage() {
 
         {/* Hero KPIs — 4 main cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Potencial Total */}
+          {/* Potencial por Capacidade */}
           <div className="bg-dark-card rounded-2xl p-6 hover:bg-dark-lighter/50 transition-colors">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-gray-400 text-sm">Potencial Total</span>
+              <span className="text-gray-400 text-sm">Potencial Capacidade</span>
               <div className="bg-purple-500 p-2 rounded-xl">
-                <TrendingUp className="h-5 w-5 text-white" />
+                <Building2 className="h-5 w-5 text-white" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-white">{formatCurrency(stats.faturamentoPotencial)}</p>
-            <p className="text-xs text-gray-500 mt-1">{stats.totalTurmas} turmas × todas vagas preenchidas</p>
+            <p className="text-2xl font-bold text-white">
+              {stats.potencialCapacidade > 0 ? formatCurrency(stats.potencialCapacidade) + '/mês' : 'Não configurado'}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              {stats.potencialCapacidade > 0 
+                ? `${stats.capacidadeUnidades.length} unidade${stats.capacidadeUnidades.length > 1 ? 's' : ''} · cadeiras × h/dia × 22 dias`
+                : 'Configure horas e valor/hora nas unidades'
+              }
+            </p>
+            {stats.potencialCapacidade > 0 && (
+              <p className="text-xs text-gray-600 mt-1">
+                Potencial por turmas: {formatCurrency(stats.faturamentoPotencial)}
+              </p>
+            )}
           </div>
 
           {/* Faturamento Realizado */}

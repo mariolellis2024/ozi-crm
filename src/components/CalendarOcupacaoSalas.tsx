@@ -10,6 +10,7 @@ interface Sala {
   id: string;
   nome: string;
   cadeiras: number;
+  unidade_nome?: string;
 }
 
 interface Turma {
@@ -26,6 +27,7 @@ interface Turma {
     preco: number;
   };
   alunos_enrolled?: Array<{ id: string; nome: string }>;
+  days_of_week?: number[];
 }
 
 interface CalendarOcupacaoSalasProps {
@@ -291,6 +293,11 @@ export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasPr
                       <MapPin className="h-4 w-4 text-gray-400" />
                       {sala.nome}
                     </div>
+                    {sala.unidade_nome && (
+                      <div className="text-[10px] text-teal-accent/70 mt-0.5 ml-6">
+                        {sala.unidade_nome}
+                      </div>
+                    )}
                     <div className="flex items-center gap-1 text-gray-400 text-xs mt-1">
                       <Users className="h-3 w-3" />
                       {sala.cadeiras} lugares

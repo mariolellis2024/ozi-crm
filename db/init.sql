@@ -312,3 +312,8 @@ ALTER TABLE turmas ADD COLUMN IF NOT EXISTS investimento_anuncios_realizado NUME
 ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS enrolled_by uuid REFERENCES users(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_interests_enrolled_by ON aluno_curso_interests(enrolled_by) WHERE enrolled_by IS NOT NULL;
 
+-- =====================================================
+-- Capacity planning on unidades: hours/day per room + price per student/hour
+-- =====================================================
+ALTER TABLE unidades ADD COLUMN IF NOT EXISTS horas_disponiveis_dia NUMERIC(4,1) NOT NULL DEFAULT 0;
+ALTER TABLE unidades ADD COLUMN IF NOT EXISTS valor_hora_aluno NUMERIC(10,2) NOT NULL DEFAULT 0;

@@ -9,6 +9,7 @@ router.get('/', async (req, res) => {
     const result = await pool.query(`
       SELECT u.*, 
         (SELECT COUNT(*) FROM salas s WHERE s.unidade_id = u.id) as total_salas,
+        (SELECT COALESCE(SUM(s.cadeiras), 0) FROM salas s WHERE s.unidade_id = u.id) as total_cadeiras,
         (SELECT COUNT(*) FROM turmas t 
          JOIN salas s ON s.id = t.sala_id 
          WHERE s.unidade_id = u.id) as total_turmas,
@@ -16,7 +17,14 @@ router.get('/', async (req, res) => {
       FROM unidades u 
       ORDER BY u.nome
     `);
-    res.json(result.rows);
+    res.json(result.rows.map(u => ({
+      ...u,
+      horas_disponiveis_dia: parseFloat(u.horas_disponiveis_dia || 0),
+      valor_hora_aluno: parseFloat(u.valor_hora_aluno || 0),
+      total_cadeiras: parseInt(u.total_cadeiras || 0),
+      // Potencial mensal = cadeiras × horas/dia × 22 dias úteis × valor/hora/aluno
+      potencial_mensal: parseInt(u.total_cadeiras || 0) * parseFloat(u.horas_disponiveis_dia || 0) * 22 * parseFloat(u.valor_hora_aluno || 0)
+    })));
   } catch (error) {
     console.error('Error loading unidades:', error);
     res.status(500).json({ error: 'Erro ao carregar unidades' });
@@ -26,10 +34,10 @@ router.get('/', async (req, res) => {
 // POST /api/unidades
 router.post('/', async (req, res) => {
   try {
-    const { nome, cidade, endereco } = req.body;
+    const { nome, cidade, endereco, horas_disponiveis_dia, valor_hora_aluno } = req.body;
     const result = await pool.query(
-      'INSERT INTO unidades (nome, cidade, endereco) VALUES ($1, $2, $3) RETURNING *',
-      [nome, cidade || null, endereco || null]
+      'INSERT INTO unidades (nome, cidade, endereco, horas_disponiveis_dia, valor_hora_aluno) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [nome, cidade || null, endereco || null, parseFloat(horas_disponiveis_dia) || 0, parseFloat(valor_hora_aluno) || 0]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -42,12 +50,14 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, cidade, endereco, meta_pixel_id, meta_capi_token, google_analytics_id } = req.body;
+    const { nome, cidade, endereco, meta_pixel_id, meta_capi_token, google_analytics_id, horas_disponiveis_dia, valor_hora_aluno } = req.body;
     const result = await pool.query(
       `UPDATE unidades SET nome = $1, cidade = $2, endereco = $3,
-       meta_pixel_id = $4, meta_capi_token = $5, google_analytics_id = $6
-       WHERE id = $7 RETURNING *`,
-      [nome, cidade || null, endereco || null, meta_pixel_id || null, meta_capi_token || null, google_analytics_id || null, id]
+       meta_pixel_id = $4, meta_capi_token = $5, google_analytics_id = $6,
+       horas_disponiveis_dia = $7, valor_hora_aluno = $8
+       WHERE id = $9 RETURNING *`,
+      [nome, cidade || null, endereco || null, meta_pixel_id || null, meta_capi_token || null, google_analytics_id || null,
+       parseFloat(horas_disponiveis_dia) || 0, parseFloat(valor_hora_aluno) || 0, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Unidade não encontrada' });
