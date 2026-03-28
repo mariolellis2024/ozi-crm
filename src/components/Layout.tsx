@@ -91,7 +91,7 @@ export function Layout({ children }: LayoutProps) {
 
         <div className="px-6 pt-6 scale-in">
           <div className="flex items-center justify-center space-x-3">
-            <img src="/icon.webp" alt="OZI CRM Logo" className="w-4/5 h-auto flex-shrink-0 rounded" />
+            <img src="/icon.webp" alt="OZI CRM Logo" className="w-[48%] h-auto flex-shrink-0 rounded" />
           </div>
         </div>
 
