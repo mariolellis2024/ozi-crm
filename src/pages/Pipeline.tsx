@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { Filter, X, MessageCircle } from 'lucide-react';
+import { Filter, X, MessageCircle, ClipboardList } from 'lucide-react';
 import { formatPhone } from '../utils/format';
 import toast from 'react-hot-toast';
 import { useUnidade } from '../contexts/UnidadeContext';
@@ -80,6 +80,42 @@ export function Pipeline() {
     motivo: string;
     loading: boolean;
   }>({ isOpen: false, interest: null, motivo: '', loading: false });
+
+  // History modal
+  const [historyModal, setHistoryModal] = useState<{
+    isOpen: boolean;
+    alunoId: string;
+    alunoNome: string;
+    entries: any[];
+    newEntry: string;
+    loading: boolean;
+  }>({ isOpen: false, alunoId: '', alunoNome: '', entries: [], newEntry: '', loading: false });
+
+  async function openHistory(interest: Interest) {
+    setHistoryModal({ isOpen: true, alunoId: interest.aluno_id, alunoNome: interest.aluno_nome, entries: [], newEntry: '', loading: true });
+    try {
+      const data = await api.get(`/api/contact-history/${interest.aluno_id}`);
+      setHistoryModal(prev => ({ ...prev, entries: data, loading: false }));
+    } catch {
+      setHistoryModal(prev => ({ ...prev, loading: false }));
+    }
+  }
+
+  async function addHistoryEntry() {
+    if (!historyModal.newEntry.trim()) return;
+    try {
+      await api.post('/api/contact-history', {
+        aluno_id: historyModal.alunoId,
+        tipo: 'contato',
+        descricao: historyModal.newEntry
+      });
+      const data = await api.get(`/api/contact-history/${historyModal.alunoId}`);
+      setHistoryModal(prev => ({ ...prev, entries: data, newEntry: '' }));
+      toast.success('Registro adicionado');
+    } catch {
+      toast.error('Erro ao salvar registro');
+    }
+  }
 
   useEffect(() => {
     loadData();
@@ -361,7 +397,7 @@ export function Pipeline() {
                           </a>
                         )}
                         {/* Quick actions */}
-                        <div className="flex gap-1 mt-2">
+                        <div className="flex flex-wrap gap-1 mt-2">
                           {COLUMNS.filter(s => s !== status).map(targetStatus => (
                             <button
                               key={targetStatus}
@@ -371,6 +407,13 @@ export function Pipeline() {
                               → {STATUS_CONFIG[targetStatus].label}
                             </button>
                           ))}
+                          <button
+                            onClick={() => openHistory(interest)}
+                            className="text-[9px] px-2 py-0.5 rounded-full border border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
+                          >
+                            <ClipboardList className="h-2.5 w-2.5 inline mr-0.5" />
+                            Histórico
+                          </button>
                         </div>
                       </div>
                     );
@@ -387,6 +430,72 @@ export function Pipeline() {
           })}
         </div>
       </div>
+
+      {/* Contact History modal */}
+      {historyModal.isOpen && createPortal(
+        <div className="fixed inset-0 z-[10000] bg-black/60 flex items-center justify-center p-4" onClick={() => setHistoryModal(prev => ({ ...prev, isOpen: false }))}>
+          <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-white">Histórico de Contato</h2>
+              <button onClick={() => setHistoryModal(prev => ({ ...prev, isOpen: false }))} className="text-gray-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="text-gray-400 text-sm mb-4">
+              <span className="text-white font-medium">{historyModal.alunoNome}</span>
+            </p>
+
+            {/* Add new entry */}
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                value={historyModal.newEntry}
+                onChange={e => setHistoryModal(prev => ({ ...prev, newEntry: e.target.value }))}
+                placeholder="Anotar contato, observação..."
+                className="flex-1 bg-dark-lighter border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-accent/50 focus:outline-none"
+                onKeyDown={e => e.key === 'Enter' && addHistoryEntry()}
+              />
+              <button
+                onClick={addHistoryEntry}
+                className="px-3 py-2 bg-teal-accent text-dark font-medium rounded-lg text-sm hover:bg-teal-400 transition-colors"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Timeline */}
+            <div className="flex-1 overflow-y-auto space-y-3">
+              {historyModal.loading ? (
+                <p className="text-gray-500 text-sm text-center py-4">Carregando...</p>
+              ) : historyModal.entries.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-4">Nenhum registro ainda</p>
+              ) : (
+                historyModal.entries.map((entry: any) => (
+                  <div key={entry.id} className={`p-3 rounded-lg border text-sm ${
+                    entry.tipo === 'perda' 
+                      ? 'bg-red-500/10 border-red-500/20' 
+                      : 'bg-dark-lighter border-gray-700'
+                  }`}>
+                    <div className="flex justify-between items-start">
+                      <p className="text-white">{entry.descricao}</p>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+                        entry.tipo === 'perda' ? 'bg-red-500/20 text-red-400' : 'bg-teal-accent/20 text-teal-accent'
+                      }`}>
+                        {entry.tipo === 'perda' ? 'Perda' : 'Contato'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-gray-500 text-xs">{entry.user_name || entry.user_email || ''}</span>
+                      <span className="text-gray-600 text-xs">{new Date(entry.created_at).toLocaleDateString('pt-BR')} {new Date(entry.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Loss reason modal */}
       {lossModal.isOpen && lossModal.interest && createPortal(
