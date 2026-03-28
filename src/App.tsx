@@ -6,21 +6,37 @@ import { Layout } from './components/Layout';
 import { UnidadeProvider } from './contexts/UnidadeContext';
 import { Toaster } from 'react-hot-toast';
 
-// Lazy-loaded pages — each becomes a separate chunk
-const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
-const Turmas = lazy(() => import('./pages/Turmas').then(m => ({ default: m.Turmas })));
-const Alunos = lazy(() => import('./pages/Alunos').then(m => ({ default: m.Alunos })));
-const Cursos = lazy(() => import('./pages/Cursos').then(m => ({ default: m.Cursos })));
-const Professores = lazy(() => import('./pages/Professores').then(m => ({ default: m.Professores })));
-const Salas = lazy(() => import('./pages/Salas').then(m => ({ default: m.Salas })));
-const Unidades = lazy(() => import('./pages/Unidades').then(m => ({ default: m.Unidades })));
-const Usuarios = lazy(() => import('./pages/Usuarios').then(m => ({ default: m.Usuarios })));
-const Calendario = lazy(() => import('./pages/Calendario').then(m => ({ default: m.Calendario })));
-const Pipeline = lazy(() => import('./pages/Pipeline').then(m => ({ default: m.Pipeline })));
-const Atividades = lazy(() => import('./pages/Atividades').then(m => ({ default: m.Atividades })));
-const Pagamentos = lazy(() => import('./pages/Pagamentos').then(m => ({ default: m.Pagamentos })));
-const Formularios = lazy(() => import('./pages/Formularios').then(m => ({ default: m.Formularios })));
-const FormularioPublico = lazy(() => import('./pages/FormularioPublico').then(m => ({ default: m.FormularioPublico })));
+// Helper: retry lazy imports on chunk load failure (stale cache after deploy)
+function lazyRetry(importFn: () => Promise<any>, name: string) {
+  return lazy(() =>
+    importFn().catch(() => {
+      // Only reload once per session to avoid infinite loops
+      const key = `chunk_retry_${name}`;
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        window.location.reload();
+      }
+      // Return empty to satisfy TS — reload will interrupt
+      return { default: () => null } as any;
+    })
+  );
+}
+
+// Lazy-loaded pages — each becomes a separate chunk with auto-retry
+const DashboardPage = lazyRetry(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })), 'DashboardPage');
+const Turmas = lazyRetry(() => import('./pages/Turmas').then(m => ({ default: m.Turmas })), 'Turmas');
+const Alunos = lazyRetry(() => import('./pages/Alunos').then(m => ({ default: m.Alunos })), 'Alunos');
+const Cursos = lazyRetry(() => import('./pages/Cursos').then(m => ({ default: m.Cursos })), 'Cursos');
+const Professores = lazyRetry(() => import('./pages/Professores').then(m => ({ default: m.Professores })), 'Professores');
+const Salas = lazyRetry(() => import('./pages/Salas').then(m => ({ default: m.Salas })), 'Salas');
+const Unidades = lazyRetry(() => import('./pages/Unidades').then(m => ({ default: m.Unidades })), 'Unidades');
+const Usuarios = lazyRetry(() => import('./pages/Usuarios').then(m => ({ default: m.Usuarios })), 'Usuarios');
+const Calendario = lazyRetry(() => import('./pages/Calendario').then(m => ({ default: m.Calendario })), 'Calendario');
+const Pipeline = lazyRetry(() => import('./pages/Pipeline').then(m => ({ default: m.Pipeline })), 'Pipeline');
+const Atividades = lazyRetry(() => import('./pages/Atividades').then(m => ({ default: m.Atividades })), 'Atividades');
+const Pagamentos = lazyRetry(() => import('./pages/Pagamentos').then(m => ({ default: m.Pagamentos })), 'Pagamentos');
+const Formularios = lazyRetry(() => import('./pages/Formularios').then(m => ({ default: m.Formularios })), 'Formularios');
+const FormularioPublico = lazyRetry(() => import('./pages/FormularioPublico').then(m => ({ default: m.FormularioPublico })), 'FormularioPublico');
 
 interface User {
   id: string;
