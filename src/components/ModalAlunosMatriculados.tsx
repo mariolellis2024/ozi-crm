@@ -11,6 +11,7 @@ interface AlunoMatriculado {
   email?: string;
   whatsapp: string;
   empresa?: string;
+  enrolled_by_name?: string;
 }
 
 interface ModalAlunosMatriculadosProps {
@@ -210,17 +211,12 @@ export function ModalAlunosMatriculados({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          const token = localStorage.getItem('token');
-                          window.open(`/api/certificates/${aluno.id}/${cursoId}?token=${token}`, '_blank');
-                        }}
-                        className="px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-sm"
-                        title="Gerar Certificado"
-                      >
-                        <Award className="h-4 w-4" />
-                        Certificado
-                      </button>
+                      {aluno.enrolled_by_name && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-accent/10 border border-teal-accent/20 text-teal-accent text-xs font-medium mr-2" title="Matriculado por">
+                          <Users className="h-3.5 w-3.5" />
+                          <span>Matriculado por {aluno.enrolled_by_name.split(' ')[0]}</span>
+                        </div>
+                      )}
                       <button
                         onClick={() => handleUnenrollClick(aluno.id, aluno.nome)}
                         disabled={unenrollingStudents.has(aluno.id)}

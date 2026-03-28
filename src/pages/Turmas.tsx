@@ -9,6 +9,7 @@ import { ModalTurma } from '../components/ModalTurma';
 import { useUnidade } from '../contexts/UnidadeContext';
 import { ModalAlunosInteressados } from '../components/ModalAlunosInteressados';
 import { ModalAlunosMatriculados } from '../components/ModalAlunosMatriculados';
+import { ModalComissoesTurma } from '../components/ModalComissoesTurma';
 import { CalendarOcupacaoSalas } from '../components/CalendarOcupacaoSalas';
 
 type Period = 'manha' | 'tarde' | 'noite';
@@ -115,6 +116,12 @@ export function Turmas() {
     totalParcelas: '1',
     valorTotal: '',
     firstDueDate: new Date().toISOString().split('T')[0]
+  });
+  const [comissoesTurmaModal, setComissoesTurmaModal] = useState({
+    isOpen: false,
+    turmaId: '',
+    cursoNome: '',
+    cursoPreco: 0
   });
   const [formData, setFormData] = useState({
     name: '',
@@ -585,6 +592,16 @@ export function Turmas() {
     });
   }
 
+  function handleOpenComissoes(turma: Turma) {
+    if (!turma.curso) return;
+    setComissoesTurmaModal({
+      isOpen: true,
+      turmaId: turma.id,
+      cursoNome: turma.curso.nome,
+      cursoPreco: turma.curso.preco
+    });
+  }
+
   function handleStudentEnrolled() {
     loadData(); // Reload data to update enrolled count
   }
@@ -763,9 +780,6 @@ export function Turmas() {
                         <p className="text-gray-400">
                           {sugestao.totalInteressados} alunos interessados
                         </p>
-                        <p className="text-emerald-400 font-semibold">
-                          Potencial: {formatCurrency(sugestao.faturamentoPotencial)}
-                        </p>
                       </div>
                       <button
                         onClick={() => {
@@ -874,6 +888,17 @@ export function Turmas() {
                   >
                     <UserCheck className="h-4 w-4" />
                     <span>Ver Alunos Matriculados ({turma.alunos_enrolled?.length || 0})</span>
+                  </button>
+                )}
+
+                {/* Botão para ver comissões */}
+                {(turma.alunos_enrolled?.length || 0) > 0 && (
+                  <button
+                    onClick={() => handleOpenComissoes(turma)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors"
+                  >
+                    <DollarSign className="h-4 w-4" />
+                    <span>Ver Comissões da Turma</span>
                   </button>
                 )}
 
@@ -1170,6 +1195,14 @@ export function Turmas() {
           cursoNome={alunosMatriculadosModal.cursoNome}
           cursoPreco={alunosMatriculadosModal.cursoPreco}
           onStudentUnenrolled={handleStudentUnenrolled}
+        />
+
+        <ModalComissoesTurma
+          isOpen={comissoesTurmaModal.isOpen}
+          onClose={() => setComissoesTurmaModal({ ...comissoesTurmaModal, isOpen: false })}
+          turmaId={comissoesTurmaModal.turmaId}
+          cursoNome={comissoesTurmaModal.cursoNome}
+          cursoPreco={comissoesTurmaModal.cursoPreco}
         />
 
         {/* Payment Generation Modal */}

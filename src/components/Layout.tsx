@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { GraduationCap, User, LogOut, BookOpen, Home, DoorClosed, Activity, Users, BarChart3, CalendarDays, GitBranch, ClipboardList, Wallet, Building2, ChevronDown, FileText, Menu, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -15,7 +15,12 @@ export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const { unidades, selectedUnidadeId, setSelectedUnidadeId, selectedUnidade } = useUnidade();
+
+  useEffect(() => {
+    api.getUser().then(setUser);
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -54,6 +59,8 @@ export function Layout({ children }: LayoutProps) {
     { icon: Building2, label: 'Unidades', path: '/unidades' },
     { icon: Users, label: 'Usuários', path: '/usuarios' },
   ];
+
+  const visibleGlobalItems = user?.is_super_admin ? globalMenuItems : [];
 
   return (
     <div className="min-h-screen flex fade-in">
@@ -132,10 +139,10 @@ export function Layout({ children }: LayoutProps) {
           ))}
 
           {/* Separator */}
-          <div className="mx-4 my-2 border-t border-gray-700" />
+          {visibleGlobalItems.length > 0 && <div className="mx-4 my-2 border-t border-gray-700" />}
 
           {/* Global pages */}
-          {globalMenuItems.map((item, index) => (
+          {visibleGlobalItems.map((item, index) => (
             <button
               key={index}
               onClick={() => handleNavigate(item.path)}

@@ -97,7 +97,7 @@ router.get('/me', async (req, res) => {
     const decoded = jwt.default.verify(token, process.env.JWT_SECRET || 'default-dev-secret');
 
     const result = await pool.query(
-      'SELECT id, email, full_name, created_at FROM users WHERE id = $1',
+      'SELECT id, email, full_name, is_super_admin, created_at FROM users WHERE id = $1',
       [decoded.id]
     );
 

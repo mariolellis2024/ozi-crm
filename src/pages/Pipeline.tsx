@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
 import { Filter, X, MessageCircle, ClipboardList } from 'lucide-react';
-import { formatPhone } from '../utils/format';
+import { formatPhone, formatCurrency } from '../utils/format';
 import toast from 'react-hot-toast';
 import { useUnidade } from '../contexts/UnidadeContext';
 
@@ -15,6 +15,7 @@ interface Interest {
   aluno_unidade_id: string | null;
   curso_id: string;
   curso_nome: string;
+  curso_preco: number | string | null;
   status: string;
   turma_id: string | null;
   created_at: string;
@@ -347,11 +348,14 @@ export function Pipeline() {
               >
                 {/* Column Header */}
                 <div className="p-4 border-b border-dark-lighter">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-1">
                     <h3 className={`font-semibold ${cfg.color}`}>{cfg.label}</h3>
                     <span className={`text-xs px-2 py-1 rounded-full border ${cfg.bgColor} font-medium`}>
                       {items.length}
                     </span>
+                  </div>
+                  <div className="text-sm font-medium text-gray-400">
+                    {formatCurrency(items.reduce((acc, curr) => acc + (parseFloat(curr.curso_preco as string) || 0), 0))}
                   </div>
                 </div>
 

@@ -133,9 +133,10 @@ router.get('/turma/:turmaId/enrolled', async (req, res) => {
   try {
     const { turmaId } = req.params;
     const result = await pool.query(
-      `SELECT a.id, a.nome, a.email, a.whatsapp, a.empresa, a.available_periods, aci.id as interest_id
+      `SELECT a.id, a.nome, a.email, a.whatsapp, a.empresa, a.available_periods, aci.id as interest_id, u.full_name as enrolled_by_name
        FROM aluno_curso_interests aci
        INNER JOIN alunos a ON a.id = aci.aluno_id
+       LEFT JOIN users u ON u.id = aci.enrolled_by
        WHERE aci.turma_id = $1 AND aci.status = 'enrolled'`,
       [turmaId]
     );
@@ -278,9 +279,9 @@ router.post('/enroll', async (req, res) => {
     }
 
     const result = await pool.query(
-      `UPDATE aluno_curso_interests SET status = 'enrolled', turma_id = $1
+      `UPDATE aluno_curso_interests SET status = 'enrolled', turma_id = $1, enrolled_by = $4
        WHERE aluno_id = $2 AND curso_id = $3 RETURNING *`,
-      [turma_id, aluno_id, curso_id]
+      [turma_id, aluno_id, curso_id, req.user?.id || null]
     );
 
     if (result.rows.length === 0) {
@@ -303,9 +304,9 @@ router.put('/enroll', async (req, res) => {
     const { aluno_id, curso_id, turma_id } = req.body;
 
     const result = await pool.query(
-      `UPDATE aluno_curso_interests SET status = 'enrolled', turma_id = $1
+      `UPDATE aluno_curso_interests SET status = 'enrolled', turma_id = $1, enrolled_by = $4
        WHERE aluno_id = $2 AND curso_id = $3 RETURNING *`,
-      [turma_id, aluno_id, curso_id]
+      [turma_id, aluno_id, curso_id, req.user?.id || null]
     );
 
     if (result.rows.length === 0) {
@@ -353,6 +354,11 @@ router.put('/:id/status', async (req, res) => {
       result = await pool.query(
         'UPDATE aluno_curso_interests SET status = $1, turma_id = NULL WHERE id = $2 RETURNING *',
         [status, id]
+      );
+    } else if (status === 'enrolled') {
+      result = await pool.query(
+        'UPDATE aluno_curso_interests SET status = $1, enrolled_by = $3 WHERE id = $2 RETURNING *',
+        [status, id, req.user?.id || null]
       );
     } else {
       result = await pool.query(

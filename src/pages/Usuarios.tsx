@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
 import { Pencil, Trash2, UserPlus, Mail, Lock, User, ShieldCheck, Ban, ShieldOff, Building2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 
@@ -37,10 +38,19 @@ export function Usuarios() {
   });
   const [unidades, setUnidades] = useState<Unidade[]>([]);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
-    loadUsers();
-    loadUnidades();
-  }, []);
+    api.getUser().then(user => {
+      if (!user?.is_super_admin) {
+        toast.error('Acesso negado');
+        navigate('/');
+      } else {
+        loadUsers();
+        loadUnidades();
+      }
+    });
+  }, [navigate]);
 
   async function loadUsers() {
     try {

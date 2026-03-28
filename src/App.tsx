@@ -42,6 +42,7 @@ interface User {
   id: string;
   email: string;
   full_name?: string;
+  is_super_admin?: boolean;
 }
 
 // Auth cache — avoid re-fetching /api/auth/me on every navigation

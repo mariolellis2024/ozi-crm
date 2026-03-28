@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
         aci.id, aci.aluno_id, aci.curso_id, aci.status, aci.turma_id, aci.created_at,
         a.nome as aluno_nome, a.email as aluno_email, a.whatsapp as aluno_whatsapp,
         a.unidade_id as aluno_unidade_id,
-        c.nome as curso_nome,
+        c.nome as curso_nome, c.preco as curso_preco,
         u.nome as unidade_nome
       FROM aluno_curso_interests aci
       JOIN alunos a ON a.id = aci.aluno_id

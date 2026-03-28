@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { Plus, Pencil, Trash2, Search, Users, TrendingUp, Filter, CheckSquare, Square, Edit3, ShieldOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Users, TrendingUp, Filter, CheckSquare, Square, Edit3, ShieldOff, ClipboardList, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatPhone } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
@@ -89,6 +90,42 @@ export function Alunos() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const [bulkEditModal, setBulkEditModal] = useState(false);
+
+  // History modal
+  const [historyModal, setHistoryModal] = useState<{
+    isOpen: boolean;
+    alunoId: string;
+    alunoNome: string;
+    entries: any[];
+    newEntry: string;
+    loading: boolean;
+  }>({ isOpen: false, alunoId: '', alunoNome: '', entries: [], newEntry: '', loading: false });
+
+  async function openHistory(alunoId: string, alunoNome: string) {
+    setHistoryModal({ isOpen: true, alunoId, alunoNome, entries: [], newEntry: '', loading: true });
+    try {
+      const data = await api.get(`/api/contact-history/${alunoId}`);
+      setHistoryModal(prev => ({ ...prev, entries: data, loading: false }));
+    } catch {
+      setHistoryModal(prev => ({ ...prev, loading: false }));
+    }
+  }
+
+  async function addHistoryEntry() {
+    if (!historyModal.newEntry.trim()) return;
+    try {
+      await api.post('/api/contact-history', {
+        aluno_id: historyModal.alunoId,
+        tipo: 'contato',
+        descricao: historyModal.newEntry
+      });
+      const data = await api.get(`/api/contact-history/${historyModal.alunoId}`);
+      setHistoryModal(prev => ({ ...prev, entries: data, newEntry: '' }));
+      toast.success('Registro adicionado');
+    } catch {
+      toast.error('Erro ao salvar registro');
+    }
+  }
 
   useEffect(() => {
     // Initialize filters from URL params
@@ -643,7 +680,14 @@ export function Alunos() {
                       )}
                       <td className="px-6 py-4">
                         <div>
-                          <div className="text-white font-medium">{aluno.nome}</div>
+                          <button 
+                            onClick={() => openHistory(aluno.id, aluno.nome)}
+                            className="text-white font-medium hover:text-teal-accent text-left transition-colors flex items-center gap-1.5"
+                            title="Ver histórico de contatos"
+                          >
+                            <ClipboardList className="h-3.5 w-3.5" />
+                            {aluno.nome}
+                          </button>
                           {aluno.empresa && (
                             <div className="text-gray-400 text-sm">{aluno.empresa}</div>
                           )}
@@ -835,6 +879,81 @@ export function Alunos() {
           onCancel={handleCancelDelete}
           variant="danger"
         />
+
+      {/* Contact History modal */}
+      {historyModal.isOpen && createPortal(
+        <div className="fixed inset-0 z-[10000] bg-black/60 flex items-center justify-center p-4 fade-in" onClick={() => setHistoryModal(prev => ({ ...prev, isOpen: false }))}>
+          <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md max-h-[80vh] flex flex-col scale-in" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                <ClipboardList className="h-5 w-5 text-teal-accent" />
+                Histórico de Contato
+              </h2>
+              <button onClick={() => setHistoryModal(prev => ({ ...prev, isOpen: false }))} className="text-gray-400 hover:text-white transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="text-gray-400 text-sm mb-4">
+              <span className="text-white font-medium">{historyModal.alunoNome}</span>
+            </p>
+
+            {/* Add new entry */}
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                value={historyModal.newEntry}
+                onChange={e => setHistoryModal(prev => ({ ...prev, newEntry: e.target.value }))}
+                placeholder="Anotar contato, observação..."
+                className="flex-1 bg-dark-lighter border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-accent/50 focus:outline-none placeholder-gray-500"
+                onKeyDown={e => e.key === 'Enter' && addHistoryEntry()}
+              />
+              <button
+                onClick={addHistoryEntry}
+                disabled={!historyModal.newEntry.trim()}
+                className="px-3 py-2 bg-teal-accent text-dark font-medium rounded-lg text-sm hover:bg-teal-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Timeline */}
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+              {historyModal.loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-teal-accent border-t-transparent"></div>
+                </div>
+              ) : historyModal.entries.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 text-sm">Nenhum registro ainda</p>
+                </div>
+              ) : (
+                historyModal.entries.map((entry: any) => (
+                  <div key={entry.id} className={`p-3 rounded-xl border text-sm transition-colors ${
+                    entry.tipo === 'perda' 
+                      ? 'bg-red-500/10 border-red-500/20 hover:border-red-500/30' 
+                      : 'bg-dark-lighter border-gray-700/50 hover:border-gray-600'
+                  }`}>
+                    <div className="flex justify-between items-start gap-4">
+                      <p className="text-gray-200 leading-relaxed break-words flex-1">{entry.descricao}</p>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium tracking-wide flex-shrink-0 ${
+                        entry.tipo === 'perda' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-teal-accent/20 text-teal-accent border border-teal-accent/30'
+                      }`}>
+                        {entry.tipo === 'perda' ? 'Perda' : 'Contato'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-700/50">
+                      <span className="text-gray-500 text-xs font-medium">{entry.user_name || entry.user_email || 'Sistema'}</span>
+                      <span className="text-gray-500 text-xs">{new Date(entry.created_at).toLocaleDateString('pt-BR')} às {new Date(entry.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       </div>
     </div>
   );

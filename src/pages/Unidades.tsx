@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
 import { Plus, Pencil, Trash2, MapPin, Building2, Zap, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { formatCurrency } from '../utils/format';
@@ -45,7 +46,18 @@ export function Unidades() {
     }
   }
 
-  useEffect(() => { loadUnidades(); }, []);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    api.getUser().then(user => {
+      if (!user?.is_super_admin) {
+        toast.error('Acesso negado');
+        navigate('/');
+      } else {
+        loadUnidades();
+      }
+    });
+  }, [navigate]);
 
   async function loadUnidades() {
     try {
