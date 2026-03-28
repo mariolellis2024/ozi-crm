@@ -43,9 +43,10 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: str
   interested: { label: 'Interessados', color: 'text-amber-400', bgColor: 'bg-amber-500/10 border-amber-500/30' },
   enrolled: { label: 'Matriculados', color: 'text-blue-400', bgColor: 'bg-blue-500/10 border-blue-500/30' },
   completed: { label: 'Concluídos', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10 border-emerald-500/30' },
+  lost: { label: 'Perdidos', color: 'text-red-400', bgColor: 'bg-red-500/10 border-red-500/30' },
 };
 
-const COLUMNS = ['interested', 'enrolled', 'completed'];
+const COLUMNS = ['interested', 'enrolled', 'completed', 'lost'];
 
 export function Pipeline() {
   const { selectedUnidadeId } = useUnidade();
@@ -71,6 +72,14 @@ export function Pipeline() {
     isOpen: false, interest: null, turmas: [], selectedTurmaId: '',
     genero: '', dataNascimento: '', cep: '', loading: false, hasExistingData: false
   });
+
+  // Loss reason modal
+  const [lossModal, setLossModal] = useState<{
+    isOpen: boolean;
+    interest: Interest | null;
+    motivo: string;
+    loading: boolean;
+  }>({ isOpen: false, interest: null, motivo: '', loading: false });
 
   useEffect(() => {
     loadData();
@@ -172,12 +181,40 @@ export function Pipeline() {
       return;
     }
 
+    // If moving to lost, ask for reason
+    if (newStatus === 'lost') {
+      setLossModal({ isOpen: true, interest, motivo: '', loading: false });
+      return;
+    }
+
     try {
       await api.put(`/api/interests/${interest.id}/status`, { status: newStatus });
       toast.success(`Aluno movido para ${STATUS_CONFIG[newStatus].label}`);
       loadData();
     } catch (error: any) {
       toast.error(error.message || 'Erro ao mover aluno');
+    }
+  }
+
+  async function handleLostConfirm() {
+    if (!lossModal.interest) return;
+    setLossModal(prev => ({ ...prev, loading: true }));
+    try {
+      // Save contact history with loss reason
+      await api.post('/api/contact-history', {
+        aluno_id: lossModal.interest.aluno_id,
+        tipo: 'perda',
+        descricao: lossModal.motivo || 'Não quis continuar',
+        motivo_perda: lossModal.motivo || 'Não quis continuar'
+      });
+      // Move to lost
+      await api.put(`/api/interests/${lossModal.interest.id}/status`, { status: 'lost' });
+      toast.success('Aluno marcado como perdido');
+      setLossModal({ isOpen: false, interest: null, motivo: '', loading: false });
+      loadData();
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao marcar como perdido');
+      setLossModal(prev => ({ ...prev, loading: false }));
     }
   }
 
@@ -256,7 +293,7 @@ export function Pipeline() {
         </div>
 
         {/* Kanban Board */}
-        <div className="grid grid-cols-3 gap-4 min-h-[60vh]">
+        <div className="grid grid-cols-4 gap-4 min-h-[60vh]">
           {COLUMNS.map(status => {
             const items = getColumnItems(status);
             const cfg = STATUS_CONFIG[status];
@@ -350,6 +387,46 @@ export function Pipeline() {
           })}
         </div>
       </div>
+
+      {/* Loss reason modal */}
+      {lossModal.isOpen && lossModal.interest && createPortal(
+        <div className="fixed inset-0 z-[10000] bg-black/60 flex items-center justify-center p-4" onClick={() => setLossModal(prev => ({ ...prev, isOpen: false }))}>
+          <div className="bg-dark-card rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-white">Marcar como Perdido</h2>
+              <button onClick={() => setLossModal(prev => ({ ...prev, isOpen: false }))} className="text-gray-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="text-gray-400 text-sm mb-4">
+              Por que <span className="text-white font-medium">{lossModal.interest.aluno_nome}</span> não quis continuar?
+            </p>
+            <textarea
+              value={lossModal.motivo}
+              onChange={e => setLossModal(prev => ({ ...prev, motivo: e.target.value }))}
+              placeholder="Ex: Não tem interesse, achou caro, mudou de cidade..."
+              rows={3}
+              className="w-full bg-dark-lighter border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500/50 focus:outline-none mb-4 resize-none"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setLossModal(prev => ({ ...prev, isOpen: false }))}
+                className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 rounded-xl hover:bg-dark-lighter transition-colors text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleLostConfirm}
+                disabled={lossModal.loading}
+                className="flex-1 px-4 py-2.5 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600 transition-colors text-sm disabled:opacity-50"
+              >
+                {lossModal.loading ? 'Salvando...' : '✗ Confirmar Perda'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Enrollment Modal */}
       {enrollModal.isOpen && enrollModal.interest && createPortal(

@@ -317,3 +317,26 @@ CREATE INDEX IF NOT EXISTS idx_interests_enrolled_by ON aluno_curso_interests(en
 -- =====================================================
 ALTER TABLE unidades ADD COLUMN IF NOT EXISTS horas_disponiveis_dia NUMERIC(4,1) NOT NULL DEFAULT 0;
 ALTER TABLE unidades ADD COLUMN IF NOT EXISTS valor_hora_aluno NUMERIC(10,2) NOT NULL DEFAULT 0;
+
+-- =====================================================
+-- Add 'lost' status to interest_status enum
+-- =====================================================
+DO $$ BEGIN
+  ALTER TYPE interest_status ADD VALUE IF NOT EXISTS 'lost';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- =====================================================
+-- Contact history — track interactions with students
+-- =====================================================
+CREATE TABLE IF NOT EXISTS contact_history (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  aluno_id uuid NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES users(id) ON DELETE SET NULL,
+  tipo VARCHAR(50) NOT NULL DEFAULT 'contato',
+  descricao TEXT NOT NULL,
+  motivo_perda VARCHAR(255),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_contact_history_aluno ON contact_history(aluno_id);

@@ -17,15 +17,29 @@ export async function runMigrations(retries = 10, delay = 3000) {
     try {
       const client = await pool.connect();
       try {
+        // Execute the full init.sql in a single transaction
+        await client.query('BEGIN');
         await client.query(initSQL);
+        await client.query('COMMIT');
         console.log('✅ Database migrations completed successfully');
         return;
+      } catch (innerError) {
+        await client.query('ROLLBACK').catch(() => {});
+        
+        // If schema is already up to date, these errors are expected
+        if (innerError.code === '42710' || // duplicate_object (enum exists)
+            innerError.code === '42701' || // duplicate_column
+            innerError.code === '42P07')   // duplicate_table
+        {
+          console.log('✅ Database schema already up to date');
+          return;
+        }
+        throw innerError;
       } finally {
         client.release();
       }
     } catch (error) {
-      if (error.code === '42710') {
-        // duplicate_object (enum already exists) — schema is up to date
+      if (error.code === '42710' || error.code === '42701' || error.code === '42P07') {
         console.log('✅ Database schema already up to date');
         return;
       }
@@ -38,7 +52,7 @@ export async function runMigrations(retries = 10, delay = 3000) {
         }
       }
 
-      console.error(`❌ Migration error (attempt ${attempt}/${retries}):`, error.message);
+      console.error(`❌ Migration error (attempt ${attempt}/${retries}):`, error.message, error.code);
       if (attempt === retries) throw error;
       await sleep(delay);
     }

@@ -24,6 +24,7 @@ import pagamentosRoutes from './routes/pagamentos.js';
 import uploadRoutes from './routes/upload.js';
 import formulariosRoutes from './routes/formularios.js';
 import formsPublicRoutes from './routes/forms-public.js';
+import contactHistoryRoutes from './routes/contact-history.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -57,6 +58,7 @@ app.use('/api/certificates', authenticateToken, certificatesRoutes);
 app.use('/api/pagamentos', authenticateToken, pagamentosRoutes);
 app.use('/api/upload', authenticateToken, uploadRoutes);
 app.use('/api/formularios', authenticateToken, formulariosRoutes);
+app.use('/api/contact-history', authenticateToken, contactHistoryRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Plus, Pencil, Trash2, Search, Users, TrendingUp, Filter, CheckSquare, Square, Edit3 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Users, TrendingUp, Filter, CheckSquare, Square, Edit3, ShieldOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatPhone } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
@@ -11,7 +11,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useUnidade } from '../contexts/UnidadeContext';
 
 type Period = 'manha' | 'tarde' | 'noite';
-type InterestStatus = 'interested' | 'enrolled' | 'completed';
+type InterestStatus = 'interested' | 'enrolled' | 'completed' | 'lost';
 
 interface Aluno {
   id: string;
@@ -59,6 +59,7 @@ export function Alunos() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | InterestStatus | 'none'>('all');
+  const [showLost, setShowLost] = useState(false);
   const [cursoFilter, setCursoFilter] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [cursosInteresseModal, setCursosInteresseModal] = useState({
@@ -123,6 +124,7 @@ export function Alunos() {
       if (cursoFilter) params.set('curso', cursoFilter);
       if (searchTerm) params.set('search', searchTerm);
       if (selectedUnidadeId) params.set('unidade_id', selectedUnidadeId);
+      if (statusFilter === 'all' && !showLost) params.set('exclude_lost', 'true');
 
       const result = await api.get(`/api/alunos?${params.toString()}`);
       setAlunos(result.data || []);
@@ -309,6 +311,7 @@ export function Alunos() {
       case 'interested': return 'Interessado';
       case 'enrolled': return 'Cursando';
       case 'completed': return 'Concluído';
+      case 'lost': return 'Perdido';
       default: return status;
     }
   }
@@ -318,6 +321,7 @@ export function Alunos() {
       case 'interested': return 'text-blue-400';
       case 'enrolled': return 'text-green-400';
       case 'completed': return 'text-purple-400';
+      case 'lost': return 'text-red-400';
       default: return 'text-gray-400';
     }
   }
@@ -549,6 +553,17 @@ export function Alunos() {
               >
                 <Users className="h-4 w-4" />
                 Sem Interesse
+              </button>
+              <button
+                onClick={() => { setStatusFilter('lost'); setShowLost(true); }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  statusFilter === 'lost'
+                    ? 'bg-red-500 text-white'
+                    : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark-card'
+                }`}
+              >
+                <ShieldOff className="h-4 w-4" />
+                Perdidos
               </button>
             </div>
           </div>

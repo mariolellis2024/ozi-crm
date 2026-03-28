@@ -136,12 +136,24 @@ router.get('/', async (req, res) => {
 
     } else {
       // All students with their interests
+      const { exclude_lost } = req.query;
       let whereClause = '';
       const params = [];
       let paramIndex = 1;
 
+      // By default, exclude students who only have 'lost' interests
+      if (exclude_lost !== 'false') {
+        whereClause = `WHERE a.id NOT IN (
+          SELECT aci2.aluno_id FROM aluno_curso_interests aci2
+          WHERE aci2.aluno_id = a.id
+          GROUP BY aci2.aluno_id
+          HAVING COUNT(*) = COUNT(*) FILTER (WHERE aci2.status = 'lost')
+          AND COUNT(*) > 0
+        )`;
+      }
+
       if (unidade_id) {
-        whereClause = `WHERE a.unidade_id = $${paramIndex}`;
+        whereClause += (whereClause ? ' AND' : 'WHERE') + ` a.unidade_id = $${paramIndex}`;
         params.push(unidade_id);
         paramIndex++;
       }
