@@ -1,7 +1,9 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { X, Plus, Trash2, GraduationCap, Calendar } from 'lucide-react';
+import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { DaySelector, DAYS_OF_WEEK } from './turma/DaySelector';
+import { ProfessorList } from './turma/ProfessorList';
 
 type Period = 'manha' | 'tarde' | 'noite';
 
@@ -50,16 +52,6 @@ const PERIODS: { value: Period; label: string; color: string }[] = [
   { value: 'noite', label: 'Noite', color: 'text-blue-400' }
 ];
 
-const DAYS_OF_WEEK = [
-  { value: 1, label: 'Segunda-feira', short: 'Seg' },
-  { value: 2, label: 'Terça-feira', short: 'Ter' },
-  { value: 3, label: 'Quarta-feira', short: 'Qua' },
-  { value: 4, label: 'Quinta-feira', short: 'Qui' },
-  { value: 5, label: 'Sexta-feira', short: 'Sex' },
-  { value: 6, label: 'Sábado', short: 'Sáb' },
-  { value: 7, label: 'Domingo', short: 'Dom' }
-];
-
 export function ModalTurma({ 
   isOpen, 
   editingId, 
@@ -79,12 +71,10 @@ export function ModalTurma({
   // Validação da data de início
   const isStartDateValid = () => {
     if (!formData.start_date || !formData.days_of_week || formData.days_of_week.length === 0) {
-      return true; // Não validar se não há dados suficientes
+      return true;
     }
-    
     const startDate = new Date(formData.start_date + 'T00:00:00');
-    const startDayOfWeek = startDate.getDay() === 0 ? 7 : startDate.getDay(); // Converter domingo de 0 para 7
-    
+    const startDayOfWeek = startDate.getDay() === 0 ? 7 : startDate.getDay();
     return formData.days_of_week.includes(startDayOfWeek);
   };
 
@@ -94,26 +84,22 @@ export function ModalTurma({
   function calculateEndDate(startDate: string, daysOfWeek: number[], totalHours: number): string {
     if (!startDate || !daysOfWeek.length || !totalHours) return '';
     
-    const hoursPerClass = 3; // 3 horas por aula
+    const hoursPerClass = 3;
     const totalClasses = Math.ceil(totalHours / hoursPerClass);
     
     const start = new Date(startDate + 'T00:00:00');
     let currentDate = new Date(start);
     let classesScheduled = 0;
     
-    // Se a data de início não for um dos dias selecionados, avançar para o próximo dia válido
     while (!daysOfWeek.includes(currentDate.getDay() === 0 ? 7 : currentDate.getDay())) {
       currentDate.setDate(currentDate.getDate() + 1);
     }
     
-    // Contar as aulas até completar o total necessário
     while (classesScheduled < totalClasses) {
       const dayOfWeek = currentDate.getDay() === 0 ? 7 : currentDate.getDay();
-      
       if (daysOfWeek.includes(dayOfWeek)) {
         classesScheduled++;
         if (classesScheduled < totalClasses) {
-          // Avançar para o próximo dia de aula
           do {
             currentDate.setDate(currentDate.getDate() + 1);
           } while (!daysOfWeek.includes(currentDate.getDay() === 0 ? 7 : currentDate.getDay()));
@@ -126,7 +112,7 @@ export function ModalTurma({
     return currentDate.toISOString().split('T')[0];
   }
 
-  // Atualizar data de término automaticamente quando houver mudanças relevantes
+  // Atualizar data de término automaticamente
   React.useEffect(() => {
     if (formData.start_date && formData.days_of_week.length > 0 && cargaHorariaCurso > 0) {
       const calculatedEndDate = calculateEndDate(
@@ -134,57 +120,20 @@ export function ModalTurma({
         formData.days_of_week, 
         cargaHorariaCurso
       );
-      
       if (calculatedEndDate && calculatedEndDate !== formData.end_date) {
-        setFormData(prev => ({
-          ...prev,
-          end_date: calculatedEndDate
-        }));
+        setFormData(prev => ({ ...prev, end_date: calculatedEndDate }));
       }
     }
   }, [formData.start_date, formData.days_of_week, cargaHorariaCurso]);
   
-  function addProfessor() {
-    setFormData({
-      ...formData,
-      professores: [...formData.professores, { professor_id: '', hours: 0 }]
-    });
-  }
-
-  function removeProfessor(index: number) {
-    const newProfessores = formData.professores.filter((_, i) => i !== index);
-    setFormData({
-      ...formData,
-      professores: newProfessores
-    });
-  }
-
-  function updateProfessor(index: number, field: keyof ProfessorAssignment, value: string | number) {
-    const newProfessores = [...formData.professores];
-    newProfessores[index] = {
-      ...newProfessores[index],
-      [field]: field === 'hours' ? Number(value) : value
-    };
-    setFormData({
-      ...formData,
-      professores: newProfessores
-    });
-  }
-
   function toggleDayOfWeek(dayValue: number) {
     const currentDays = formData.days_of_week || [];
     const isSelected = currentDays.includes(dayValue);
     
     if (isSelected) {
-      setFormData({
-        ...formData,
-        days_of_week: currentDays.filter(day => day !== dayValue)
-      });
+      setFormData({ ...formData, days_of_week: currentDays.filter(day => day !== dayValue) });
     } else {
-      setFormData({
-        ...formData,
-        days_of_week: [...currentDays, dayValue].sort()
-      });
+      setFormData({ ...formData, days_of_week: [...currentDays, dayValue].sort() });
     }
   }
 
@@ -404,172 +353,37 @@ export function ModalTurma({
               </div>
             </div>
 
-            {/* Seção de Dias da Semana */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-teal-accent" />
-                <h3 className="text-lg font-medium text-white">Dias da Semana</h3>
-                <span className="text-sm text-gray-400">(3 horas por aula)</span>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {DAYS_OF_WEEK.map(day => (
-                  <button
-                    key={day.value}
-                    type="button"
-                    onClick={() => toggleDayOfWeek(day.value)}
-                    className={`p-3 rounded-lg border transition-colors text-sm ${
-                      (formData.days_of_week || []).includes(day.value)
-                        ? 'bg-teal-accent text-dark border-teal-accent'
-                        : 'bg-dark-lighter text-gray-400 border-gray-700 hover:text-white hover:border-gray-600'
-                    }`}
-                  >
-                    <div className="font-medium">{day.short}</div>
-                    <div className="text-xs opacity-80">{day.label.split('-')[0]}</div>
-                  </button>
-                ))}
-              </div>
-              
-              <div className="text-sm text-gray-400">
-                {(formData.days_of_week || []).length === 0 ? (
-                  <span className="text-red-400">⚠️ Selecione pelo menos um dia da semana</span>
-                ) : (
-                  <div className="space-y-1">
-                    <span>
-                      Selecionados: {(formData.days_of_week || []).map(dayValue => 
-                        DAYS_OF_WEEK.find(d => d.value === dayValue)?.short
-                      ).join(', ')}
-                    </span>
-                    {cargaHorariaCurso > 0 && (
-                      <div className="text-xs">
-                        <span className="text-teal-accent">
-                          {Math.ceil(cargaHorariaCurso / 3)} aulas necessárias
-                        </span>
-                        {formData.days_of_week.length > 0 && (
-                          <span className="ml-2">
-                            • {formData.days_of_week.length} dia{formData.days_of_week.length > 1 ? 's' : ''} por semana
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* Sub-componente: Dias da Semana */}
+            <DaySelector
+              selectedDays={formData.days_of_week || []}
+              onToggleDay={toggleDayOfWeek}
+              cargaHorariaCurso={cargaHorariaCurso}
+            />
 
-            {/* Seção de Professores */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-white flex items-center gap-2">
-                  <GraduationCap className="h-5 w-5" />
-                  Professores
-                </h3>
-                <button
-                  type="button"
-                  onClick={addProfessor}
-                  className="flex items-center gap-2 px-3 py-1 bg-teal-accent text-dark rounded-lg hover:bg-teal-accent/90 transition-colors text-sm"
-                >
-                  <Plus className="h-4 w-4" />
-                  Adicionar Professor
-                </button>
-              </div>
-
-              {formData.professores.length > 0 && (
-                <div className="space-y-3">
-                  {formData.professores.map((professorAssignment, index) => (
-                    <div key={index} className="bg-dark-lighter rounded-lg p-4 border border-gray-700">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-400 mb-1">
-                            Professor
-                          </label>
-                          <select
-                            value={professorAssignment.professor_id}
-                            onChange={(e) => updateProfessor(index, 'professor_id', e.target.value)}
-                            className="w-full bg-dark border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                            required
-                          >
-                            <option value="">Selecione um professor</option>
-                            {(() => {
-                              // Filter professors by the selected sala's unidade
-                              const selectedSala = salas.find(s => s.id === formData.sala_id);
-                              return professores
-                                .filter(prof => {
-                                  // Exclude already selected professors
-                                  const alreadySelected = formData.professores.some((pa, i) => 
-                                    i !== index && pa.professor_id === prof.id
-                                  );
-                                  if (alreadySelected) return false;
-                                  // Filter by unidade if a sala is selected
-                                  if (selectedSala?.unidade_id && prof.unidade_id) {
-                                    return prof.unidade_id === selectedSala.unidade_id;
-                                  }
-                                  return true;
-                                })
-                                .map(professor => (
-                                  <option key={professor.id} value={professor.id}>
-                                    {professor.nome}
-                                  </option>
-                                ));
-                            })()}
-                          </select>
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-400 mb-1">
-                              Horas
-                            </label>
-                            <input
-                              type="number"
-                              value={professorAssignment.hours}
-                              onChange={(e) => updateProfessor(index, 'hours', e.target.value)}
-                              className="w-full bg-dark border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-                              min="0"
-                              step="0.5"
-                              required
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeProfessor(index)}
-                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                            title="Remover professor"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Resumo das horas */}
-              {cargaHorariaCurso > 0 && (
-                <div className={`p-3 rounded-lg border ${
-                  horasValidas 
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
-                    : 'bg-red-500/10 border-red-500/30 text-red-400'
-                }`}>
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Total de horas dos professores:</span>
-                    <span className="font-semibold">{totalHorasProfessores}h</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Carga horária do curso:</span>
-                    <span className="font-semibold">{cargaHorariaCurso}h</span>
-                  </div>
-                  {!horasValidas && (
-                    <div className="mt-2 text-xs">
-                      {totalHorasProfessores < cargaHorariaCurso 
-                        ? `Faltam ${cargaHorariaCurso - totalHorasProfessores}h para completar a carga horária`
-                        : `Excesso de ${totalHorasProfessores - cargaHorariaCurso}h na carga horária`
-                      }
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            {/* Sub-componente: Professores */}
+            <ProfessorList
+              professores={formData.professores}
+              availableProfessores={professores}
+              salas={salas}
+              selectedSalaId={formData.sala_id}
+              cargaHorariaCurso={cargaHorariaCurso}
+              onAdd={() => setFormData({
+                ...formData,
+                professores: [...formData.professores, { professor_id: '', hours: 0 }]
+              })}
+              onRemove={(index) => setFormData({
+                ...formData,
+                professores: formData.professores.filter((_, i) => i !== index)
+              })}
+              onUpdate={(index, field, value) => {
+                const newProfessores = [...formData.professores];
+                newProfessores[index] = {
+                  ...newProfessores[index],
+                  [field]: field === 'hours' ? Number(value) : value
+                };
+                setFormData({ ...formData, professores: newProfessores });
+              }}
+            />
             
             <button
               type="submit"

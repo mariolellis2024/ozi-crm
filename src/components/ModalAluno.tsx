@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { formatWhatsappInput, formatCepInput } from '../utils/format';
 import { LoadingButton } from './LoadingButton';
+import { InputField } from './InputField';
+import toast from 'react-hot-toast';
 
 type Period = 'manha' | 'tarde' | 'noite';
 
@@ -62,6 +64,20 @@ export function ModalAluno({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!formData.nome.trim()) {
+      toast.error('O nome é obrigatório');
+      return;
+    }
+    if (!formData.whatsapp.trim()) {
+      toast.error('O WhatsApp é obrigatório');
+      return;
+    }
+    if (!formData.unidade_id) {
+      toast.error('Selecione uma unidade');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await onSubmit(e);
@@ -77,7 +93,7 @@ export function ModalAluno({
       onClick={onClose}
     >
       <div 
-        className="bg-dark-card rounded-2xl p-6 w-full max-w-md"
+        className="bg-dark-card rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
@@ -94,60 +110,40 @@ export function ModalAluno({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="nome" className="block text-sm font-medium text-gray-400 mb-1">
-              Nome
-            </label>
-            <input
-              type="text"
-              id="nome"
-              value={formData.nome}
-              onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-              required
-            />
-          </div>
+          <InputField
+            id="nome"
+            label="Nome"
+            value={formData.nome}
+            onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+            required
+          />
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-            />
-          </div>
+          <InputField
+            id="email"
+            type="email"
+            label="Email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            required={false}
+          />
 
-          <div>
-            <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-400 mb-1">
-              WhatsApp
-            </label>
-            <input
-              type="tel"
-              id="whatsapp"
-              value={formData.whatsapp}
-              onChange={(e) => setFormData({ ...formData, whatsapp: formatWhatsappInput(e.target.value) })}
-              placeholder="(11) 99999-9999"
-              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-              required
-            />
-          </div>
+          <InputField
+            id="whatsapp"
+            type="tel"
+            label="WhatsApp"
+            value={formData.whatsapp}
+            onChange={(e) => setFormData({ ...formData, whatsapp: formatWhatsappInput(e.target.value) })}
+            placeholder="(11) 99999-9999"
+            required
+          />
 
-          <div>
-            <label htmlFor="empresa" className="block text-sm font-medium text-gray-400 mb-1">
-              Empresa
-            </label>
-            <input
-              type="text"
-              id="empresa"
-              value={formData.empresa}
-              onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
-              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-            />
-          </div>
+          <InputField
+            id="empresa"
+            label="Empresa"
+            value={formData.empresa}
+            onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
+            required={false}
+          />
 
           {/* Unidade select */}
           <div>
@@ -187,34 +183,25 @@ export function ModalAluno({
           </div>
 
           {/* Data de Nascimento */}
-          <div>
-            <label htmlFor="dataNascimento" className="block text-sm font-medium text-gray-400 mb-1">
-              Data de Nascimento
-            </label>
-            <input
-              type="date"
-              id="dataNascimento"
-              value={formData.dataNascimento}
-              onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
-              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-            />
-          </div>
+          <InputField
+            id="dataNascimento"
+            type="date"
+            label="Data de Nascimento"
+            value={formData.dataNascimento}
+            onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
+            required={false}
+          />
 
           {/* CEP */}
-          <div>
-            <label htmlFor="cep" className="block text-sm font-medium text-gray-400 mb-1">
-              CEP
-            </label>
-            <input
-              type="text"
-              id="cep"
-              value={formData.cep}
-              onChange={(e) => setFormData({ ...formData, cep: formatCepInput(e.target.value) })}
-              placeholder="00000-000"
-              maxLength={9}
-              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-            />
-          </div>
+          <InputField
+            id="cep"
+            label="CEP"
+            value={formData.cep}
+            onChange={(e) => setFormData({ ...formData, cep: formatCepInput(e.target.value) })}
+            placeholder="00000-000"
+            maxLength={9}
+            required={false}
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">

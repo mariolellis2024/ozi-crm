@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { formatWhatsappInput } from '../utils/format';
 import { LoadingButton } from './LoadingButton';
+import { InputField } from './InputField';
+import toast from 'react-hot-toast';
 
 interface ModalProfessorProps {
   isOpen: boolean;
@@ -39,6 +41,20 @@ export function ModalProfessor({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!formData.nome.trim()) {
+      toast.error('O nome é obrigatório');
+      return;
+    }
+    if (!formData.email.trim()) {
+      toast.error('O email é obrigatório');
+      return;
+    }
+    if (!formData.whatsapp.trim()) {
+      toast.error('O WhatsApp é obrigatório');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await onSubmit(e);
@@ -71,64 +87,43 @@ export function ModalProfessor({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="nome" className="block text-sm font-medium text-gray-400 mb-1">
-              Nome
-            </label>
-            <input
-              type="text"
-              id="nome"
-              value={formData.nome}
-              onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-              required
-            />
-          </div>
+          <InputField
+            id="nome"
+            label="Nome"
+            value={formData.nome}
+            onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+            required
+          />
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-              required
-            />
-          </div>
+          <InputField
+            id="email"
+            type="email"
+            label="Email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            required
+          />
 
-          <div>
-            <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-400 mb-1">
-              WhatsApp
-            </label>
-            <input
-              type="tel"
-              id="whatsapp"
-              value={formData.whatsapp}
-              onChange={(e) => setFormData({ ...formData, whatsapp: formatWhatsappInput(e.target.value) })}
-              placeholder="(11) 99999-9999"
-              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-              required
-            />
-          </div>
+          <InputField
+            id="whatsapp"
+            type="tel"
+            label="WhatsApp"
+            value={formData.whatsapp}
+            onChange={(e) => setFormData({ ...formData, whatsapp: formatWhatsappInput(e.target.value) })}
+            placeholder="(11) 99999-9999"
+            required
+          />
 
-          <div>
-            <label htmlFor="valor_hora" className="block text-sm font-medium text-gray-400 mb-1">
-              Valor da Hora
-            </label>
-            <input
-              type="number"
-              id="valor_hora"
-              value={formData.valor_hora}
-              onChange={(e) => setFormData({ ...formData, valor_hora: e.target.value })}
-              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-              min="0"
-              step="0.01"
-              required
-            />
-          </div>
+          <InputField
+            id="valor_hora"
+            type="number"
+            label="Valor da Hora"
+            value={formData.valor_hora}
+            onChange={(e) => setFormData({ ...formData, valor_hora: e.target.value })}
+            min="0"
+            step="0.01"
+            required
+          />
 
           <div>
             <label htmlFor="unidade_id" className="block text-sm font-medium text-gray-400 mb-1">

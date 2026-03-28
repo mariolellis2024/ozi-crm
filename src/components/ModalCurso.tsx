@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { X, Plus, Pencil, Trash2, ImagePlus, Loader2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { LoadingButton } from './LoadingButton';
+import { InputField } from './InputField';
+import { formatCurrencyInput, parseCurrencyInput } from '../utils/format';
 import toast from 'react-hot-toast';
 
 interface Categoria {
@@ -170,7 +172,18 @@ export function ModalCurso({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={(e) => {
+            e.preventDefault();
+            if (!formData.nome.trim()) {
+              toast.error('O nome do curso é obrigatório');
+              return;
+            }
+            if (!formData.preco || parseCurrencyInput(formData.preco) <= 0) {
+              toast.error('O preço é obrigatório');
+              return;
+            }
+            onSubmit(e);
+          }} className="space-y-4">
           {/* Image Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">
@@ -236,19 +249,13 @@ export function ModalCurso({
             />
           </div>
 
-          <div>
-            <label htmlFor="nome" className="block text-sm font-medium text-gray-400 mb-1">
-              Nome
-            </label>
-            <input
-              type="text"
-              id="nome"
-              value={formData.nome}
-              onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-              required
-            />
-          </div>
+          <InputField
+            id="nome"
+            label="Nome"
+            value={formData.nome}
+            onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+            required
+          />
 
           <div>
             <label htmlFor="categoria_id" className="block text-sm font-medium text-gray-400 mb-1">
@@ -365,22 +372,14 @@ export function ModalCurso({
             />
           </div>
 
-          <div>
-            <label htmlFor="preco" className="block text-sm font-medium text-gray-400 mb-1">
-              Preço
-            </label>
-            <input
-              type="number"
-              id="preco"
-              value={formData.preco}
-              onChange={(e) => setFormData({ ...formData, preco: e.target.value })}
-              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-              min="0"
-              step="0.01"
-              required
-              placeholder="0,00"
-            />
-          </div>
+          <InputField
+            id="preco"
+            label="Preço"
+            value={formData.preco}
+            onChange={(e) => setFormData({ ...formData, preco: formatCurrencyInput(e.target.value) })}
+            placeholder="R$ 0,00"
+            required
+          />
 
           <LoadingButton
             isLoading={uploading}

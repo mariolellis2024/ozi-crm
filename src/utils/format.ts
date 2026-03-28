@@ -66,3 +66,35 @@ export function formatCepInput(value: string): string {
   if (digits.length <= 5) return digits;
   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 }
+
+/**
+ * Máscara de input para valores monetários — R$ X.XXX,XX
+ * Usada no ModalCurso para formatar preço enquanto digita.
+ * Armazena como string formatada; use parseCurrencyInput para obter o número.
+ */
+export function formatCurrencyInput(value: string): string {
+  // Remove tudo que não é dígito
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return '';
+  
+  // Converte para centavos → reais
+  const cents = parseInt(digits, 10);
+  const reais = (cents / 100).toFixed(2);
+  
+  // Formata com separadores brasileiros
+  const [intPart, decPart] = reais.split('.');
+  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  
+  return `R$ ${formattedInt},${decPart}`;
+}
+
+/**
+ * Extrai o valor numérico de uma string formatada como moeda.
+ * Ex: "R$ 1.500,00" → 1500.00
+ */
+export function parseCurrencyInput(formatted: string): number {
+  if (!formatted) return 0;
+  const digits = formatted.replace(/\D/g, '');
+  if (!digits) return 0;
+  return parseInt(digits, 10) / 100;
+}

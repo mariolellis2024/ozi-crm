@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Plus, Pencil, Trash2, Clock, TrendingUp, Users, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, parseCurrencyInput, formatCurrencyInput } from '../utils/format';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ModalCurso } from '../components/ModalCurso';
 import { ModalCategorias } from '../components/ModalCategorias';
@@ -84,7 +84,7 @@ export function Cursos() {
       const cursoData = {
         ...formData,
         carga_horaria: Number(formData.carga_horaria),
-        preco: Number(formData.preco)
+        preco: parseCurrencyInput(formData.preco)
       };
 
       if (editingId) {
@@ -135,7 +135,7 @@ export function Cursos() {
     setFormData({
       nome: curso.nome,
       carga_horaria: curso.carga_horaria.toString(),
-      preco: curso.preco.toString(),
+      preco: formatCurrencyInput((curso.preco * 100).toString()),
       categoria_id: curso.categoria_id || '',
       imagem_url: curso.imagem_url || ''
     });
