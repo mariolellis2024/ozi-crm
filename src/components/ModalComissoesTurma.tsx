@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, DollarSign, Users } from 'lucide-react';
+import { X, DollarSign, Users, TrendingUp } from 'lucide-react';
 import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/format';
@@ -19,6 +19,15 @@ interface ModalComissoesTurmaProps {
   turmaId: string;
   cursoNome: string;
   cursoPreco: number;
+  cadeiras: number;
+}
+
+function getCommissionRate(enrolled: number, capacity: number): { rate: number; label: string; tier: string } {
+  if (capacity <= 0) return { rate: 0.02, label: '2%', tier: 'base' };
+  const occupancy = (enrolled / capacity) * 100;
+  if (occupancy >= 100) return { rate: 0.05, label: '5%', tier: 'gold' };
+  if (occupancy >= 90) return { rate: 0.03, label: '3%', tier: 'silver' };
+  return { rate: 0.02, label: '2%', tier: 'base' };
 }
 
 export function ModalComissoesTurma({
@@ -26,10 +35,12 @@ export function ModalComissoesTurma({
   onClose,
   turmaId,
   cursoNome,
-  cursoPreco
+  cursoPreco,
+  cadeiras
 }: ModalComissoesTurmaProps) {
   const [comissoes, setComissoes] = useState<Comissao[]>([]);
   const [loading, setLoading] = useState(false);
+  const [enrolledCount, setEnrolledCount] = useState(0);
 
   useEffect(() => {
     if (isOpen) {
@@ -40,15 +51,17 @@ export function ModalComissoesTurma({
   async function loadComissoes() {
     setLoading(true);
     try {
-      // Get all enrolled students for this turma
       const estudantes = await api.get(`/api/interests/turma/${turmaId}/enrolled`);
-      
-      // Calculate comissions locally since we have everything we need
+      const totalEnrolled = estudantes.length;
+      setEnrolledCount(totalEnrolled);
+
+      const { rate } = getCommissionRate(totalEnrolled, cadeiras);
+
       const comissoesMap = new Map<string, Comissao>();
-      
+
       estudantes.forEach((estudante: any) => {
         if (estudante.enrolled_by_name) {
-          const nomeVendedor = estudante.enrolled_by_name.split(' ')[0]; // Use first name
+          const nomeVendedor = estudante.enrolled_by_name;
           if (!comissoesMap.has(nomeVendedor)) {
             comissoesMap.set(nomeVendedor, {
               user_id: 'unknown',
@@ -58,14 +71,14 @@ export function ModalComissoesTurma({
               comissao: 0
             });
           }
-          
+
           const com = comissoesMap.get(nomeVendedor)!;
           com.vendas += 1;
           com.valor_total_vendido += cursoPreco;
-          com.comissao += (cursoPreco * 0.02); // 2% commission
+          com.comissao += (cursoPreco * rate);
         }
       });
-      
+
       setComissoes(Array.from(comissoesMap.values()));
     } catch (error) {
       toast.error('Erro ao carregar comissões');
@@ -76,15 +89,24 @@ export function ModalComissoesTurma({
 
   if (!isOpen) return null;
 
+  const { rate, label, tier } = getCommissionRate(enrolledCount, cadeiras);
+  const occupancyPercent = cadeiras > 0 ? Math.min((enrolledCount / cadeiras) * 100, 100) : 0;
   const totalComissoes = comissoes.reduce((acc, curr) => acc + curr.comissao, 0);
   const totalVendido = comissoes.reduce((acc, curr) => acc + curr.valor_total_vendido, 0);
 
+  const tierColors = {
+    base: { bg: 'bg-gray-500/20', text: 'text-gray-300', border: 'border-gray-500/30', bar: 'bg-gray-400' },
+    silver: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30', bar: 'bg-blue-400' },
+    gold: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30', bar: 'bg-amber-400' },
+  };
+  const tc = tierColors[tier as keyof typeof tierColors];
+
   return createPortal(
-    <div 
+    <div
       className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4 fade-in"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-dark-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col scale-in"
         onClick={(e) => e.stopPropagation()}
       >
@@ -103,6 +125,33 @@ export function ModalComissoesTurma({
           >
             <X className="h-5 w-5" />
           </button>
+        </div>
+
+        {/* Occupancy & Commission Tier */}
+        <div className={`rounded-xl p-4 mb-5 border ${tc.bg} ${tc.border}`}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <TrendingUp className={`h-4 w-4 ${tc.text}`} />
+              <span className="text-white text-sm font-medium">Ocupação da Turma</span>
+            </div>
+            <span className={`text-sm font-bold px-3 py-1 rounded-full border ${tc.bg} ${tc.text} ${tc.border}`}>
+              Comissão: {label}
+            </span>
+          </div>
+          <div className="w-full bg-dark rounded-full h-3 mb-2">
+            <div
+              className={`${tc.bar} h-3 rounded-full transition-all duration-500`}
+              style={{ width: `${occupancyPercent}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-gray-400">
+            <span>{enrolledCount}/{cadeiras} alunos ({occupancyPercent.toFixed(0)}%)</span>
+            <div className="flex gap-3">
+              <span className={occupancyPercent < 90 ? `font-bold ${tc.text}` : ''}>{'<'}90%: 2%</span>
+              <span className={occupancyPercent >= 90 && occupancyPercent < 100 ? `font-bold ${tc.text}` : ''}>90-99%: 3%</span>
+              <span className={occupancyPercent >= 100 ? `font-bold ${tc.text}` : ''}>100%: 5%</span>
+            </div>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -124,14 +173,14 @@ export function ModalComissoesTurma({
                         <p className="text-sm text-gray-400">{com.vendas} venda{com.vendas > 1 ? 's' : ''}</p>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-6 text-sm">
                       <div>
                         <p className="text-gray-400 mb-1">Total Vendido</p>
                         <p className="text-white font-medium">{formatCurrency(com.valor_total_vendido)}</p>
                       </div>
                       <div>
-                        <p className="text-gray-400 mb-1">Comissão (2%)</p>
+                        <p className="text-gray-400 mb-1">Comissão ({label})</p>
                         <p className="text-purple-400 font-bold">{formatCurrency(com.comissao)}</p>
                       </div>
                     </div>
@@ -157,7 +206,7 @@ export function ModalComissoesTurma({
               <span className="text-white font-medium">{formatCurrency(totalVendido)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-400">Total em Comissões (2%)</span>
+              <span className="text-gray-400">Total em Comissões ({label})</span>
               <span className="text-purple-400 font-bold text-lg">{formatCurrency(totalComissoes)}</span>
             </div>
           </div>

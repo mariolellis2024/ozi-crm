@@ -121,7 +121,8 @@ export function Turmas() {
     isOpen: false,
     turmaId: '',
     cursoNome: '',
-    cursoPreco: 0
+    cursoPreco: 0,
+    cadeiras: 0
   });
   const [formData, setFormData] = useState({
     name: '',
@@ -598,7 +599,8 @@ export function Turmas() {
       isOpen: true,
       turmaId: turma.id,
       cursoNome: turma.curso.nome,
-      cursoPreco: turma.curso.preco
+      cursoPreco: turma.curso.preco,
+      cadeiras: turma.cadeiras
     });
   }
 
@@ -1203,6 +1205,7 @@ export function Turmas() {
           turmaId={comissoesTurmaModal.turmaId}
           cursoNome={comissoesTurmaModal.cursoNome}
           cursoPreco={comissoesTurmaModal.cursoPreco}
+          cadeiras={comissoesTurmaModal.cadeiras}
         />
 
         {/* Payment Generation Modal */}
