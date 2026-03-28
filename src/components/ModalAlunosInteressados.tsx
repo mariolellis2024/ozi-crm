@@ -448,8 +448,9 @@ export function ModalAlunosInteressados({
                   className="w-full bg-dark-lighter border border-gray-700 rounded-lg text-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-accent"
                 >
                   <option value="">Selecione...</option>
-                  <option value="m">Masculino</option>
-                  <option value="f">Feminino</option>
+                  <option value="feminino">Feminino</option>
+                  <option value="masculino">Masculino</option>
+                  <option value="outro">Outro</option>
                 </select>
               </div>
 
