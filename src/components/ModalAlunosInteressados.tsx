@@ -47,15 +47,16 @@ export function ModalAlunosInteressados({
   const [enrolledCount, setEnrolledCount] = useState(0);
   const [turmaCapacity, setTurmaCapacity] = useState(0);
 
-  // Enrollment form state (gender, DOB, CEP)
+  // Enrollment form state (email, gender, DOB, CEP)
   const [enrollForm, setEnrollForm] = useState<{
     isOpen: boolean;
     alunoId: string;
     alunoNome: string;
+    email: string;
     genero: string;
     dataNascimento: string;
     cep: string;
-  }>({ isOpen: false, alunoId: '', alunoNome: '', genero: '', dataNascimento: '', cep: '' });
+  }>({ isOpen: false, alunoId: '', alunoNome: '', email: '', genero: '', dataNascimento: '', cep: '' });
 
   useEffect(() => {
     if (isOpen) {
@@ -128,9 +129,10 @@ export function ModalAlunosInteressados({
     }
 
     // Open the enrollment form — pre-fill from existing data
-    let genero = '', dataNascimento = '', cep = '';
+    let email = '', genero = '', dataNascimento = '', cep = '';
     try {
       const alunoData = await api.get(`/api/alunos/${alunoId}`);
+      email = alunoData.email || '';
       genero = alunoData.genero || '';
       dataNascimento = alunoData.data_nascimento ? new Date(alunoData.data_nascimento).toISOString().split('T')[0] : '';
       cep = alunoData.cep || '';
@@ -140,6 +142,7 @@ export function ModalAlunosInteressados({
       isOpen: true,
       alunoId,
       alunoNome: aluno.nome,
+      email,
       genero,
       dataNascimento,
       cep
@@ -155,9 +158,9 @@ export function ModalAlunosInteressados({
 
   // Step 2: After form submit, proceed with enrollment
   async function handleConfirmEnroll() {
-    const { alunoId, genero, dataNascimento, cep } = enrollForm;
-    if (!genero || !dataNascimento || !cep || cep.replace(/\D/g, '').length < 5) {
-      toast.error('Preencha todos os campos obrigatórios (Gênero, Data de Nascimento e CEP)');
+    const { alunoId, email, genero, dataNascimento, cep } = enrollForm;
+    if (!email || !email.includes('@') || !genero || !dataNascimento || !cep || cep.replace(/\D/g, '').length < 5) {
+      toast.error('Preencha todos os campos obrigatórios (E-mail, Gênero, Data de Nascimento e CEP)');
       return;
     }
 
@@ -172,6 +175,7 @@ export function ModalAlunosInteressados({
         aluno_id: alunoId,
         curso_id: cursoId,
         turma_id: turmaId,
+        email: email.trim(),
         genero,
         data_nascimento: dataNascimento,
         cep: cep.replace(/\D/g, '')
@@ -423,6 +427,18 @@ export function ModalAlunosInteressados({
             </p>
 
             <div className="space-y-4">
+              {/* Email */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">E-mail *</label>
+                <input
+                  type="email"
+                  value={enrollForm.email}
+                  onChange={(e) => setEnrollForm(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="aluno@email.com"
+                  className="w-full bg-dark-lighter border border-gray-700 rounded-lg text-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-accent placeholder-gray-600"
+                />
+              </div>
+
               {/* Gender */}
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Gênero *</label>

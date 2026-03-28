@@ -19,7 +19,7 @@ import { FormularioPublico } from './pages/FormularioPublico';
 import { Layout } from './components/Layout';
 import { UnidadeProvider } from './contexts/UnidadeContext';
 import { Toaster } from 'react-hot-toast';
-import { OrganicBackground } from './components/OrganicBackground';
+
 
 interface User {
   id: string;
@@ -66,7 +66,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <OrganicBackground />
+
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/f/:slug" element={<FormularioPublico />} />

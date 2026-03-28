@@ -240,13 +240,13 @@ router.get('/check-conflict', async (req, res) => {
 // POST /api/interests/enroll — enroll student in turma
 router.post('/enroll', async (req, res) => {
   try {
-    const { aluno_id, curso_id, turma_id, genero, data_nascimento, cep } = req.body;
+    const { aluno_id, curso_id, turma_id, email, genero, data_nascimento, cep } = req.body;
 
-    // Save enrollment data (genero, data_nascimento, cep) to aluno
-    if (genero || data_nascimento || cep) {
+    // Save enrollment data (email, genero, data_nascimento, cep) to aluno
+    if (email || genero || data_nascimento || cep) {
       await pool.query(
-        `UPDATE alunos SET genero = COALESCE($2, genero), data_nascimento = COALESCE($3, data_nascimento), cep = COALESCE($4, cep) WHERE id = $1`,
-        [aluno_id, genero || null, data_nascimento || null, cep || null]
+        `UPDATE alunos SET email = COALESCE($2, email), genero = COALESCE($3, genero), data_nascimento = COALESCE($4, data_nascimento), cep = COALESCE($5, cep) WHERE id = $1`,
+        [aluno_id, email || null, genero || null, data_nascimento || null, cep || null]
       );
     }
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { OrganicBackground } from '../components/OrganicBackground';
 import { CheckCircle, Loader2, Clock, Sun, Moon } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
 
 interface FormData {
   id: string;
@@ -37,7 +38,6 @@ export function FormularioPublico() {
   const [submitted, setSubmitted] = useState(false);
 
   const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [periods, setPeriods] = useState<Period[]>([]);
 
@@ -141,7 +141,6 @@ export function FormularioPublico() {
         body: JSON.stringify({
           nome: nome.trim(),
           whatsapp: whatsapp.replace(/\D/g, ''),
-          email: email.trim() || undefined,
           available_periods: periods,
           fbc,
           fbp
@@ -168,7 +167,7 @@ export function FormularioPublico() {
 
       setSubmitted(true);
     } catch (err: any) {
-      alert(err.message || 'Erro ao cadastrar. Tente novamente.');
+      toast.error(err.message || 'Erro ao cadastrar. Tente novamente.');
     } finally {
       setSubmitting(false);
     }
@@ -227,6 +226,7 @@ export function FormularioPublico() {
   // Form state
   return (
     <div className="min-h-screen bg-dark relative">
+      <Toaster position="top-center" />
       <OrganicBackground />
 
       <div className="relative z-10 max-w-lg mx-auto px-4 py-8">
@@ -289,16 +289,6 @@ export function FormularioPublico() {
               onChange={(e) => setNome(e.target.value)}
               placeholder="Seu nome completo"
               required
-              className="w-full bg-white/5 backdrop-blur-sm border border-white/10 text-white px-4 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-accent/50 focus:border-teal-accent/50 placeholder-gray-500 text-base"
-            />
-          </div>
-
-          <div>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Seu melhor e-mail"
               className="w-full bg-white/5 backdrop-blur-sm border border-white/10 text-white px-4 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-accent/50 focus:border-teal-accent/50 placeholder-gray-500 text-base"
             />
           </div>
