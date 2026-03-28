@@ -191,7 +191,7 @@ export function Alunos() {
       }
 
       setIsModalOpen(false);
-      setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [], unidade_id: '', genero: '', dataNascimento: '', cep: '' });
+      setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [], unidade_id: selectedUnidadeId || '', genero: '', dataNascimento: '', cep: '' });
       setEditingId(null);
       loadAlunos();
     } catch (error) {
@@ -261,7 +261,7 @@ export function Alunos() {
 
   function handleCloseModal() {
     setIsModalOpen(false);
-    setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [], unidade_id: '', genero: '', dataNascimento: '', cep: '' });
+    setFormData({ nome: '', email: '', whatsapp: '', empresa: '', available_periods: [], unidade_id: selectedUnidadeId || '', genero: '', dataNascimento: '', cep: '' });
     setEditingId(null);
   }
 

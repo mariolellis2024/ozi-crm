@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { formatWhatsappInput } from '../utils/format';
+import { LoadingButton } from './LoadingButton';
 
 interface ModalProfessorProps {
   isOpen: boolean;
@@ -33,6 +35,17 @@ export function ModalProfessor({
   onSubmit, 
   onClose 
 }: ModalProfessorProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await onSubmit(e);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return createPortal(
     isOpen ? (
@@ -57,7 +70,7 @@ export function ModalProfessor({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="nome" className="block text-sm font-medium text-gray-400 mb-1">
               Nome
@@ -94,7 +107,8 @@ export function ModalProfessor({
               type="tel"
               id="whatsapp"
               value={formData.whatsapp}
-              onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, whatsapp: formatWhatsappInput(e.target.value) })}
+              placeholder="(11) 99999-9999"
               className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
               required
             />
@@ -133,12 +147,11 @@ export function ModalProfessor({
             </select>
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-teal-accent text-dark font-medium rounded-lg px-4 py-2 hover:bg-teal-accent/90 transition-colors"
-          >
-            {editingId ? 'Atualizar' : 'Cadastrar'}
-          </button>
+          <LoadingButton
+            isLoading={isSubmitting}
+            text={editingId ? 'Atualizar' : 'Cadastrar'}
+            className="w-full bg-teal-accent text-dark font-medium rounded-lg px-4 py-2 hover:bg-teal-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          />
         </form>
       </div>
     </div>

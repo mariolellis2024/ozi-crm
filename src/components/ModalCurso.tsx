@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, Pencil, Trash2, ImagePlus, Loader2 } from 'lucide-react';
 import { api } from '../lib/api';
+import { LoadingButton } from './LoadingButton';
 import toast from 'react-hot-toast';
 
 interface Categoria {
@@ -381,12 +382,11 @@ export function ModalCurso({
             />
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-teal-accent text-dark font-medium rounded-lg px-4 py-2 hover:bg-teal-accent/90 transition-colors"
-          >
-            {editingId ? 'Atualizar' : 'Cadastrar'}
-          </button>
+          <LoadingButton
+            isLoading={uploading}
+            text={editingId ? 'Atualizar' : 'Cadastrar'}
+            className="w-full bg-teal-accent text-dark font-medium rounded-lg px-4 py-2 hover:bg-teal-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          />
         </form>
       </div>
     </div>

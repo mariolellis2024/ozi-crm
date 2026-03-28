@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../lib/api';
-import { GraduationCap, User, LogOut, BookOpen, Home, DoorClosed, Activity, Users, BarChart3, CalendarDays, GitBranch, ClipboardList, Wallet, Building2, ChevronDown, FileText } from 'lucide-react';
+import { GraduationCap, User, LogOut, BookOpen, Home, DoorClosed, Activity, Users, BarChart3, CalendarDays, GitBranch, ClipboardList, Wallet, Building2, ChevronDown, FileText, Menu, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PerformanceDashboard } from './PerformanceDashboard';
@@ -14,6 +14,7 @@ export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { unidades, selectedUnidadeId, setSelectedUnidadeId, selectedUnidade } = useUnidade();
 
   const handleSignOut = async () => {
@@ -27,6 +28,11 @@ export function Layout({ children }: LayoutProps) {
       navigate('/login');
     }
   };
+
+  function handleNavigate(path: string) {
+    navigate(path);
+    setSidebarOpen(false); // Close sidebar on mobile after navigation
+  }
 
   // Pages that filter by unidade (above the separator)
   const filteredMenuItems = [
@@ -51,7 +57,38 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen flex fade-in">
-      <aside className="w-64 bg-dark-lighter fixed h-full slide-in-left flex flex-col">
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setSidebarOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-dark-card rounded-lg text-gray-400 hover:text-white transition-colors"
+        aria-label="Abrir menu"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/60 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+        w-64 bg-dark-lighter fixed h-full flex flex-col z-50 transition-transform duration-300
+        lg:translate-x-0 lg:slide-in-left
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        {/* Mobile close button */}
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden absolute top-4 right-4 p-1 text-gray-400 hover:text-white transition-colors"
+          aria-label="Fechar menu"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
         <div className="px-6 pt-6 scale-in">
           <div className="flex items-center justify-center space-x-3">
             <img src="/icon.webp" alt="OZI CRM Logo" className="w-4/5 h-auto flex-shrink-0 rounded" />
@@ -82,7 +119,7 @@ export function Layout({ children }: LayoutProps) {
           {filteredMenuItems.map((item, index) => (
             <button
               key={index}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavigate(item.path)}
               className={`w-full flex items-center px-6 py-3 text-gray-400 hover:text-white hover:bg-dark-card transition-all duration-200 hover:translate-x-1 text-sm ${
                 location.pathname === item.path ? 'bg-dark-card text-white' : ''
               }`}
@@ -101,7 +138,7 @@ export function Layout({ children }: LayoutProps) {
           {globalMenuItems.map((item, index) => (
             <button
               key={index}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavigate(item.path)}
               className={`w-full flex items-center px-6 py-3 text-gray-400 hover:text-white hover:bg-dark-card transition-all duration-200 hover:translate-x-1 text-sm ${
                 location.pathname === item.path ? 'bg-dark-card text-white' : ''
               }`}
@@ -145,7 +182,9 @@ export function Layout({ children }: LayoutProps) {
           </button>
         </div>
       </aside>
-      <main className="ml-64 w-full fade-in-delay-1">
+
+      {/* Main content — responsive margin */}
+      <main className="lg:ml-64 w-full fade-in-delay-1 pt-14 lg:pt-0">
         {children}
       </main>
 
