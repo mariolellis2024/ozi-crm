@@ -283,3 +283,18 @@ ALTER TABLE alunos ADD COLUMN IF NOT EXISTS meta_user_agent text;
 ALTER TABLE alunos ADD COLUMN IF NOT EXISTS genero text;
 ALTER TABLE alunos ADD COLUMN IF NOT EXISTS data_nascimento date;
 ALTER TABLE alunos ADD COLUMN IF NOT EXISTS cep text;
+
+-- =====================================================
+-- Form Analytics (visits + formulario_id on interests)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS form_visits (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  formulario_id uuid NOT NULL REFERENCES formularios(id) ON DELETE CASCADE,
+  visitor_ip text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_form_visits_formulario ON form_visits(formulario_id);
+
+ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS formulario_id uuid REFERENCES formularios(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_interests_formulario ON aluno_curso_interests(formulario_id) WHERE formulario_id IS NOT NULL;

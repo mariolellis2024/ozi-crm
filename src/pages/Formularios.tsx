@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { Plus, Pencil, Trash2, Link2, Copy, ExternalLink, FileText, ToggleLeft, ToggleRight, Code2, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Link2, Copy, ExternalLink, FileText, ToggleLeft, ToggleRight, Code2, X, Eye, UserPlus, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { useUnidade } from '../contexts/UnidadeContext';
@@ -28,6 +28,8 @@ interface Formulario {
   curso_nome: string;
   curso_imagem: string | null;
   unidade_nome: string;
+  visitas: number;
+  cadastros: number;
 }
 
 export function Formularios() {
@@ -246,6 +248,24 @@ export function Formularios() {
                       /f/{f.slug}
                     </span>
                   </div>
+                </div>
+              </div>
+
+              {/* Analytics badges */}
+              <div className="hidden sm:flex items-center gap-3 ml-auto mr-2">
+                <div className="flex items-center gap-1.5 text-gray-400" title="Visitas">
+                  <Eye className="h-3.5 w-3.5" />
+                  <span className="text-xs font-medium">{f.visitas}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-teal-accent" title="Cadastros">
+                  <UserPlus className="h-3.5 w-3.5" />
+                  <span className="text-xs font-medium">{f.cadastros}</span>
+                </div>
+                <div className="flex items-center gap-1.5" title="Taxa de conversão">
+                  <TrendingUp className="h-3.5 w-3.5 text-purple-400" />
+                  <span className="text-xs font-medium text-purple-400">
+                    {f.visitas > 0 ? ((f.cadastros / f.visitas) * 100).toFixed(1) : '0.0'}%
+                  </span>
                 </div>
               </div>
 

@@ -32,6 +32,16 @@ router.get('/:slug', async (req, res) => {
       return res.status(410).json({ error: 'Este formulário não está mais ativo' });
     }
 
+    // Track visit (fire-and-forget, don't block response)
+    const visitorIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+                    || req.headers['x-real-ip']
+                    || req.socket?.remoteAddress
+                    || '';
+    pool.query(
+      'INSERT INTO form_visits (formulario_id, visitor_ip) VALUES ($1, $2)',
+      [row.id, visitorIp]
+    ).catch(err => console.error('Error tracking form visit:', err));
+
     res.json({
       id: row.id,
       slug: row.slug,
@@ -134,11 +144,11 @@ router.post('/:slug/register', async (req, res) => {
     );
 
     if (existingInterest.rows.length === 0) {
-      // Create interest
+      // Create interest linked to the source form
       await pool.query(
-        `INSERT INTO aluno_curso_interests (aluno_id, curso_id, status)
-         VALUES ($1, $2, 'interested')`,
-        [alunoId, form.curso_id]
+        `INSERT INTO aluno_curso_interests (aluno_id, curso_id, status, formulario_id)
+         VALUES ($1, $2, 'interested', $3)`,
+        [alunoId, form.curso_id, form.id]
       );
     }
 

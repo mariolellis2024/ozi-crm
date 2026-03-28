@@ -9,7 +9,9 @@ router.get('/', async (req, res) => {
     const { unidade_id } = req.query;
     let query = `
       SELECT f.*, c.nome as curso_nome, c.imagem_url as curso_imagem,
-             u.nome as unidade_nome
+             u.nome as unidade_nome,
+             COALESCE((SELECT COUNT(*) FROM form_visits fv WHERE fv.formulario_id = f.id), 0)::int as visitas,
+             COALESCE((SELECT COUNT(*) FROM aluno_curso_interests aci WHERE aci.formulario_id = f.id), 0)::int as cadastros
       FROM formularios f
       JOIN cursos c ON c.id = f.curso_id
       JOIN unidades u ON u.id = f.unidade_id
