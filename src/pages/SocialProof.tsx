@@ -17,7 +17,7 @@ interface SocialProofItem {
   group_id: string;
   nome: string;
   foto_url: string | null;
-  metricas: { platform: string; value: string }[];
+  metricas: { platform: string; value: string; url?: string }[];
   total_seguidores: string | null;
   ordem: number;
 }
@@ -25,12 +25,12 @@ interface SocialProofItem {
 interface ItemFormState {
   nome: string;
   foto_url: string;
-  metricas: { platform: string; value: string }[];
+  metricas: { platform: string; value: string; url: string }[];
 }
 
 const EMPTY_ITEM: ItemFormState = {
   nome: '', foto_url: '',
-  metricas: [{ platform: '', value: '' }]
+  metricas: [{ platform: '', value: '', url: '' }]
 };
 
 /** Parse "4.7M" → 4700000, "500K" → 500000, "3.94" → 3940000 (assume M if no suffix) */
@@ -161,7 +161,7 @@ export function SocialProofPage() {
   function openNewItem(groupId: string) {
     setActiveGroupId(groupId);
     setEditingItemId(null);
-    setItemForm({ ...EMPTY_ITEM, metricas: [{ platform: '', value: '' }] });
+    setItemForm({ ...EMPTY_ITEM, metricas: [{ platform: '', value: '', url: '' }] });
     setIsItemModalOpen(true);
   }
 
@@ -171,7 +171,7 @@ export function SocialProofPage() {
     setItemForm({
       nome: item.nome,
       foto_url: item.foto_url || '',
-      metricas: item.metricas.length > 0 ? item.metricas : [{ platform: '', value: '' }]
+      metricas: item.metricas.length > 0 ? item.metricas.map(m => ({ ...m, url: m.url || '' })) : [{ platform: '', value: '', url: '' }]
     });
     setIsItemModalOpen(true);
   }
@@ -219,10 +219,10 @@ export function SocialProofPage() {
   }
 
   function addMetrica() {
-    setItemForm(prev => ({ ...prev, metricas: [...prev.metricas, { platform: '', value: '' }] }));
+    setItemForm(prev => ({ ...prev, metricas: [...prev.metricas, { platform: '', value: '', url: '' }] }));
   }
 
-  function updateMetrica(idx: number, field: 'platform' | 'value', val: string) {
+  function updateMetrica(idx: number, field: 'platform' | 'value' | 'url', val: string) {
     setItemForm(prev => ({
       ...prev,
       metricas: prev.metricas.map((m, i) => i === idx ? { ...m, [field]: val } : m)
@@ -437,24 +437,32 @@ export function SocialProofPage() {
                 </div>
                 <div className="space-y-2">
                   {itemForm.metricas.map((m, i) => (
-                    <div key={i} className="flex gap-2">
+                    <div key={i} className="space-y-1.5">
+                      <div className="flex gap-2">
+                        <input
+                          type="text" value={m.platform}
+                          onChange={e => updateMetrica(i, 'platform', e.target.value)}
+                          placeholder="Ex: Instagram"
+                          className="flex-1 bg-dark-lighter border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-accent"
+                        />
+                        <input
+                          type="text" value={m.value}
+                          onChange={e => updateMetrica(i, 'value', e.target.value)}
+                          placeholder="Ex: 4.7M"
+                          className="w-24 bg-dark-lighter border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-accent"
+                        />
+                        {itemForm.metricas.length > 1 && (
+                          <button type="button" onClick={() => removeMetrica(i)} className="text-gray-500 hover:text-red-400">
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                       <input
-                        type="text" value={m.platform}
-                        onChange={e => updateMetrica(i, 'platform', e.target.value)}
-                        placeholder="Ex: Instagram"
-                        className="flex-1 bg-dark-lighter border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-accent"
+                        type="url" value={m.url}
+                        onChange={e => updateMetrica(i, 'url', e.target.value)}
+                        placeholder="🔗 Link do perfil (opcional)"
+                        className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:ring-1 focus:ring-teal-accent"
                       />
-                      <input
-                        type="text" value={m.value}
-                        onChange={e => updateMetrica(i, 'value', e.target.value)}
-                        placeholder="Ex: 4.7M"
-                        className="w-24 bg-dark-lighter border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-accent"
-                      />
-                      {itemForm.metricas.length > 1 && (
-                        <button type="button" onClick={() => removeMetrica(i)} className="text-gray-500 hover:text-red-400">
-                          <X className="h-4 w-4" />
-                        </button>
-                      )}
                     </div>
                   ))}
                 </div>
