@@ -38,6 +38,23 @@ interface Turma {
   cadeiras: number;
   enrolled_count: number;
   unidade_nome: string;
+  sala_nome: string;
+}
+
+const PERIOD_LABELS: Record<string, string> = {
+  manha: 'Manhã',
+  tarde: 'Tarde',
+  noite: 'Noite'
+};
+
+function periodLabel(p: string) {
+  return PERIOD_LABELS[p] || p;
+}
+
+function formatDateShort(dateStr: string) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
@@ -150,22 +167,22 @@ export function Pipeline() {
       ]);
       setCursos(cursosData);
       setInterests(interestsData);
-      setAllTurmas(turmasData);
+      // Map turma data: extract unidade_nome and enrolled_count from nested objects
+      const mappedTurmas = turmasData.map((t: any) => ({
+        ...t,
+        unidade_nome: t.sala?.unidade_nome || t.unidade_nome || '',
+        sala_nome: t.sala?.nome || '',
+        enrolled_count: t.alunos_enrolled?.length ?? t.enrolled_count ?? 0,
+      }));
+      setAllTurmas(mappedTurmas);
     } catch (error) {
       console.error('Erro ao carregar pipeline:', error);
     }
   }
 
   async function openEnrollModal(interest: Interest) {
-    // Find turmas for this curso AND this student's unidade
-    const availableTurmas = allTurmas.filter(t => {
-      if (t.curso_id !== interest.curso_id) return false;
-      // Filter by student's unidade if available
-      if (interest.aluno_unidade_id && (t as any).sala?.unidade_id) {
-        if ((t as any).sala.unidade_id !== interest.aluno_unidade_id) return false;
-      }
-      return true;
-    });
+    // Find turmas for this curso
+    const availableTurmas = allTurmas.filter(t => t.curso_id === interest.curso_id);
 
     if (availableTurmas.length === 0) {
       toast.error('Nenhuma turma aberta para este curso. Crie uma turma primeiro.');
@@ -173,22 +190,72 @@ export function Pipeline() {
     }
 
     // Fetch aluno data for pre-fill
-    let genero = '', dataNascimento = '', cep = '', hasExistingData = false;
+    let email = '', genero = '', dataNascimento = '', cep = '', hasExistingData = false;
     try {
       const aluno = await api.get(`/api/alunos/${interest.aluno_id}`);
+      email = aluno.email || '';
       // Normalize legacy gender values ('m' -> 'masculino', 'f' -> 'feminino')
       const rawGenero = (aluno.genero || '').toLowerCase();
       genero = rawGenero === 'm' ? 'masculino' : rawGenero === 'f' ? 'feminino' : rawGenero;
       dataNascimento = aluno.data_nascimento || '';
       cep = aluno.cep || '';
-      hasExistingData = !!(genero && dataNascimento && cep);
+      hasExistingData = !!(email && genero && dataNascimento && cep);
     } catch { /* ignore */ }
+
+    // Sort: student's unidade first, then by vacancies
+    const sorted = [...availableTurmas].sort((a, b) => {
+      // Student's unidade first
+      if (interest.aluno_unidade_id) {
+        const aMatch = (a as any).sala?.unidade_id === interest.aluno_unidade_id || a.unidade_nome === interest.unidade_nome;
+        const bMatch = (b as any).sala?.unidade_id === interest.aluno_unidade_id || b.unidade_nome === interest.unidade_nome;
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+      }
+      // Non-full turmas first
+      const aFull = a.enrolled_count >= a.cadeiras ? 1 : 0;
+      const bFull = b.enrolled_count >= b.cadeiras ? 1 : 0;
+      return aFull - bFull;
+    });
+
+    // Non-full turmas
+    const nonFullTurmas = sorted.filter(t => t.enrolled_count < t.cadeiras);
+
+    // If student has all data AND only 1 non-full turma, skip the form
+    if (hasExistingData && nonFullTurmas.length === 1) {
+      const turma = nonFullTurmas[0];
+      const confirmed = window.confirm(
+        `Matricular ${interest.aluno_nome} na turma:\n\n` +
+        `📚 ${turma.name}\n` +
+        `📍 ${turma.unidade_nome}${turma.sala_nome ? ' • ' + turma.sala_nome : ''}\n` +
+        `🕐 ${periodLabel(turma.period)} • ${formatDateShort(turma.start_date)} a ${formatDateShort(turma.end_date)}\n` +
+        `👥 ${turma.enrolled_count}/${turma.cadeiras} vagas\n\n` +
+        `Confirmar matrícula?`
+      );
+      if (confirmed) {
+        try {
+          await api.post('/api/interests/enroll', {
+            aluno_id: interest.aluno_id,
+            curso_id: interest.curso_id,
+            turma_id: turma.id,
+            email,
+            genero,
+            data_nascimento: dataNascimento ? new Date(dataNascimento).toISOString().split('T')[0] : '',
+            cep: (cep || '').replace(/\D/g, '')
+          });
+          toast.success(`${interest.aluno_nome} matriculado(a) com sucesso!`);
+          loadData();
+        } catch (error: any) {
+          toast.error(error.message || 'Erro ao matricular');
+        }
+      }
+      return;
+    }
 
     setEnrollModal({
       isOpen: true,
       interest,
-      turmas: availableTurmas,
-      selectedTurmaId: availableTurmas.length === 1 ? availableTurmas[0].id : '',
+      turmas: sorted,
+      selectedTurmaId: nonFullTurmas.length === 1 ? nonFullTurmas[0].id : '',
       genero,
       dataNascimento: dataNascimento ? new Date(dataNascimento).toISOString().split('T')[0] : '',
       cep,
@@ -663,28 +730,51 @@ export function Pipeline() {
 
             {/* Turma Selection */}
             <div className="mb-4">
-              <label className="block text-sm text-gray-300 mb-1">Turma *</label>
-              {enrollModal.turmas.length === 1 ? (
-                <div className="bg-dark-lighter border border-gray-700 rounded-lg p-3">
-                  <p className="text-white text-sm font-medium">{enrollModal.turmas[0].name}</p>
-                  <p className="text-gray-400 text-xs mt-0.5">
-                    {enrollModal.turmas[0].period} • {enrollModal.turmas[0].unidade_nome}
-                  </p>
-                </div>
-              ) : (
-                <select
-                  value={enrollModal.selectedTurmaId}
-                  onChange={(e) => setEnrollModal(prev => ({ ...prev, selectedTurmaId: e.target.value }))}
-                  className="w-full bg-dark-lighter border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-accent/50 focus:outline-none"
-                >
-                  <option value="">Selecione uma turma...</option>
-                  {enrollModal.turmas.map(t => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} • {t.period} • {t.unidade_nome} ({t.enrolled_count}/{t.cadeiras} vagas)
-                    </option>
-                  ))}
-                </select>
-              )}
+              <label className="block text-sm text-gray-300 mb-2">Turma *</label>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {enrollModal.turmas.map(t => {
+                  const isFull = t.enrolled_count >= t.cadeiras;
+                  const isAlmostFull = !isFull && t.enrolled_count >= t.cadeiras * 0.8;
+                  const isSelected = enrollModal.selectedTurmaId === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      disabled={isFull}
+                      onClick={() => setEnrollModal(prev => ({ ...prev, selectedTurmaId: t.id }))}
+                      className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
+                        isFull
+                          ? 'opacity-40 cursor-not-allowed border-gray-700 bg-dark-lighter'
+                          : isSelected
+                          ? 'border-teal-accent bg-teal-accent/10'
+                          : 'border-gray-700 bg-dark-lighter hover:border-gray-500'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-white text-sm font-medium">{t.name}</p>
+                          <p className="text-gray-400 text-xs mt-0.5">
+                            📍 {t.unidade_nome || 'Sem unidade'}{t.sala_nome ? ` • ${t.sala_nome}` : ''}
+                          </p>
+                          <p className="text-gray-500 text-xs mt-0.5">
+                            🕐 {periodLabel(t.period)} • {formatDateShort(t.start_date)} a {formatDateShort(t.end_date)}
+                          </p>
+                        </div>
+                        <div className="text-right flex-shrink-0 ml-2">
+                          <span className={`text-xs font-medium ${
+                            isFull ? 'text-red-400' : isAlmostFull ? 'text-amber-400' : 'text-emerald-400'
+                          }`}>
+                            {t.enrolled_count}/{t.cadeiras}
+                          </span>
+                          <p className="text-[10px] text-gray-500">
+                            {isFull ? 'Lotada' : isAlmostFull ? 'Últimas vagas' : 'vagas'}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Gender */}
