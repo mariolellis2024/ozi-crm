@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { OrganicBackground } from '../components/OrganicBackground';
-import { CheckCircle, Loader2, Clock, Sun, Moon } from 'lucide-react';
+import { CheckCircle, Loader2, Clock, Sun, Moon, MapPin, Users, ChevronDown } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
 interface FormData {
@@ -29,6 +28,39 @@ interface FormData {
 
 type Period = 'manha' | 'tarde' | 'noite';
 
+// Social proof data — OZI institutional numbers
+const SOCIAL_PROOF_STATS = [
+  { value: '+23', label: 'anos de experiência' },
+  { value: '2003', label: 'ano de fundação da OZI' },
+  { value: '+9 mil', label: 'alunos presenciais' },
+  { value: '+20 mil', label: 'alunos online' },
+];
+
+const ALUMNI = [
+  { initials: 'PC', nome: 'Patricio Carvalho', cargo: 'Criador de conteúdo', stats: [{ platform: 'Instagram', value: '4.7M' }, { platform: 'YouTube', value: '3.93M' }], total: '8.63M' },
+  { initials: 'IK', nome: 'Ir Kelly Patricia', cargo: 'Instituto Hesed', stats: [{ platform: 'Instagram', value: '4.9M' }, { platform: 'YouTube', value: '5.02M' }], total: '9.92M' },
+  { initials: 'RG', nome: 'Raul Gazolla', cargo: 'Ator, Produtor e Palestrante', stats: [{ platform: 'Instagram', value: '1.8M' }] },
+  { initials: 'LF', nome: 'Lucas Fernandes', cargo: 'Escritor, Apresentador Globoplay', stats: [{ platform: 'Instagram', value: '2M' }] },
+];
+
+function formatPriceInstallment(preco: number, parcelas: number = 12, taxa: number = 0.0297): { parcela: string; total: string; economia: string; economiaPct: string } {
+  // Standard card installment calculation
+  const totalParcelado = preco * Math.pow(1 + taxa, parcelas);
+  const parcela = totalParcelado / parcelas;
+  const economia = totalParcelado - preco;
+  const economiaPct = ((economia / totalParcelado) * 100).toFixed(0);
+  return {
+    parcela: parcela.toFixed(2).replace('.', ','),
+    total: totalParcelado.toFixed(2).replace('.', ','),
+    economia: economia.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.'),
+    economiaPct
+  };
+}
+
+function formatCurrencyBR(value: number): string {
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
 export function FormularioPublico() {
   const { slug } = useParams<{ slug: string }>();
   const [formInfo, setFormInfo] = useState<FormData | null>(null);
@@ -36,14 +68,30 @@ export function FormularioPublico() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [showFloating, setShowFloating] = useState(false);
 
   const [nome, setNome] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [periods, setPeriods] = useState<Period[]>([]);
 
+  const heroRef = useRef<HTMLDivElement>(null);
+  const formSectionRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     loadForm();
   }, [slug]);
+
+  // Floating CTA bar visibility
+  useEffect(() => {
+    function handleScroll() {
+      if (!heroRef.current || !formSectionRef.current) return;
+      const heroBottom = heroRef.current.getBoundingClientRect().bottom;
+      const formTop = formSectionRef.current.getBoundingClientRect().top;
+      setShowFloating(heroBottom < 0 && formTop > window.innerHeight);
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   async function loadForm() {
     try {
@@ -65,7 +113,6 @@ export function FormularioPublico() {
 
   function injectTrackingScripts(tracking: FormData['tracking']) {
     const inject = () => {
-      // Meta Pixel
       if (tracking.meta_pixel_id) {
         const script = document.createElement('script');
         script.innerHTML = `
@@ -79,14 +126,11 @@ export function FormularioPublico() {
         `;
         document.head.appendChild(script);
       }
-
-      // Google Analytics
       if (tracking.google_analytics_id) {
         const gtagScript = document.createElement('script');
         gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=${tracking.google_analytics_id}`;
         gtagScript.async = true;
         document.head.appendChild(gtagScript);
-
         const gtagInit = document.createElement('script');
         gtagInit.innerHTML = `
           window.dataLayer = window.dataLayer || [];
@@ -97,8 +141,6 @@ export function FormularioPublico() {
         document.head.appendChild(gtagInit);
       }
     };
-
-    // Defer tracking to after browser is idle — avoids blocking first render
     if ('requestIdleCallback' in window) {
       (window as any).requestIdleCallback(inject);
     } else {
@@ -107,9 +149,7 @@ export function FormularioPublico() {
   }
 
   function togglePeriod(p: Period) {
-    setPeriods(prev =>
-      prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]
-    );
+    setPeriods(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
   }
 
   function formatWhatsapp(value: string) {
@@ -119,29 +159,30 @@ export function FormularioPublico() {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   }
 
+  function scrollToForm() {
+    formSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!nome.trim() || !whatsapp.trim()) return;
-    if (periods.length === 0) return;
+    if (periods.length === 0) {
+      toast.error('Selecione pelo menos um horário');
+      return;
+    }
 
     setSubmitting(true);
     try {
-      // Read Meta cookies for CAPI matching (fbc = click ID, fbp = browser ID)
       const getCookie = (name: string) => {
         const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
         return match ? match[2] : '';
       };
-
       let fbc = getCookie('_fbc');
       const fbp = getCookie('_fbp');
-
-      // If _fbc cookie doesn't exist but fbclid is in URL, construct it
       if (!fbc) {
         const urlParams = new URLSearchParams(window.location.search);
         const fbclid = urlParams.get('fbclid');
-        if (fbclid) {
-          fbc = `fb.1.${Date.now()}.${fbclid}`;
-        }
+        if (fbclid) fbc = `fb.1.${Date.now()}.${fbclid}`;
       }
 
       const response = await fetch(`/api/public/forms/${slug}/register`, {
@@ -151,8 +192,7 @@ export function FormularioPublico() {
           nome: nome.trim(),
           whatsapp: whatsapp.replace(/\D/g, ''),
           available_periods: periods,
-          fbc,
-          fbp
+          fbc, fbp
         })
       });
 
@@ -161,17 +201,9 @@ export function FormularioPublico() {
         throw new Error(data.error || 'Erro ao cadastrar');
       }
 
-      // Fire client-side conversion events
       try {
-        if ((window as any).fbq) {
-          (window as any).fbq('track', 'Lead');
-        }
-        if ((window as any).gtag) {
-          (window as any).gtag('event', 'generate_lead', {
-            currency: 'BRL',
-            value: formInfo?.curso.preco || 0
-          });
-        }
+        if ((window as any).fbq) (window as any).fbq('track', 'Lead');
+        if ((window as any).gtag) (window as any).gtag('event', 'generate_lead', { currency: 'BRL', value: formInfo?.curso.preco || 0 });
       } catch { /* tracking errors should not block UX */ }
 
       setSubmitted(true);
@@ -182,191 +214,400 @@ export function FormularioPublico() {
     }
   }
 
-  // Loading state
+  // --- RENDER STATES ---
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-dark flex items-center justify-center relative">
-        <OrganicBackground />
-        <div className="relative z-10">
-          <Loader2 className="h-10 w-10 text-teal-accent animate-spin" />
-        </div>
+      <div className="lp-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <Loader2 className="h-10 w-10 animate-spin" style={{ color: 'var(--ac)' }} />
       </div>
     );
   }
 
-  // Error state
   if (error || !formInfo) {
     return (
-      <div className="min-h-screen bg-dark flex items-center justify-center relative p-4">
-        <OrganicBackground />
-        <div className="relative z-10 text-center">
-          <div className="text-6xl mb-4">😔</div>
-          <h1 className="text-2xl font-bold text-white mb-2">Formulário não encontrado</h1>
-          <p className="text-gray-400">{error || 'Este link não é válido ou o formulário foi desativado.'}</p>
+      <div className="lp-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', textAlign: 'center', padding: '2rem' }}>
+        <div>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>😔</div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Formulário não encontrado</h1>
+          <p style={{ color: 'var(--tx2)' }}>{error || 'Este link não é válido ou o formulário foi desativado.'}</p>
         </div>
       </div>
     );
   }
 
-  // Success state
   if (submitted) {
     return (
-      <div className="min-h-screen bg-dark flex items-center justify-center relative p-4">
-        <OrganicBackground />
-        <div className="relative z-10 text-center max-w-md mx-auto">
-          <div className="mb-6">
-            <CheckCircle className="h-20 w-20 text-teal-accent mx-auto animate-bounce" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-3">Você está na lista! 🎉</h1>
-          <p className="text-gray-300 text-lg mb-2">
-            Seu interesse no curso <strong className="text-teal-accent">{formInfo.curso.nome}</strong> foi registrado.
+      <div className="lp-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', textAlign: 'center', padding: '2rem' }}>
+        <div>
+          <CheckCircle className="h-20 w-20 mx-auto mb-6" style={{ color: 'var(--ac)' }} />
+          <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.75rem' }}>Você está na lista! 🎉</h1>
+          <p style={{ color: 'var(--tx2)', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+            Seu interesse no curso <strong style={{ color: 'var(--ac)' }}>{formInfo.curso.nome}</strong> foi registrado.
           </p>
-          <p className="text-gray-400">
-            Entraremos em contato pelo WhatsApp assim que a turma estiver confirmada.
-          </p>
-          <div className="mt-8 py-3 px-6 rounded-full bg-dark-card/80 inline-block">
-            <span className="text-gray-400 text-sm">📍 {formInfo.unidade.nome}</span>
+          <p style={{ color: 'var(--tx2)' }}>Entraremos em contato pelo WhatsApp assim que a turma estiver confirmada.</p>
+          <div style={{ marginTop: '2rem', padding: '0.75rem 1.5rem', borderRadius: '100px', background: 'var(--bg-card)', display: 'inline-block' }}>
+            <span style={{ color: 'var(--tx2)', fontSize: '0.9rem' }}>📍 {formInfo.unidade.nome}</span>
           </div>
         </div>
       </div>
     );
   }
 
-  // Form state
+  const preco = formInfo.curso.preco;
+  const pricing = formatPriceInstallment(preco);
+  const hasPricing = preco > 0;
+
   return (
-    <div className="min-h-screen bg-dark relative">
+    <>
       <Toaster position="top-center" />
-      <OrganicBackground />
+      {/* Google Fonts */}
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-      <div className="relative z-10 max-w-lg mx-auto px-4 py-8">
-        {/* Logo */}
-        <div className="text-center mb-6">
-          <img
-            src="/icon.webp"
-            alt="OZI"
-            className="h-12 mx-auto"
-          />
-        </div>
+      <style>{`
+        :root {
+          --bg: #0d1117;
+          --bg-card: #161b22;
+          --bg-card-h: #1c2333;
+          --ac: #3dffa2;
+          --ac-dim: rgba(61,255,162,.12);
+          --gold: #f0c850;
+          --gold-dim: rgba(240,200,80,.12);
+          --tx: #e6edf3;
+          --tx2: #8b949e;
+          --txm: #555d66;
+          --brd: #21262d;
+        }
+        .lp-page {
+          font-family: 'DM Sans', -apple-system, sans-serif;
+          background: var(--bg);
+          color: var(--tx);
+          line-height: 1.7;
+          -webkit-font-smoothing: antialiased;
+          min-height: 100vh;
+        }
+        .lp-page * { box-sizing: border-box; }
+        .lp-c { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+        .lp-heading { font-family: 'Space Grotesk', sans-serif; }
+        .lp-hl { color: var(--ac); }
 
-        {/* Hero Image */}
-        {formInfo.curso.imagem_url && (
-          <div className="mb-6 rounded-2xl overflow-hidden">
-            <img
-              src={formInfo.curso.imagem_url}
-              alt={formInfo.curso.nome}
-              width={512}
-              height={256}
-              className="w-full h-52 sm:h-64 object-cover"
-            />
+        /* Nav */
+        .lp-nav { padding: 16px 0; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--brd); }
+        .lp-nav-logo { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; letter-spacing: 3px; color: var(--tx); }
+        .lp-nav-cta { padding: 10px 24px; background: var(--ac); color: #0d1117; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: opacity 0.3s; text-decoration: none; }
+        .lp-nav-cta:hover { opacity: 0.85; }
+
+        /* Hero */
+        .lp-hero { padding: 60px 0 48px; }
+        .lp-hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; align-items: center; }
+        .lp-badge { display: inline-block; padding: 6px 16px; border: 1px solid var(--ac); border-radius: 100px; font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--ac); background: var(--ac-dim); margin-bottom: 20px; }
+        .lp-hero h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700; line-height: 1.2; margin-bottom: 16px; }
+        .lp-hero-sub { font-size: 1rem; color: var(--tx2); line-height: 1.8; margin-bottom: 24px; }
+        .lp-hero-tags { display: flex; gap: 10px; flex-wrap: wrap; }
+        .lp-tag { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--tx2); padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--brd); border-radius: 8px; font-weight: 500; }
+        .lp-hero-img { width: 100%; height: 360px; border-radius: 16px; object-fit: cover; border: 2px solid var(--brd); }
+        .lp-hero-placeholder { width: 100%; height: 360px; border-radius: 16px; border: 2px dashed var(--brd); background: var(--bg-card); display: flex; align-items: center; justify-content: center; color: var(--txm); font-size: 0.9rem; }
+
+        /* Sections */
+        .lp-section { padding: 64px 0; border-top: 1px solid var(--brd); }
+        .lp-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--ac); margin-bottom: 14px; }
+
+        /* Pricing */
+        .lp-price-card { display: inline-block; background: var(--bg-card); border: 2px solid var(--ac); border-radius: 20px; padding: 40px 48px; position: relative; overflow: hidden; }
+        .lp-price-card::after { content: ''; position: absolute; inset: -1px; border-radius: 20px; background: linear-gradient(135deg, var(--ac), transparent 50%); opacity: 0.06; pointer-events: none; }
+        .lp-price-big { font-family: 'Space Grotesk', sans-serif; font-size: 2.8rem; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+        .lp-price-vista { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 700; color: var(--ac); margin-bottom: 6px; }
+        .lp-checklist { text-align: left; border-top: 1px solid var(--brd); padding-top: 18px; list-style: none; font-size: 0.88rem; color: var(--tx2); line-height: 2.2; margin: 0; padding-left: 0; }
+        .lp-checklist li { padding-left: 22px; position: relative; }
+        .lp-checklist li::before { content: '✓'; position: absolute; left: 0; color: var(--ac); font-weight: 700; }
+
+        /* Social Proof */
+        .lp-alumni-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
+        .lp-alumni-card { background: var(--bg-card); border: 1px solid var(--brd); border-radius: 14px; padding: 24px 14px; text-align: center; transition: border-color 0.3s; }
+        .lp-alumni-card:hover { border-color: #30363d; }
+        .lp-alumni-avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--ac-dim); border: 2px solid var(--brd); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--ac); }
+        .lp-alumni-name { font-size: 0.9rem; font-weight: 700; margin-bottom: 2px; }
+        .lp-alumni-role { font-size: 0.72rem; color: var(--txm); margin-bottom: 8px; line-height: 1.4; }
+        .lp-alumni-stat { font-size: 0.78rem; color: var(--tx2); margin-bottom: 2px; }
+        .lp-alumni-stat strong { color: var(--tx); }
+        .lp-alumni-total { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--brd); font-size: 0.88rem; font-weight: 800; color: var(--ac); }
+        .lp-alumni-total-label { display: block; font-size: 0.65rem; color: var(--txm); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+        .lp-stats-row { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; }
+        .lp-stat { text-align: center; }
+        .lp-stat-num { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 700; color: var(--ac); line-height: 1; margin-bottom: 4px; }
+        .lp-stat-label { font-size: 0.82rem; color: var(--txm); font-weight: 500; }
+
+        /* Form Section */
+        .lp-form-wrapper { max-width: 480px; margin: 0 auto; }
+        .lp-input { width: 100%; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--brd); border-radius: 10px; color: var(--tx); font-family: 'DM Sans', sans-serif; font-size: 0.95rem; outline: none; transition: border-color 0.3s; }
+        .lp-input::placeholder { color: var(--txm); }
+        .lp-input:focus { border-color: var(--ac); }
+        .lp-period-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .lp-period-btn { padding: 12px; background: var(--bg-card); border: 1px solid var(--brd); border-radius: 10px; text-align: center; cursor: pointer; transition: all 0.3s; font-size: 0.9rem; color: var(--tx2); font-weight: 500; font-family: 'DM Sans', sans-serif; }
+        .lp-period-btn:hover, .lp-period-btn.active { border-color: var(--ac); color: var(--ac); background: var(--ac-dim); }
+        .lp-period-icon { display: block; font-size: 1.2rem; margin-bottom: 4px; }
+        .lp-submit { width: 100%; padding: 16px; background: var(--ac); color: #0d1117; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: opacity 0.3s, transform 0.2s; }
+        .lp-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+        .lp-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Floating CTA */
+        .lp-floating { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(13,17,23,0.95); backdrop-filter: blur(12px); border-top: 1px solid var(--brd); padding: 12px 24px; display: flex; justify-content: center; align-items: center; gap: 20px; z-index: 100; transform: translateY(100%); transition: transform 0.4s ease; }
+        .lp-floating.show { transform: translateY(0); }
+        .lp-floating-text { font-size: 0.9rem; color: var(--tx2); }
+        .lp-floating-text strong { color: var(--tx); }
+
+        /* Footer */
+        .lp-footer { padding: 24px 0; border-top: 1px solid var(--brd); text-align: center; font-size: 0.8rem; color: var(--txm); }
+
+        /* Scroll indicator */
+        .lp-scroll-cta { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 32px; color: var(--txm); font-size: 0.8rem; cursor: pointer; transition: color 0.3s; }
+        .lp-scroll-cta:hover { color: var(--ac); }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+          .lp-hero-grid { grid-template-columns: 1fr; }
+          .lp-hero-img, .lp-hero-placeholder { height: 240px; }
+          .lp-alumni-grid { grid-template-columns: repeat(2, 1fr); }
+          .lp-stats-row { gap: 24px; }
+          .lp-price-card { padding: 28px 24px; width: 100%; }
+          .lp-floating { flex-direction: column; gap: 8px; padding: 10px 18px; }
+          .lp-hero { padding: 40px 0 32px; }
+          .lp-c { padding: 0 16px; }
+        }
+      `}</style>
+
+      <div className="lp-page">
+        {/* Nav */}
+        <nav className="lp-c">
+          <div className="lp-nav">
+            <span className="lp-nav-logo">OZI</span>
+            <button onClick={scrollToForm} className="lp-nav-cta">Lista de Espera</button>
           </div>
-        )}
+        </nav>
 
-        {/* Course Info */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-            {formInfo.titulo}
-          </h1>
-          {formInfo.descricao && (
-            <p className="text-gray-400 text-sm sm:text-base">{formInfo.descricao}</p>
-          )}
-          <div className="flex items-center justify-center gap-4 mt-3 text-sm text-gray-400">
-            {formInfo.curso.carga_horaria > 0 && (
-              <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" /> {formInfo.curso.carga_horaria}h
-              </span>
-            )}
-            <span className="flex items-center gap-1">
-              📍 {formInfo.unidade.nome}
-            </span>
-          </div>
-        </div>
-
-        {/* CTA Text */}
-        <div className="text-center mb-6">
-          <h2 className="text-lg font-semibold text-teal-accent">
-            Entre na Lista de Espera
-          </h2>
-          <p className="text-gray-400 text-sm mt-1">
-            Garanta sua vaga quando a próxima turma abrir
-          </p>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <input
-              type="text"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              placeholder="Seu nome completo"
-              required
-              className="w-full bg-white/5 backdrop-blur-sm border border-white/10 text-white px-4 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-accent/50 focus:border-teal-accent/50 placeholder-gray-500 text-base"
-            />
-          </div>
-
-          <div>
-            <input
-              type="tel"
-              value={whatsapp}
-              onChange={(e) => setWhatsapp(formatWhatsapp(e.target.value))}
-              placeholder="WhatsApp (11) 99999-9999"
-              required
-              className="w-full bg-white/5 backdrop-blur-sm border border-white/10 text-white px-4 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-accent/50 focus:border-teal-accent/50 placeholder-gray-500 text-base"
-            />
-          </div>
-
-          {/* Period Selection */}
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              Qual horário você prefere?
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { key: 'manha' as Period, label: 'Manhã', icon: Sun, color: 'amber' },
-                { key: 'tarde' as Period, label: 'Tarde', icon: Sun, color: 'orange' },
-                { key: 'noite' as Period, label: 'Noite', icon: Moon, color: 'indigo' },
-              ]).map(({ key, label, icon: Icon }) => {
-                const selected = periods.includes(key);
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => togglePeriod(key)}
-                    className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border transition-all duration-200 ${
-                      selected
-                        ? 'bg-teal-accent/10 border-teal-accent/50 text-teal-accent'
-                        : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span className="text-xs font-medium">{label}</span>
-                  </button>
-                );
-              })}
+        {/* Hero */}
+        <section className="lp-hero" ref={heroRef}>
+          <div className="lp-c">
+            <div className="lp-hero-grid">
+              <div>
+                <span className="lp-badge">
+                  Curso Presencial · {formInfo.unidade.cidade || formInfo.unidade.nome}
+                </span>
+                <h1 className="lp-heading">
+                  {formInfo.titulo || formInfo.curso.nome}
+                </h1>
+                {formInfo.descricao && (
+                  <p className="lp-hero-sub">{formInfo.descricao}</p>
+                )}
+                <div className="lp-hero-tags">
+                  {formInfo.curso.carga_horaria > 0 && (
+                    <span className="lp-tag">
+                      <Clock className="h-4 w-4" /> {formInfo.curso.carga_horaria}h
+                    </span>
+                  )}
+                  <span className="lp-tag">
+                    <MapPin className="h-4 w-4" /> {formInfo.unidade.cidade || formInfo.unidade.nome}
+                  </span>
+                  <span className="lp-tag">
+                    <Users className="h-4 w-4" /> Turmas reduzidas
+                  </span>
+                </div>
+              </div>
+              <div>
+                {formInfo.curso.imagem_url ? (
+                  <img
+                    src={formInfo.curso.imagem_url}
+                    alt={formInfo.curso.nome}
+                    className="lp-hero-img"
+                  />
+                ) : (
+                  <div className="lp-hero-placeholder">
+                    📸 Imagem do curso
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="lp-scroll-cta" onClick={scrollToForm}>
+              <span>Saiba mais</span>
+              <ChevronDown className="h-5 w-5" style={{ animation: 'bounce 2s infinite' }} />
             </div>
           </div>
+        </section>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={submitting || !nome.trim() || !whatsapp.trim() || periods.length === 0}
-            className="w-full bg-teal-accent text-dark font-bold py-4 rounded-xl text-lg hover:bg-teal-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-glow hover:shadow-glow-intense"
-          >
-            {submitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Cadastrando...
-              </span>
-            ) : (
-              'Quero entrar na Lista de Espera'
-            )}
-          </button>
+        {/* Pricing Section */}
+        {hasPricing && (
+          <section className="lp-section" style={{ textAlign: 'center' }}>
+            <div className="lp-c">
+              <p className="lp-label" style={{ textAlign: 'center' }}>Investimento</p>
+              <h2 className="lp-heading" style={{ fontSize: 'clamp(1.3rem, 3vw, 1.8rem)', fontWeight: 700, marginBottom: '6px' }}>
+                Quanto custa construir sua carreira?
+              </h2>
+              <p style={{ fontSize: '0.95rem', color: 'var(--tx2)', marginBottom: '32px' }}>
+                O conhecimento fica com você para sempre.
+              </p>
+              <div className="lp-price-card">
+                <p style={{ fontSize: '0.88rem', color: 'var(--tx2)', marginBottom: '4px' }}>No cartão em até</p>
+                <div className="lp-price-big">
+                  <span style={{ fontSize: '1.3rem', color: 'var(--tx2)', marginRight: '4px' }}>12x</span>
+                  <span style={{ fontSize: '1.3rem', verticalAlign: 'top', marginRight: '2px' }}>R$</span>
+                  {pricing.parcela}
+                </div>
+                <p style={{ fontSize: '0.78rem', color: 'var(--txm)', marginBottom: '20px' }}>
+                  Total parcelado: R$ {pricing.total}
+                </p>
+                <hr style={{ border: 'none', borderTop: '1px solid var(--brd)', margin: '18px 0' }} />
+                <p style={{ fontSize: '0.85rem', color: 'var(--tx2)', marginBottom: '6px' }}>Ou à vista por</p>
+                <div className="lp-price-vista">
+                  <span style={{ fontSize: '1rem', verticalAlign: 'top', marginRight: '2px' }}>R$</span>
+                  {formatCurrencyBR(preco)}
+                </div>
+                <span style={{
+                  display: 'inline-block', padding: '4px 14px', background: 'var(--ac-dim)',
+                  border: '1px solid var(--ac)', borderRadius: '100px', fontSize: '0.75rem',
+                  fontWeight: 700, color: 'var(--ac)', marginBottom: '20px'
+                }}>
+                  Economia de R$ {pricing.economia} · {pricing.economiaPct}% OFF
+                </span>
+                <ul className="lp-checklist">
+                  <li>Curso presencial completo</li>
+                  {formInfo.curso.carga_horaria > 0 && <li>{formInfo.curso.carga_horaria} horas de conteúdo</li>}
+                  <li>Turma reduzida e personalizada</li>
+                  <li>Certificado de conclusão</li>
+                  <li>Material de apoio incluso</li>
+                  <li>📍 {formInfo.unidade.nome}</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+        )}
 
-          <p className="text-center text-xs text-gray-500 mt-2">
-            Ao se cadastrar, você receberá informações sobre o curso pelo WhatsApp.
-          </p>
-        </form>
+        {/* Social Proof */}
+        <section className="lp-section">
+          <div className="lp-c">
+            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+              <p className="lp-label">Quem já passou por aqui</p>
+              <h2 className="lp-heading" style={{ fontSize: 'clamp(1.4rem, 3.5vw, 2rem)', fontWeight: 700, marginBottom: '6px' }}>
+                Grandes nomes já passaram pela <span className="lp-hl">OZI.</span>
+              </h2>
+              <p style={{ fontSize: '1rem', color: 'var(--tx2)', fontStyle: 'italic' }}>Quem sabe você não é o próximo.</p>
+            </div>
+
+            <div className="lp-alumni-grid">
+              {ALUMNI.map((a, i) => (
+                <div key={i} className="lp-alumni-card">
+                  <div className="lp-alumni-avatar">{a.initials}</div>
+                  <div className="lp-alumni-name">{a.nome}</div>
+                  <div className="lp-alumni-role">{a.cargo}</div>
+                  {a.stats.map((s, j) => (
+                    <div key={j} className="lp-alumni-stat">
+                      <strong>{s.value}</strong> no {s.platform}
+                    </div>
+                  ))}
+                  {a.total && (
+                    <div className="lp-alumni-total">
+                      {a.total}
+                      <span className="lp-alumni-total-label">total de seguidores</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="lp-stats-row">
+              {SOCIAL_PROOF_STATS.map((s, i) => (
+                <div key={i} className="lp-stat">
+                  <div className="lp-stat-num">{s.value}</div>
+                  <div className="lp-stat-label">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Form Section */}
+        <section className="lp-section" ref={formSectionRef} id="cadastro">
+          <div className="lp-c">
+            <div className="lp-form-wrapper" style={{ textAlign: 'center' }}>
+              <p className="lp-label">Lista de Espera</p>
+              <h2 className="lp-heading" style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '6px' }}>
+                Garanta sua vaga na próxima turma
+              </h2>
+              <p style={{ fontSize: '0.92rem', color: 'var(--tx2)', marginBottom: '28px' }}>
+                Preencha seus dados e nossa equipe entrará em contato pelo WhatsApp.
+              </p>
+
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <input
+                  type="text"
+                  value={nome}
+                  onChange={e => setNome(e.target.value)}
+                  placeholder="Seu nome completo"
+                  required
+                  className="lp-input"
+                />
+                <input
+                  type="tel"
+                  value={whatsapp}
+                  onChange={e => setWhatsapp(formatWhatsapp(e.target.value))}
+                  placeholder="WhatsApp (11) 99999-9999"
+                  required
+                  className="lp-input"
+                />
+
+                <p style={{ fontSize: '0.88rem', color: 'var(--tx2)', marginTop: '4px', marginBottom: '0', textAlign: 'left', fontWeight: 500 }}>
+                  Qual horário prefere?
+                </p>
+                <div className="lp-period-grid">
+                  {([
+                    { key: 'manha' as Period, label: 'Manhã', icon: '☀️' },
+                    { key: 'tarde' as Period, label: 'Tarde', icon: '🌤️' },
+                    { key: 'noite' as Period, label: 'Noite', icon: '🌙' },
+                  ]).map(({ key, label, icon }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => togglePeriod(key)}
+                      className={`lp-period-btn ${periods.includes(key) ? 'active' : ''}`}
+                    >
+                      <span className="lp-period-icon">{icon}</span>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting || !nome.trim() || !whatsapp.trim() || periods.length === 0}
+                  className="lp-submit"
+                  style={{ marginTop: '8px' }}
+                >
+                  {submitting ? 'Cadastrando...' : 'Quero garantir minha vaga'}
+                </button>
+
+                <p style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--txm)', marginTop: '4px' }}>
+                  Ao se cadastrar, você receberá informações sobre o curso pelo WhatsApp.
+                </p>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="lp-footer">
+          <div className="lp-c">OZI Educação LTDA · Brasília / São Paulo · Desde 2003</div>
+        </footer>
+
+        {/* Floating CTA Bar */}
+        {hasPricing && (
+          <div className={`lp-floating ${showFloating ? 'show' : ''}`}>
+            <span className="lp-floating-text">
+              <strong>12x de R$ {pricing.parcela}</strong> ou R$ {formatCurrencyBR(preco)} à vista
+            </span>
+            <button onClick={scrollToForm} className="lp-nav-cta">Lista de Espera</button>
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 }
