@@ -489,7 +489,7 @@ export function FormularioPublico() {
                   <h2 className="lp-heading" style={{ fontSize: 'clamp(1.4rem, 3.5vw, 2rem)', fontWeight: 700, marginBottom: '6px' }}>
                     Grandes nomes já passaram pela <span className="lp-hl">OZI.</span>
                   </h2>
-                  <p style={{ fontSize: '1rem', color: 'var(--tx2)', fontStyle: 'italic' }}>Quem sabe você não é o próximo.</p>
+                  <p style={{ fontSize: 'clamp(1.4rem, 3.5vw, 2rem)', fontWeight: 700, color: 'var(--tx)' }}>Quem sabe você não é o próximo.</p>
                 </div>
 
                 <div className="lp-alumni-grid">
