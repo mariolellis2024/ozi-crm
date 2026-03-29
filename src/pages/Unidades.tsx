@@ -182,7 +182,7 @@ export function Unidades() {
                   <p className="text-emerald-400 font-bold text-sm">
                     Potencial: {formatCurrency(u.potencial_mensal)}/mês
                   </p>
-                  <p className="text-[10px] text-gray-600">{u.total_cadeiras} cadeiras × {u.horas_disponiveis_dia}h × 22 dias</p>
+                  <p className="text-[10px] text-gray-600">{u.total_cadeiras} cadeiras × {u.horas_disponiveis_dia}h × 20 dias</p>
                 </div>
               )}
 

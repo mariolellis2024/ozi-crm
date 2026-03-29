@@ -22,8 +22,8 @@ router.get('/', async (req, res) => {
       horas_disponiveis_dia: parseFloat(u.horas_disponiveis_dia || 0),
       valor_hora_aluno: parseFloat(u.valor_hora_aluno || 0),
       total_cadeiras: parseInt(u.total_cadeiras || 0),
-      // Potencial mensal = cadeiras × horas/dia × 22 dias úteis × valor/hora/aluno
-      potencial_mensal: parseInt(u.total_cadeiras || 0) * parseFloat(u.horas_disponiveis_dia || 0) * 22 * parseFloat(u.valor_hora_aluno || 0)
+      // Potencial mensal = cadeiras × horas/dia × 20 dias úteis × valor/hora/aluno
+      potencial_mensal: parseInt(u.total_cadeiras || 0) * parseFloat(u.horas_disponiveis_dia || 0) * 20 * parseFloat(u.valor_hora_aluno || 0)
     })));
   } catch (error) {
     console.error('Error loading unidades:', error);

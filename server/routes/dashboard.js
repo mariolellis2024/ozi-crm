@@ -95,7 +95,7 @@ router.get('/stats', async (req, res) => {
       totalCadeiras: parseInt(u.total_cadeiras),
       horasDisponivelDia: parseFloat(u.horas_disponiveis_dia || 0),
       valorHoraAluno: parseFloat(u.valor_hora_aluno || 0),
-      potencialMensal: parseInt(u.total_cadeiras) * parseFloat(u.horas_disponiveis_dia || 0) * 22 * parseFloat(u.valor_hora_aluno || 0)
+      potencialMensal: parseInt(u.total_cadeiras) * parseFloat(u.horas_disponiveis_dia || 0) * 20 * parseFloat(u.valor_hora_aluno || 0)
     }));
     const potencialCapacidade = capacidadeUnidades.reduce((sum, u) => sum + u.potencialMensal, 0);
 
@@ -128,13 +128,14 @@ router.get('/stats', async (req, res) => {
       return sum + parseFloat(t.investimento_anuncios_realizado || 0);
     }, 0);
 
-    // Occupation
-    const totalCadeiras = turmasDetail.reduce((sum, t) => sum + parseInt(t.cadeiras), 0);
+    // Occupation — against total capacity of unidades (physical infrastructure)
+    const totalCadeirasUnidades = capacidadeUnidades.reduce((sum, u) => sum + u.totalCadeiras, 0);
+    const totalCadeirasTurmas = turmasDetail.reduce((sum, t) => sum + parseInt(t.cadeiras), 0);
     const totalEnrolled = turmasDetail.reduce((sum, t) => sum + parseInt(t.enrolled_count), 0);
-    const ocupacaoMedia = totalCadeiras > 0 ? ((totalEnrolled / totalCadeiras) * 100).toFixed(1) : 0;
+    const ocupacaoMedia = totalCadeirasUnidades > 0 ? ((totalEnrolled / totalCadeirasUnidades) * 100).toFixed(1) : 0;
 
-    // Idle capacity
-    const vagasOciosas = totalCadeiras - totalEnrolled;
+    // Idle capacity — based on turma vacancies
+    const vagasOciosas = totalCadeirasTurmas - totalEnrolled;
     const potencialOcioso = faturamentoPotencial - faturamentoRealizado;
 
     // Professor costs — need to query turma_professores

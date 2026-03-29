@@ -100,7 +100,7 @@ export function DashboardPage() {
             </p>
             <p className="text-xs text-gray-500 mt-1">
               {stats.potencialCapacidade > 0 
-                ? `${stats.capacidadeUnidades.length} unidade${stats.capacidadeUnidades.length > 1 ? 's' : ''} · cadeiras × h/dia × 22 dias`
+                ? `${stats.capacidadeUnidades.length} unidade${stats.capacidadeUnidades.length > 1 ? 's' : ''} · cadeiras × h/dia × 20 dias`
                 : 'Configure horas e valor/hora nas unidades'
               }
             </p>
@@ -163,7 +163,9 @@ export function DashboardPage() {
                   style={{ width: `${Math.min(stats.ocupacaoMedia, 100)}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">{stats.enrolled} alunos em {stats.totalTurmas} turmas</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {stats.enrolled} alunos · {stats.capacidadeUnidades.reduce((s, u) => s + u.totalCadeiras, 0)} cadeiras totais
+              </p>
             </div>
           </div>
         </div>
