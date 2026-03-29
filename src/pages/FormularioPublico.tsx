@@ -345,19 +345,21 @@ export function FormularioPublico() {
 
         /* Social Proof */
         .lp-alumni-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
-        .lp-alumni-card { position: relative; aspect-ratio: 4/5; border-radius: 16px; overflow: hidden; background: var(--bg-card); border: 1px solid var(--brd); transition: border-color 0.3s, transform 0.3s; }
+        .lp-alumni-card { position: relative; aspect-ratio: 3/5; border-radius: 16px; overflow: hidden; background: var(--bg-card); border: 1px solid var(--brd); transition: border-color 0.3s, transform 0.3s; display: flex; flex-direction: column; }
         .lp-alumni-card:hover { border-color: #30363d; transform: translateY(-4px); }
-        .lp-alumni-photo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-        .lp-alumni-gradient { position: absolute; bottom: 0; left: 0; right: 0; height: 60%; background: linear-gradient(to top, var(--bg-card) 0%, var(--bg-card) 15%, rgba(22,27,34,0.85) 50%, transparent 100%); z-index: 1; }
-        .lp-alumni-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px 14px; z-index: 2; text-align: center; }
-        .lp-alumni-avatar { width: 100%; aspect-ratio: 4/5; background: var(--ac-dim); display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 2rem; color: var(--ac); }
-        .lp-alumni-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-        .lp-alumni-stat { font-size: 0.78rem; color: var(--tx2); margin-bottom: 2px; }
+        .lp-alumni-photo-wrap { position: relative; width: 100%; height: 75%; flex-shrink: 0; overflow: hidden; }
+        .lp-alumni-photo { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+        .lp-alumni-gradient { position: absolute; bottom: 0; left: 0; right: 0; height: 55%; background: linear-gradient(to top, var(--bg-card) 0%, rgba(22,27,34,0.7) 60%, transparent 100%); }
+        .lp-alumni-photo-name { position: absolute; bottom: 10px; left: 0; right: 0; text-align: center; z-index: 1; }
+        .lp-alumni-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 14px 16px; text-align: center; }
+        .lp-alumni-avatar { width: 100%; height: 75%; background: var(--ac-dim); display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 2rem; color: var(--ac); }
+        .lp-alumni-name { font-size: 1.15rem; font-weight: 700; text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
+        .lp-alumni-stat { font-size: 0.78rem; color: var(--tx2); margin-bottom: 1px; }
         .lp-alumni-stat a { color: inherit; text-decoration: none; transition: color 0.2s; }
         .lp-alumni-stat a:hover { color: var(--ac); }
         .lp-alumni-stat strong { color: var(--tx); }
-        .lp-alumni-total { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem; font-weight: 800; color: var(--ac); }
-        .lp-alumni-total-label { display: block; font-size: 0.6rem; color: var(--txm); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+        .lp-alumni-total { font-size: 1.6rem; font-weight: 800; color: var(--ac); line-height: 1.2; font-family: 'Space Grotesk', sans-serif; }
+        .lp-alumni-total-label { display: block; font-size: 0.55rem; color: var(--txm); font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px; }
 
         .lp-stats-row { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; }
         .lp-stat { text-align: center; }
@@ -575,15 +577,18 @@ export function FormularioPublico() {
                     return (
                       <div key={a.id} className="lp-alumni-card">
                         {a.foto_url ? (
-                          <>
+                          <div className="lp-alumni-photo-wrap">
                             <img src={a.foto_url} alt={a.nome} className="lp-alumni-photo" />
                             <div className="lp-alumni-gradient" />
-                          </>
+                            <div className="lp-alumni-photo-name">
+                              <div className="lp-alumni-name">{a.nome}</div>
+                            </div>
+                          </div>
                         ) : (
                           <div className="lp-alumni-avatar">{initials}</div>
                         )}
-                        <div className={a.foto_url ? 'lp-alumni-content' : 'lp-alumni-content'} style={!a.foto_url ? { position: 'relative' } : undefined}>
-                          <div className="lp-alumni-name">{a.nome}</div>
+                        <div className="lp-alumni-content">
+                          {!a.foto_url && <div className="lp-alumni-name" style={{ marginBottom: 6 }}>{a.nome}</div>}
                           {(a.metricas || []).map((s: { platform: string; value: string; url?: string }, j: number) => (
                             <div key={j} className="lp-alumni-stat">
                               {s.url ? (
