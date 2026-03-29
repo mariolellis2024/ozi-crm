@@ -343,23 +343,32 @@ export function FormularioPublico() {
         .lp-checklist li { padding-left: 22px; position: relative; }
         .lp-checklist li::before { content: '✓'; position: absolute; left: 0; color: var(--ac); font-weight: 700; }
 
-        /* Social Proof */
-        .lp-alumni-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
-        .lp-alumni-card { position: relative; aspect-ratio: 3/5; border-radius: 16px; overflow: hidden; background: var(--bg-card); border: 1px solid var(--brd); transition: border-color 0.3s, transform 0.3s; display: flex; flex-direction: column; }
-        .lp-alumni-card:hover { border-color: #30363d; transform: translateY(-4px); }
-        .lp-alumni-photo-wrap { position: relative; width: 100%; height: 75%; flex-shrink: 0; overflow: hidden; }
-        .lp-alumni-photo { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-        .lp-alumni-gradient { position: absolute; bottom: 0; left: 0; right: 0; height: 55%; background: linear-gradient(to top, var(--bg-card) 0%, rgba(22,27,34,0.7) 60%, transparent 100%); }
-        .lp-alumni-photo-name { position: absolute; bottom: 10px; left: 0; right: 0; text-align: center; z-index: 1; }
-        .lp-alumni-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 14px 16px; text-align: center; }
-        .lp-alumni-avatar { width: 100%; height: 75%; background: var(--ac-dim); display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 2rem; color: var(--ac); }
-        .lp-alumni-name { font-size: 1.15rem; font-weight: 700; text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
-        .lp-alumni-stat { font-size: 0.78rem; color: var(--tx2); margin-bottom: 1px; }
-        .lp-alumni-stat a { color: inherit; text-decoration: none; transition: color 0.2s; }
-        .lp-alumni-stat a:hover { color: var(--ac); }
-        .lp-alumni-stat strong { color: var(--tx); }
-        .lp-alumni-total { font-size: 1.6rem; font-weight: 800; color: var(--ac); line-height: 1.2; font-family: 'Space Grotesk', sans-serif; }
-        .lp-alumni-total-label { display: block; font-size: 0.55rem; color: var(--txm); font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px; }
+        /* Social Proof Cards */
+        .lp-alumni-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
+        @keyframes lp-fadeUp { to { opacity: 1; transform: translateY(0); } }
+        .lp-alumni-card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; overflow: hidden; position: relative; transition: transform 0.35s cubic-bezier(.22,.68,0,1.2), box-shadow 0.35s ease; opacity: 0; transform: translateY(30px); animation: lp-fadeUp 0.6s ease forwards; }
+        .lp-alumni-card:nth-child(1) { animation-delay: 0.1s; }
+        .lp-alumni-card:nth-child(2) { animation-delay: 0.2s; }
+        .lp-alumni-card:nth-child(3) { animation-delay: 0.3s; }
+        .lp-alumni-card:nth-child(4) { animation-delay: 0.4s; }
+        .lp-alumni-card:hover { transform: translateY(-6px); box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px var(--ac-dim); border-color: rgba(44,211,199,0.15); }
+        .lp-alumni-img-wrap { width: 100%; aspect-ratio: 1/1; position: relative; overflow: hidden; }
+        .lp-alumni-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(10%) contrast(1.05); transition: transform 0.5s ease, filter 0.5s ease; }
+        .lp-alumni-card:hover .lp-alumni-img-wrap img { transform: scale(1.04); filter: grayscale(0%) contrast(1.1); }
+        .lp-alumni-img-wrap::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 50%; background: linear-gradient(to top, var(--bg-card) 0%, transparent 100%); pointer-events: none; }
+        .lp-alumni-placeholder { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; color: rgba(255,255,255,0.08); background: linear-gradient(135deg, #1a1a2e 0%, #16162a 100%); letter-spacing: -0.03em; }
+        .lp-alumni-body { padding: 20px 22px 26px; }
+        .lp-alumni-name { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 14px; line-height: 1.2; color: var(--tx); }
+        .lp-alumni-platforms { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+        .lp-alumni-platform { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--tx2); font-weight: 500; text-decoration: none; transition: color 0.2s; }
+        a.lp-alumni-platform:hover { color: var(--ac); }
+        .lp-alumni-platform-icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .lp-alumni-platform-icon svg { width: 16px; height: 16px; }
+        .lp-alumni-platform-count { font-weight: 700; color: var(--tx); margin-left: auto; font-variant-numeric: tabular-nums; }
+        .lp-alumni-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), rgba(255,255,255,0.06), transparent); margin-bottom: 16px; }
+        .lp-alumni-total-row { display: flex; align-items: baseline; justify-content: space-between; }
+        .lp-alumni-total-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--tx2); }
+        .lp-alumni-total-num { font-family: 'Space Grotesk', monospace; font-size: 1.6rem; font-weight: 700; color: var(--ac); line-height: 1; text-shadow: 0 0 30px var(--ac-dim); }
 
         .lp-stats-row { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; }
         .lp-stat { text-align: center; }
@@ -498,34 +507,47 @@ export function FormularioPublico() {
                     return (
                       <div key={a.id} className="lp-alumni-card">
                         {a.foto_url ? (
-                          <div className="lp-alumni-photo-wrap">
-                            <img src={a.foto_url} alt={a.nome} className="lp-alumni-photo" />
-                            <div className="lp-alumni-gradient" />
-                            <div className="lp-alumni-photo-name">
-                              <div className="lp-alumni-name">{a.nome}</div>
-                            </div>
+                          <div className="lp-alumni-img-wrap">
+                            <img src={a.foto_url} alt={a.nome} />
                           </div>
                         ) : (
-                          <div className="lp-alumni-avatar">{initials}</div>
+                          <div className="lp-alumni-placeholder">{initials}</div>
                         )}
-                        <div className="lp-alumni-content">
-                          {!a.foto_url && <div className="lp-alumni-name" style={{ marginBottom: 6 }}>{a.nome}</div>}
-                          {(a.metricas || []).map((s: { platform: string; value: string; url?: string }, j: number) => (
-                            <div key={j} className="lp-alumni-stat">
-                              {s.url ? (
-                                <a href={s.url} target="_blank" rel="noopener noreferrer">
-                                  <strong>{s.value}</strong> no {s.platform}
-                                </a>
-                              ) : (
-                                <><strong>{s.value}</strong> no {s.platform}</>
-                              )}
-                            </div>
-                          ))}
+                        <div className="lp-alumni-body">
+                          <div className="lp-alumni-name">{a.nome}</div>
+                          <div className="lp-alumni-platforms">
+                            {(a.metricas || []).map((s: { platform: string; value: string; url?: string }, j: number) => {
+                              const pl = s.platform.toLowerCase();
+                              const isYt = pl.includes('youtube') || pl.includes('yt');
+                              const isIg = pl.includes('instagram') || pl.includes('insta') || pl.includes('ig');
+                              const isTk = pl.includes('tiktok') || pl.includes('tik');
+                              const iconColor = isYt ? '#ff4444' : isIg ? '#e040a0' : isTk ? '#69c9d0' : 'var(--tx2)';
+                              const iconSvg = isYt
+                                ? <svg viewBox="0 0 24 24" fill={iconColor}><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.4 31.4 0 0 0 24 12a31.4 31.4 0 0 0-.5-5.8zM9.6 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>
+                                : isIg
+                                ? <svg viewBox="0 0 24 24" fill={iconColor}><path d="M12 2.2c2.7 0 3 0 4.1.1 1 0 1.5.2 1.9.4.5.2.8.4 1.2.8.4.4.6.7.8 1.2.1.4.3.9.4 1.9 0 1 .1 1.4.1 4.1s0 3-.1 4.1c0 1-.2 1.5-.4 1.9-.2.5-.4.8-.8 1.2-.4.4-.7.6-1.2.8-.4.1-.9.3-1.9.4-1 0-1.4.1-4.1.1s-3 0-4.1-.1c-1 0-1.5-.2-1.9-.4a3.3 3.3 0 0 1-1.2-.8c-.4-.4-.6-.7-.8-1.2-.1-.4-.3-.9-.4-1.9C2.2 15 2.2 14.7 2.2 12s0-3 .1-4.1c0-1 .2-1.5.4-1.9.2-.5.4-.8.8-1.2.4-.4.7-.6 1.2-.8.4-.1.9-.3 1.9-.4C7 2.2 7.3 2.2 12 2.2zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2.6a2.4 2.4 0 1 0 0 4.8 2.4 2.4 0 0 0 0-4.8zm4.8-2.9a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4z"/></svg>
+                                : isTk
+                                ? <svg viewBox="0 0 24 24" fill={iconColor}><path d="M19.6 6.7A5.2 5.2 0 0 1 16.4 3h-3v13.2a2.9 2.9 0 1 1-2-2.7V10a6.4 6.4 0 1 0 5.4 6.3V9.6a8.6 8.6 0 0 0 5 1.6V7.8a5.2 5.2 0 0 1-2.2-1.1z"/></svg>
+                                : null;
+                              const Tag = s.url ? 'a' : 'div';
+                              const linkProps = s.url ? { href: s.url, target: '_blank', rel: 'noopener noreferrer' } : {};
+                              return (
+                                <Tag key={j} className="lp-alumni-platform" {...linkProps}>
+                                  {iconSvg && <span className="lp-alumni-platform-icon">{iconSvg}</span>}
+                                  {s.platform}
+                                  <span className="lp-alumni-platform-count">{s.value}</span>
+                                </Tag>
+                              );
+                            })}
+                          </div>
                           {a.total_seguidores && (
-                            <div className="lp-alumni-total">
-                              {a.total_seguidores}
-                              <span className="lp-alumni-total-label">total de seguidores</span>
-                            </div>
+                            <>
+                              <div className="lp-alumni-divider" />
+                              <div className="lp-alumni-total-row">
+                                <span className="lp-alumni-total-label">Total seguidores</span>
+                                <span className="lp-alumni-total-num">{a.total_seguidores}</span>
+                              </div>
+                            </>
                           )}
                         </div>
                       </div>
