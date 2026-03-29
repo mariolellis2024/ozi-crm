@@ -342,15 +342,31 @@ router.put('/unenroll', async (req, res) => {
   }
 });
 
+// GET /api/interests/check-payments/:alunoId/:turmaId — check if payments exist
+router.get('/check-payments/:alunoId/:turmaId', async (req, res) => {
+  try {
+    const { alunoId, turmaId } = req.params;
+    const result = await pool.query(
+      'SELECT COUNT(*)::int as count, COALESCE(SUM(valor), 0) as total FROM pagamentos WHERE aluno_id = $1 AND turma_id = $2',
+      [alunoId, turmaId]
+    );
+    const { count, total } = result.rows[0];
+    res.json({ count, total: parseFloat(total) });
+  } catch (error) {
+    console.error('Error checking payments:', error);
+    res.status(500).json({ error: 'Erro ao verificar pagamentos' });
+  }
+});
+
 // PUT /api/interests/:id/status — update interest status
 router.put('/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
     
-    // When moving back to interested, clear turma_id so student appears in interested list
+    // When moving away from enrolled (to interested or lost), clear turma_id
     let result;
-    if (status === 'interested') {
+    if (status === 'interested' || status === 'lost') {
       result = await pool.query(
         'UPDATE aluno_curso_interests SET status = $1, turma_id = NULL WHERE id = $2 RETURNING *',
         [status, id]

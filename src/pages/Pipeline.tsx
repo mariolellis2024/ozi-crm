@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { Filter, X, MessageCircle, ClipboardList } from 'lucide-react';
+import { Filter, X, MessageCircle, ClipboardList, AlertTriangle } from 'lucide-react';
 import { formatPhone, formatCurrency } from '../utils/format';
 import toast from 'react-hot-toast';
 import { useUnidade } from '../contexts/UnidadeContext';
@@ -81,6 +81,24 @@ export function Pipeline() {
     motivo: string;
     loading: boolean;
   }>({ isOpen: false, interest: null, motivo: '', loading: false });
+
+  // Unenroll confirmation modal (when moving enrolled student out)
+  const [unenrollModal, setUnenrollModal] = useState<{
+    isOpen: boolean;
+    interest: Interest | null;
+    targetStatus: string;
+    loading: boolean;
+  }>({ isOpen: false, interest: null, targetStatus: '', loading: false });
+
+  // Delete payments confirmation modal
+  const [deletePaymentsModal, setDeletePaymentsModal] = useState<{
+    isOpen: boolean;
+    interest: Interest | null;
+    targetStatus: string;
+    paymentCount: number;
+    paymentTotal: number;
+    loading: boolean;
+  }>({ isOpen: false, interest: null, targetStatus: '', paymentCount: 0, paymentTotal: 0, loading: false });
 
   // History modal
   const [historyModal, setHistoryModal] = useState<{
@@ -218,7 +236,13 @@ export function Pipeline() {
       return;
     }
 
-    // If moving to lost, ask for reason
+    // If student is enrolled and moving to interested or lost, confirm unenrollment
+    if (interest.status === 'enrolled' && (newStatus === 'interested' || newStatus === 'lost')) {
+      setUnenrollModal({ isOpen: true, interest, targetStatus: newStatus, loading: false });
+      return;
+    }
+
+    // If moving to lost (from non-enrolled), ask for reason
     if (newStatus === 'lost') {
       setLossModal({ isOpen: true, interest, motivo: '', loading: false });
       return;
@@ -231,6 +255,79 @@ export function Pipeline() {
     } catch (error: any) {
       toast.error(error.message || 'Erro ao mover aluno');
     }
+  }
+
+  async function handleUnenrollConfirm() {
+    if (!unenrollModal.interest) return;
+    const { interest, targetStatus } = unenrollModal;
+    setUnenrollModal(prev => ({ ...prev, loading: true }));
+
+    try {
+      // Check if there are payments linked to this enrollment
+      let paymentData = { count: 0, total: 0 };
+      if (interest.turma_id) {
+        paymentData = await api.get(`/api/interests/check-payments/${interest.aluno_id}/${interest.turma_id}`);
+      }
+
+      // Close unenroll modal
+      setUnenrollModal({ isOpen: false, interest: null, targetStatus: '', loading: false });
+
+      if (paymentData.count > 0) {
+        // Ask about deleting payments
+        setDeletePaymentsModal({
+          isOpen: true,
+          interest,
+          targetStatus,
+          paymentCount: paymentData.count,
+          paymentTotal: paymentData.total,
+          loading: false
+        });
+      } else {
+        // No payments, proceed directly
+        await proceedWithUnenroll(interest, targetStatus);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao verificar pagamentos');
+      setUnenrollModal(prev => ({ ...prev, loading: false }));
+    }
+  }
+
+  async function proceedWithUnenroll(interest: Interest, targetStatus: string, deletePayments = false) {
+    try {
+      // Delete payments if requested
+      if (deletePayments && interest.turma_id) {
+        await api.delete(`/api/pagamentos/by-enrollment/${interest.aluno_id}/${interest.turma_id}`);
+        toast.success('Pagamentos deletados');
+      }
+
+      // If target is lost, open loss reason modal
+      if (targetStatus === 'lost') {
+        setLossModal({ isOpen: true, interest, motivo: '', loading: false });
+        return;
+      }
+
+      // Move to interested (status update clears turma_id on backend)
+      await api.put(`/api/interests/${interest.id}/status`, { status: targetStatus });
+      toast.success(`${interest.aluno_nome} desmatriculado(a) e movido(a) para ${STATUS_CONFIG[targetStatus].label}`);
+      loadData();
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao desmatricular');
+    }
+  }
+
+  async function handleDeletePaymentsYes() {
+    if (!deletePaymentsModal.interest) return;
+    const { interest, targetStatus } = deletePaymentsModal;
+    setDeletePaymentsModal(prev => ({ ...prev, loading: true }));
+    setDeletePaymentsModal({ isOpen: false, interest: null, targetStatus: '', paymentCount: 0, paymentTotal: 0, loading: false });
+    await proceedWithUnenroll(interest, targetStatus, true);
+  }
+
+  async function handleDeletePaymentsNo() {
+    if (!deletePaymentsModal.interest) return;
+    const { interest, targetStatus } = deletePaymentsModal;
+    setDeletePaymentsModal({ isOpen: false, interest: null, targetStatus: '', paymentCount: 0, paymentTotal: 0, loading: false });
+    await proceedWithUnenroll(interest, targetStatus, false);
   }
 
   async function handleLostConfirm() {
@@ -644,6 +741,85 @@ export function Pipeline() {
                 className="flex-1 px-4 py-2.5 bg-teal-accent text-dark font-medium rounded-xl hover:bg-teal-400 transition-colors text-sm disabled:opacity-50"
               >
                 {enrollModal.loading ? 'Matriculando...' : '✓ Confirmar Matrícula'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Unenroll Confirmation Modal */}
+      {unenrollModal.isOpen && unenrollModal.interest && createPortal(
+        <div className="fixed inset-0 z-[10000] bg-black/60 flex items-center justify-center p-4" onClick={() => setUnenrollModal(prev => ({ ...prev, isOpen: false }))}>
+          <div className="bg-dark-card rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-400" />
+                <h2 className="text-lg font-semibold text-white">Desmatricular Aluno</h2>
+              </div>
+              <button onClick={() => setUnenrollModal(prev => ({ ...prev, isOpen: false }))} className="text-gray-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="text-gray-300 text-sm mb-2">
+              Tem certeza que deseja desmatricular <span className="text-white font-medium">{unenrollModal.interest.aluno_nome}</span> do curso <span className="text-teal-accent">{unenrollModal.interest.curso_nome}</span>?
+            </p>
+            <p className="text-gray-500 text-xs mb-5">
+              O aluno será removido da turma e movido para <span className={STATUS_CONFIG[unenrollModal.targetStatus].color}>{STATUS_CONFIG[unenrollModal.targetStatus].label}</span>.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setUnenrollModal(prev => ({ ...prev, isOpen: false }))}
+                className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 rounded-xl hover:bg-dark-lighter transition-colors text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleUnenrollConfirm}
+                disabled={unenrollModal.loading}
+                className="flex-1 px-4 py-2.5 bg-amber-500 text-dark font-medium rounded-xl hover:bg-amber-400 transition-colors text-sm disabled:opacity-50"
+              >
+                {unenrollModal.loading ? 'Verificando...' : 'Sim, desmatricular'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Payments Confirmation Modal */}
+      {deletePaymentsModal.isOpen && deletePaymentsModal.interest && createPortal(
+        <div className="fixed inset-0 z-[10001] bg-black/60 flex items-center justify-center p-4" onClick={() => handleDeletePaymentsNo()}>
+          <div className="bg-dark-card rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-400" />
+                <h2 className="text-lg font-semibold text-white">Deletar Pagamentos?</h2>
+              </div>
+              <button onClick={() => handleDeletePaymentsNo()} className="text-gray-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="text-gray-300 text-sm mb-2">
+              <span className="text-white font-medium">{deletePaymentsModal.interest.aluno_nome}</span> tem <span className="text-red-400 font-bold">{deletePaymentsModal.paymentCount} pagamento(s)</span> no valor total de <span className="text-red-400 font-bold">{formatCurrency(deletePaymentsModal.paymentTotal)}</span> vinculados a esta turma.
+            </p>
+            <p className="text-gray-400 text-sm mb-5">
+              Deseja deletar todos os pagamentos atrelados a esse aluno nesta turma?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleDeletePaymentsNo}
+                disabled={deletePaymentsModal.loading}
+                className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 rounded-xl hover:bg-dark-lighter transition-colors text-sm"
+              >
+                Não, manter
+              </button>
+              <button
+                onClick={handleDeletePaymentsYes}
+                disabled={deletePaymentsModal.loading}
+                className="flex-1 px-4 py-2.5 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600 transition-colors text-sm disabled:opacity-50"
+              >
+                {deletePaymentsModal.loading ? 'Deletando...' : 'Sim, deletar tudo'}
               </button>
             </div>
           </div>
