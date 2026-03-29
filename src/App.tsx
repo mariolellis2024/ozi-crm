@@ -36,6 +36,7 @@ const Pipeline = lazyRetry(() => import('./pages/Pipeline').then(m => ({ default
 const Atividades = lazyRetry(() => import('./pages/Atividades').then(m => ({ default: m.Atividades })), 'Atividades');
 const Pagamentos = lazyRetry(() => import('./pages/Pagamentos').then(m => ({ default: m.Pagamentos })), 'Pagamentos');
 const Formularios = lazyRetry(() => import('./pages/Formularios').then(m => ({ default: m.Formularios })), 'Formularios');
+const SocialProofPage = lazyRetry(() => import('./pages/SocialProof').then(m => ({ default: m.SocialProofPage })), 'SocialProofPage');
 const FormularioPublico = lazyRetry(() => import('./pages/FormularioPublico').then(m => ({ default: m.FormularioPublico })), 'FormularioPublico');
 
 interface User {
@@ -127,6 +128,7 @@ export default function App() {
                   <Route path="/atividades" element={<PrivateRoute><Atividades /></PrivateRoute>} />
                   <Route path="/pagamentos" element={<PrivateRoute><Pagamentos /></PrivateRoute>} />
                   <Route path="/formularios" element={<PrivateRoute><Formularios /></PrivateRoute>} />
+                  <Route path="/social-proof" element={<PrivateRoute><SocialProofPage /></PrivateRoute>} />
                 </Routes>
               </Suspense>
               <Toaster position="top-right" />

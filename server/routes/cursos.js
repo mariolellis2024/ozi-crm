@@ -118,4 +118,56 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// =====================================================
+// Módulos do Curso
+// =====================================================
+
+// GET /api/cursos/:cursoId/modulos — list modules for a course
+router.get('/:cursoId/modulos', async (req, res) => {
+  try {
+    const { cursoId } = req.params;
+    const result = await pool.query(
+      'SELECT * FROM curso_modulos WHERE curso_id = $1 ORDER BY ordem ASC, created_at ASC',
+      [cursoId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error loading modules:', error);
+    res.status(500).json({ error: 'Erro ao carregar módulos' });
+  }
+});
+
+// PUT /api/cursos/:cursoId/modulos — batch update all modules (replace all)
+router.put('/:cursoId/modulos', async (req, res) => {
+  try {
+    const { cursoId } = req.params;
+    const { modulos } = req.body;
+
+    // Delete existing modules
+    await pool.query('DELETE FROM curso_modulos WHERE curso_id = $1', [cursoId]);
+
+    // Insert new ones
+    if (modulos && modulos.length > 0) {
+      for (let i = 0; i < modulos.length; i++) {
+        const m = modulos[i];
+        await pool.query(
+          `INSERT INTO curso_modulos (curso_id, titulo, descricao, duracao_horas, icone, entrega, semana, ordem)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [cursoId, m.titulo, m.descricao || null, parseFloat(m.duracao_horas) || 0, m.icone || '📚', m.entrega || null, m.semana || null, i]
+        );
+      }
+    }
+
+    // Return updated list
+    const result = await pool.query(
+      'SELECT * FROM curso_modulos WHERE curso_id = $1 ORDER BY ordem ASC',
+      [cursoId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error saving modules:', error);
+    res.status(500).json({ error: 'Erro ao salvar módulos' });
+  }
+});
+
 export default router;

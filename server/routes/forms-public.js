@@ -10,7 +10,7 @@ router.get('/:slug', async (req, res) => {
     const { slug } = req.params;
 
     const result = await pool.query(
-      `SELECT f.id, f.slug, f.titulo, f.descricao, f.ativo,
+      `SELECT f.id, f.slug, f.titulo, f.descricao, f.ativo, f.social_proof_group_id,
               c.id as curso_id, c.nome as curso_nome, c.imagem_url as curso_imagem,
               c.carga_horaria, c.preco,
               u.id as unidade_id, u.nome as unidade_nome, u.cidade as unidade_cidade,
@@ -42,6 +42,17 @@ router.get('/:slug', async (req, res) => {
       [row.id, visitorIp]
     ).catch(err => console.error('Error tracking form visit:', err));
 
+    // Fetch social proof (from linked group) and course modules in parallel
+    const queries = [
+      pool.query('SELECT * FROM curso_modulos WHERE curso_id = $1 ORDER BY ordem ASC', [row.curso_id])
+    ];
+    if (row.social_proof_group_id) {
+      queries.push(
+        pool.query('SELECT * FROM social_proof_items WHERE group_id = $1 ORDER BY ordem ASC', [row.social_proof_group_id])
+      );
+    }
+    const [modulosResult, socialProofResult] = await Promise.all(queries);
+
     res.json({
       id: row.id,
       slug: row.slug,
@@ -62,7 +73,9 @@ router.get('/:slug', async (req, res) => {
       tracking: {
         meta_pixel_id: row.meta_pixel_id || null,
         google_analytics_id: row.google_analytics_id || null
-      }
+      },
+      social_proof: socialProofResult?.rows || [],
+      modulos: modulosResult.rows
     });
   } catch (error) {
     console.error('Error loading public form:', error);

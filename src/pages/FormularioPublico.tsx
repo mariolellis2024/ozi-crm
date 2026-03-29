@@ -1,7 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { CheckCircle, Loader2, Clock, Sun, Moon, MapPin, Users, ChevronDown } from 'lucide-react';
+import { CheckCircle, Loader2, Clock, MapPin, Users, ChevronDown } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+
+interface SocialProofItem {
+  id: string;
+  nome: string;
+  cargo: string | null;
+  foto_url: string | null;
+  metricas: { platform: string; value: string }[];
+  total_seguidores: string | null;
+  ordem: number;
+}
+
+interface Modulo {
+  id: string;
+  titulo: string;
+  descricao: string | null;
+  duracao_horas: number;
+  icone: string;
+  entrega: string | null;
+  semana: string | null;
+  ordem: number;
+}
 
 interface FormData {
   id: string;
@@ -24,11 +45,13 @@ interface FormData {
     meta_pixel_id: string | null;
     google_analytics_id: string | null;
   };
+  social_proof?: SocialProofItem[];
+  modulos?: Modulo[];
 }
 
 type Period = 'manha' | 'tarde' | 'noite';
 
-// Social proof data — OZI institutional numbers
+// Fallback social proof data — used only when no data is configured in the CRM
 const SOCIAL_PROOF_STATS = [
   { value: '+23', label: 'anos de experiência' },
   { value: '2003', label: 'ano de fundação da OZI' },
@@ -36,11 +59,11 @@ const SOCIAL_PROOF_STATS = [
   { value: '+20 mil', label: 'alunos online' },
 ];
 
-const ALUMNI = [
-  { initials: 'PC', nome: 'Patricio Carvalho', cargo: 'Criador de conteúdo', stats: [{ platform: 'Instagram', value: '4.7M' }, { platform: 'YouTube', value: '3.93M' }], total: '8.63M' },
-  { initials: 'IK', nome: 'Ir Kelly Patricia', cargo: 'Instituto Hesed', stats: [{ platform: 'Instagram', value: '4.9M' }, { platform: 'YouTube', value: '5.02M' }], total: '9.92M' },
-  { initials: 'RG', nome: 'Raul Gazolla', cargo: 'Ator, Produtor e Palestrante', stats: [{ platform: 'Instagram', value: '1.8M' }] },
-  { initials: 'LF', nome: 'Lucas Fernandes', cargo: 'Escritor, Apresentador Globoplay', stats: [{ platform: 'Instagram', value: '2M' }] },
+const FALLBACK_ALUMNI: SocialProofItem[] = [
+  { id: '1', nome: 'Patricio Carvalho', cargo: 'Criador de conteúdo', foto_url: null, metricas: [{ platform: 'Instagram', value: '4.7M' }, { platform: 'YouTube', value: '3.93M' }], total_seguidores: '8.63M', ordem: 0 },
+  { id: '2', nome: 'Ir Kelly Patricia', cargo: 'Instituto Hesed', foto_url: null, metricas: [{ platform: 'Instagram', value: '4.9M' }, { platform: 'YouTube', value: '5.02M' }], total_seguidores: '9.92M', ordem: 1 },
+  { id: '3', nome: 'Raul Gazolla', cargo: 'Ator, Produtor e Palestrante', foto_url: null, metricas: [{ platform: 'Instagram', value: '1.8M' }], total_seguidores: null, ordem: 2 },
+  { id: '4', nome: 'Lucas Fernandes', cargo: 'Escritor, Apresentador Globoplay', foto_url: null, metricas: [{ platform: 'Instagram', value: '2M' }], total_seguidores: null, ordem: 3 },
 ];
 
 function formatPriceInstallment(preco: number, parcelas: number = 12, taxa: number = 0.0297): { parcela: string; total: string; economia: string; economiaPct: string } {
@@ -364,11 +387,24 @@ export function FormularioPublico() {
         .lp-scroll-cta { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 32px; color: var(--txm); font-size: 0.8rem; cursor: pointer; transition: color 0.3s; }
         .lp-scroll-cta:hover { color: var(--ac); }
 
+        /* Modules */
+        .lp-modules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .lp-module-card { background: var(--bg-card); border: 1px solid var(--brd); border-radius: 14px; padding: 24px 20px 18px; display: flex; flex-direction: column; transition: border-color 0.3s, background 0.3s; }
+        .lp-module-card:hover { background: var(--bg-card-h); border-color: #30363d; }
+        .lp-module-num { font-size: 0.78rem; font-weight: 800; color: var(--ac); margin-bottom: 2px; }
+        .lp-module-week { font-size: 0.72rem; color: var(--txm); margin-bottom: 10px; }
+        .lp-module-icon { font-size: 1.5rem; margin-bottom: 8px; }
+        .lp-module-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+        .lp-module-hours { font-size: 0.75rem; color: var(--txm); font-weight: 500; margin-bottom: 8px; }
+        .lp-module-desc { font-size: 0.88rem; color: var(--tx2); line-height: 1.7; flex: 1; margin: 0; }
+        .lp-module-delivery { margin-top: 12px; padding: 8px 12px; background: var(--ac-dim); border-left: 3px solid var(--ac); border-radius: 0 8px 8px 0; font-size: 0.8rem; font-weight: 600; color: var(--ac); }
+
         /* Responsive */
         @media (max-width: 768px) {
           .lp-hero-grid { grid-template-columns: 1fr; }
           .lp-hero-img, .lp-hero-placeholder { height: 240px; }
           .lp-alumni-grid { grid-template-columns: repeat(2, 1fr); }
+          .lp-modules-grid { grid-template-columns: 1fr; }
           .lp-stats-row { gap: 24px; }
           .lp-price-card { padding: 28px 24px; width: 100%; }
           .lp-floating { flex-direction: column; gap: 8px; padding: 10px 18px; }
@@ -481,49 +517,95 @@ export function FormularioPublico() {
             </div>
           </section>
         )}
+        {/* Modules Section */}
+        {formInfo.modulos && formInfo.modulos.length > 0 && (
+          <section className="lp-section">
+            <div className="lp-c">
+              <div style={{ marginBottom: '40px' }}>
+                <p className="lp-label">O curso</p>
+                <h2 className="lp-heading" style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2.2rem)', fontWeight: 700, marginBottom: '8px' }}>
+                  {formInfo.modulos.length} módulos.{' '}
+                  {formInfo.curso.carga_horaria > 0 && <span className="lp-hl">{formInfo.curso.carga_horaria} horas.</span>}
+                </h2>
+                <p style={{ fontSize: '1rem', color: 'var(--tx2)' }}>Cada módulo entrega um resultado concreto.</p>
+              </div>
+              <div className="lp-modules-grid">
+                {formInfo.modulos.map((m, i) => (
+                  <div key={m.id} className="lp-module-card">
+                    <span className="lp-module-num">{String(i + 1).padStart(2, '0')}</span>
+                    {m.semana && <span className="lp-module-week">{m.semana}</span>}
+                    <div className="lp-module-icon">{m.icone || '📚'}</div>
+                    <h3 className="lp-module-title">{m.titulo}</h3>
+                    {m.duracao_horas > 0 && (
+                      <span className="lp-module-hours">{m.duracao_horas} horas</span>
+                    )}
+                    {m.descricao && <p className="lp-module-desc">{m.descricao}</p>}
+                    {m.entrega && (
+                      <div className="lp-module-delivery">{m.entrega}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Social Proof */}
-        <section className="lp-section">
-          <div className="lp-c">
-            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-              <p className="lp-label">Quem já passou por aqui</p>
-              <h2 className="lp-heading" style={{ fontSize: 'clamp(1.4rem, 3.5vw, 2rem)', fontWeight: 700, marginBottom: '6px' }}>
-                Grandes nomes já passaram pela <span className="lp-hl">OZI.</span>
-              </h2>
-              <p style={{ fontSize: '1rem', color: 'var(--tx2)', fontStyle: 'italic' }}>Quem sabe você não é o próximo.</p>
-            </div>
+        {(() => {
+          const alumni = (formInfo.social_proof && formInfo.social_proof.length > 0)
+            ? formInfo.social_proof
+            : FALLBACK_ALUMNI;
+          return (
+            <section className="lp-section">
+              <div className="lp-c">
+                <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                  <p className="lp-label">Quem já passou por aqui</p>
+                  <h2 className="lp-heading" style={{ fontSize: 'clamp(1.4rem, 3.5vw, 2rem)', fontWeight: 700, marginBottom: '6px' }}>
+                    Grandes nomes já passaram pela <span className="lp-hl">OZI.</span>
+                  </h2>
+                  <p style={{ fontSize: '1rem', color: 'var(--tx2)', fontStyle: 'italic' }}>Quem sabe você não é o próximo.</p>
+                </div>
 
-            <div className="lp-alumni-grid">
-              {ALUMNI.map((a, i) => (
-                <div key={i} className="lp-alumni-card">
-                  <div className="lp-alumni-avatar">{a.initials}</div>
-                  <div className="lp-alumni-name">{a.nome}</div>
-                  <div className="lp-alumni-role">{a.cargo}</div>
-                  {a.stats.map((s, j) => (
-                    <div key={j} className="lp-alumni-stat">
-                      <strong>{s.value}</strong> no {s.platform}
+                <div className="lp-alumni-grid">
+                  {alumni.map((a: SocialProofItem) => {
+                    const initials = a.nome.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                    return (
+                      <div key={a.id} className="lp-alumni-card">
+                        {a.foto_url ? (
+                          <img src={a.foto_url} alt={a.nome} style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', margin: '0 auto 12px', display: 'block' }} />
+                        ) : (
+                          <div className="lp-alumni-avatar">{initials}</div>
+                        )}
+                        <div className="lp-alumni-name">{a.nome}</div>
+                        <div className="lp-alumni-role">{a.cargo}</div>
+                        {(a.metricas || []).map((s: { platform: string; value: string }, j: number) => (
+                          <div key={j} className="lp-alumni-stat">
+                            <strong>{s.value}</strong> no {s.platform}
+                          </div>
+                        ))}
+                        {a.total_seguidores && (
+                          <div className="lp-alumni-total">
+                            {a.total_seguidores}
+                            <span className="lp-alumni-total-label">total de seguidores</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="lp-stats-row">
+                  {SOCIAL_PROOF_STATS.map((s, i) => (
+                    <div key={i} className="lp-stat">
+                      <div className="lp-stat-num">{s.value}</div>
+                      <div className="lp-stat-label">{s.label}</div>
                     </div>
                   ))}
-                  {a.total && (
-                    <div className="lp-alumni-total">
-                      {a.total}
-                      <span className="lp-alumni-total-label">total de seguidores</span>
-                    </div>
-                  )}
                 </div>
-              ))}
-            </div>
-
-            <div className="lp-stats-row">
-              {SOCIAL_PROOF_STATS.map((s, i) => (
-                <div key={i} className="lp-stat">
-                  <div className="lp-stat-num">{s.value}</div>
-                  <div className="lp-stat-label">{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+              </div>
+            </section>
+          );
+        })()}
 
         {/* Form Section */}
         <section className="lp-section" ref={formSectionRef} id="cadastro">

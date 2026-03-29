@@ -24,12 +24,20 @@ interface Formulario {
   titulo: string | null;
   descricao: string | null;
   ativo: boolean;
+  social_proof_group_id: string | null;
   created_at: string;
   curso_nome: string;
   curso_imagem: string | null;
   unidade_nome: string;
+  social_proof_group_nome: string | null;
   visitas: number;
   cadastros: number;
+}
+
+interface SocialProofGroup {
+  id: string;
+  nome: string;
+  item_count: number;
 }
 
 export function Formularios() {
@@ -45,9 +53,11 @@ export function Formularios() {
     unidade_id: '',
     titulo: '',
     descricao: '',
-    ativo: true
+    ativo: true,
+    social_proof_group_id: ''
   });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: '', nome: '' });
+  const [socialProofGroups, setSocialProofGroups] = useState<SocialProofGroup[]>([]);
 
   // Check if current user is superadmin from JWT
   const isSuperAdmin = useMemo(() => {
@@ -66,6 +76,7 @@ export function Formularios() {
     loadFormularios();
     loadCursos();
     loadUnidades();
+    loadSocialProofGroups();
   }, [selectedUnidadeId]);
 
   async function loadFormularios() {
@@ -94,6 +105,13 @@ export function Formularios() {
     } catch { /* ignore */ }
   }
 
+  async function loadSocialProofGroups() {
+    try {
+      const data = await api.get('/api/social-proof/groups');
+      setSocialProofGroups(data);
+    } catch { /* ignore */ }
+  }
+
   function generateSlug(cursoNome: string, unidadeNome: string) {
     const text = `${cursoNome}-${unidadeNome}`;
     return text
@@ -106,7 +124,7 @@ export function Formularios() {
   function handleNew() {
     const defaultUnidade = selectedUnidadeId || '';
     setEditingId(null);
-    setFormData({ slug: '', curso_id: '', unidade_id: defaultUnidade, titulo: '', descricao: '', ativo: true });
+    setFormData({ slug: '', curso_id: '', unidade_id: defaultUnidade, titulo: '', descricao: '', ativo: true, social_proof_group_id: '' });
     setIsModalOpen(true);
   }
 
@@ -118,7 +136,8 @@ export function Formularios() {
       unidade_id: f.unidade_id,
       titulo: f.titulo || '',
       descricao: f.descricao || '',
-      ativo: f.ativo
+      ativo: f.ativo,
+      social_proof_group_id: f.social_proof_group_id || ''
     });
     setIsModalOpen(true);
   }
@@ -407,6 +426,25 @@ export function Formularios() {
                   rows={2}
                   placeholder="Texto extra para a landing page"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">
+                  Quem Passou Por Aqui (Social Proof)
+                </label>
+                <select
+                  value={formData.social_proof_group_id}
+                  onChange={e => setFormData({ ...formData, social_proof_group_id: e.target.value })}
+                  className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                >
+                  <option value="">Não exibir</option>
+                  {socialProofGroups.map(g => (
+                    <option key={g.id} value={g.id}>{g.nome} ({g.item_count} {g.item_count === 1 ? 'pessoa' : 'pessoas'})</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Gerencie as coleções em <a href="/social-proof" className="text-teal-accent hover:underline" target="_blank" rel="noreferrer">Social Proof</a>
+                </p>
               </div>
 
               <div className="flex gap-3 pt-2">

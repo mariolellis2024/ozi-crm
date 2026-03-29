@@ -349,3 +349,45 @@ UPDATE alunos SET genero = 'feminino' WHERE genero = 'f';
 UPDATE alunos SET genero = 'masculino' WHERE genero = 'M';
 UPDATE alunos SET genero = 'feminino' WHERE genero = 'F';
 
+-- =====================================================
+-- Social Proof Groups — collections of alumni/testimonials
+-- =====================================================
+CREATE TABLE IF NOT EXISTS social_proof_groups (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS social_proof_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id uuid NOT NULL REFERENCES social_proof_groups(id) ON DELETE CASCADE,
+  nome text NOT NULL,
+  cargo text,
+  foto_url text,
+  metricas jsonb DEFAULT '[]',
+  total_seguidores text,
+  ordem integer DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Link formulario to a social proof group
+ALTER TABLE formularios ADD COLUMN IF NOT EXISTS social_proof_group_id uuid REFERENCES social_proof_groups(id) ON DELETE SET NULL;
+
+
+-- =====================================================
+-- Curso Módulos — course content/modules for landing pages
+-- =====================================================
+CREATE TABLE IF NOT EXISTS curso_modulos (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  curso_id uuid NOT NULL REFERENCES cursos(id) ON DELETE CASCADE,
+  titulo text NOT NULL,
+  descricao text,
+  duracao_horas numeric DEFAULT 0,
+  icone text DEFAULT '📚',
+  entrega text,
+  semana text,
+  ordem integer DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_curso_modulos_curso ON curso_modulos(curso_id);

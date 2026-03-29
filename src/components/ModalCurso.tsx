@@ -381,6 +381,11 @@ export function ModalCurso({
             required
           />
 
+          {/* Modules Editor — only when editing */}
+          {editingId && (
+            <ModulosEditor cursoId={editingId} />
+          )}
+
           <LoadingButton
             isLoading={uploading}
             text={editingId ? 'Atualizar' : 'Cadastrar'}
@@ -391,5 +396,182 @@ export function ModalCurso({
     </div>
     ) : null,
     document.body
+  );
+}
+
+// =====================================================
+// Modules Editor Component
+// =====================================================
+interface ModuloForm {
+  titulo: string;
+  descricao: string;
+  duracao_horas: string;
+  icone: string;
+  entrega: string;
+  semana: string;
+}
+
+function ModulosEditor({ cursoId }: { cursoId: string }) {
+  const [modulos, setModulos] = useState<ModuloForm[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    loadModulos();
+  }, [cursoId]);
+
+  async function loadModulos() {
+    try {
+      const data = await api.get(`/api/cursos/${cursoId}/modulos`);
+      setModulos(data.map((m: any) => ({
+        titulo: m.titulo || '',
+        descricao: m.descricao || '',
+        duracao_horas: String(m.duracao_horas || 0),
+        icone: m.icone || '📚',
+        entrega: m.entrega || '',
+        semana: m.semana || ''
+      })));
+    } catch {
+      toast.error('Erro ao carregar módulos');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function addModulo() {
+    setModulos(prev => [...prev, { titulo: '', descricao: '', duracao_horas: '3', icone: '📚', entrega: '', semana: '' }]);
+  }
+
+  function removeModulo(index: number) {
+    setModulos(prev => prev.filter((_, i) => i !== index));
+  }
+
+  function updateModulo(index: number, field: keyof ModuloForm, value: string) {
+    setModulos(prev => prev.map((m, i) => i === index ? { ...m, [field]: value } : m));
+  }
+
+  async function saveModulos() {
+    const valid = modulos.filter(m => m.titulo.trim());
+    if (valid.length !== modulos.length) {
+      toast.error('Todos os módulos precisam ter um título');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.put(`/api/cursos/${cursoId}/modulos`, { modulos });
+      toast.success('Módulos salvos com sucesso!');
+    } catch {
+      toast.error('Erro ao salvar módulos');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const EMOJIS = ['📚', '🧠', '🎨', '🎬', '📹', '📱', '🔄', '💡', '🎯', '🚀', '💰', '📊', '🗣️', '✍️', '🎤', '🖥️'];
+
+  if (loading) {
+    return (
+      <div className="mt-4 text-center py-4">
+        <Loader2 className="h-5 w-5 animate-spin text-teal-accent mx-auto" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 border-t border-gray-700 pt-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+          📋 Ementa do Curso ({modulos.length} módulos)
+        </h3>
+        <button
+          type="button"
+          onClick={addModulo}
+          className="flex items-center gap-1 text-xs px-3 py-1.5 bg-teal-accent/10 text-teal-accent rounded-lg hover:bg-teal-accent/20 transition-colors"
+        >
+          <Plus className="h-3 w-3" /> Módulo
+        </button>
+      </div>
+
+      {modulos.length === 0 ? (
+        <p className="text-gray-500 text-sm text-center py-4">
+          Nenhum módulo adicionado. Clique em "+ Módulo" para criar a ementa.
+        </p>
+      ) : (
+        <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+          {modulos.map((m, i) => (
+            <div key={i} className="bg-dark rounded-lg p-3 border border-gray-700/50">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <span className="text-teal-accent text-xs font-bold mt-1">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <div className="flex-1 grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={m.titulo}
+                    onChange={e => updateModulo(i, 'titulo', e.target.value)}
+                    placeholder="Título do módulo *"
+                    className="bg-dark-lighter border border-gray-700 rounded px-2.5 py-1.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-accent col-span-2"
+                  />
+                  <select
+                    value={m.icone}
+                    onChange={e => updateModulo(i, 'icone', e.target.value)}
+                    className="bg-dark-lighter border border-gray-700 rounded px-2.5 py-1.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-accent"
+                  >
+                    {EMOJIS.map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+                  <input
+                    type="number"
+                    value={m.duracao_horas}
+                    onChange={e => updateModulo(i, 'duracao_horas', e.target.value)}
+                    placeholder="Horas"
+                    min="0"
+                    className="bg-dark-lighter border border-gray-700 rounded px-2.5 py-1.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-accent"
+                  />
+                  <input
+                    type="text"
+                    value={m.semana}
+                    onChange={e => updateModulo(i, 'semana', e.target.value)}
+                    placeholder="Ex: Semana 1 · Dias 1-2"
+                    className="bg-dark-lighter border border-gray-700 rounded px-2.5 py-1.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-accent col-span-2"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeModulo(i)}
+                  className="text-gray-500 hover:text-red-400 transition-colors mt-1"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <textarea
+                value={m.descricao}
+                onChange={e => updateModulo(i, 'descricao', e.target.value)}
+                placeholder="Descrição do módulo"
+                rows={2}
+                className="w-full bg-dark-lighter border border-gray-700 rounded px-2.5 py-1.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-accent resize-none mb-2"
+              />
+              <input
+                type="text"
+                value={m.entrega}
+                onChange={e => updateModulo(i, 'entrega', e.target.value)}
+                placeholder="📦 Entrega: Ex: Canal configurado + 5 vídeos"
+                className="w-full bg-dark-lighter border border-gray-700 rounded px-2.5 py-1.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-accent"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {modulos.length > 0 && (
+        <button
+          type="button"
+          onClick={saveModulos}
+          disabled={saving}
+          className="mt-3 w-full py-2 bg-dark-lighter border border-teal-accent/30 text-teal-accent text-sm font-medium rounded-lg hover:bg-teal-accent/10 transition-colors disabled:opacity-50"
+        >
+          {saving ? 'Salvando...' : '💾 Salvar Módulos'}
+        </button>
+      )}
+    </div>
   );
 }

@@ -10,11 +10,13 @@ router.get('/', async (req, res) => {
     let query = `
       SELECT f.*, c.nome as curso_nome, c.imagem_url as curso_imagem,
              u.nome as unidade_nome,
+             spg.nome as social_proof_group_nome,
              COALESCE((SELECT COUNT(*) FROM form_visits fv WHERE fv.formulario_id = f.id), 0)::int as visitas,
              COALESCE((SELECT COUNT(*) FROM aluno_curso_interests aci WHERE aci.formulario_id = f.id), 0)::int as cadastros
       FROM formularios f
       JOIN cursos c ON c.id = f.curso_id
       JOIN unidades u ON u.id = f.unidade_id
+      LEFT JOIN social_proof_groups spg ON spg.id = f.social_proof_group_id
     `;
     const params = [];
 
@@ -36,7 +38,7 @@ router.get('/', async (req, res) => {
 // POST /api/formularios
 router.post('/', async (req, res) => {
   try {
-    const { slug, curso_id, unidade_id, titulo, descricao } = req.body;
+    const { slug, curso_id, unidade_id, titulo, descricao, social_proof_group_id } = req.body;
 
     if (!slug || !curso_id || !unidade_id) {
       return res.status(400).json({ error: 'Slug, curso e unidade são obrigatórios' });
@@ -49,9 +51,9 @@ router.post('/', async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO formularios (slug, curso_id, unidade_id, titulo, descricao)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [slug, curso_id, unidade_id, titulo || null, descricao || null]
+      `INSERT INTO formularios (slug, curso_id, unidade_id, titulo, descricao, social_proof_group_id)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [slug, curso_id, unidade_id, titulo || null, descricao || null, social_proof_group_id || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -64,7 +66,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { slug, curso_id, unidade_id, titulo, descricao, ativo } = req.body;
+    const { slug, curso_id, unidade_id, titulo, descricao, ativo, social_proof_group_id } = req.body;
 
     // Check slug uniqueness (excluding self)
     if (slug) {
@@ -75,9 +77,9 @@ router.put('/:id', async (req, res) => {
     }
 
     const result = await pool.query(
-      `UPDATE formularios SET slug = $1, curso_id = $2, unidade_id = $3, titulo = $4, descricao = $5, ativo = $6
-       WHERE id = $7 RETURNING *`,
-      [slug, curso_id, unidade_id, titulo || null, descricao || null, ativo !== false, id]
+      `UPDATE formularios SET slug = $1, curso_id = $2, unidade_id = $3, titulo = $4, descricao = $5, ativo = $6, social_proof_group_id = $7
+       WHERE id = $8 RETURNING *`,
+      [slug, curso_id, unidade_id, titulo || null, descricao || null, ativo !== false, social_proof_group_id || null, id]
     );
 
     if (result.rows.length === 0) {
