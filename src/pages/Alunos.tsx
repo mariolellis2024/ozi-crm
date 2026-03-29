@@ -275,7 +275,7 @@ export function Alunos() {
         empresa: data.empresa || '',
         available_periods: data.available_periods || [],
         unidade_id: data.unidade_id || '',
-        genero: data.genero || '',
+        genero: (() => { const g = (data.genero || '').toLowerCase(); return g === 'm' ? 'masculino' : g === 'f' ? 'feminino' : g; })(),
         dataNascimento: data.data_nascimento ? new Date(data.data_nascimento).toISOString().split('T')[0] : '',
         cep: data.cep || ''
       });

@@ -176,7 +176,9 @@ export function Pipeline() {
     let genero = '', dataNascimento = '', cep = '', hasExistingData = false;
     try {
       const aluno = await api.get(`/api/alunos/${interest.aluno_id}`);
-      genero = aluno.genero || '';
+      // Normalize legacy gender values ('m' -> 'masculino', 'f' -> 'feminino')
+      const rawGenero = (aluno.genero || '').toLowerCase();
+      genero = rawGenero === 'm' ? 'masculino' : rawGenero === 'f' ? 'feminino' : rawGenero;
       dataNascimento = aluno.data_nascimento || '';
       cep = aluno.cep || '';
       hasExistingData = !!(genero && dataNascimento && cep);

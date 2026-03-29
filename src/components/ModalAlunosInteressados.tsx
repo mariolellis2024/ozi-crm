@@ -103,7 +103,7 @@ export function ModalAlunosInteressados({
     }
   }
 
-  // Step 1: Open enrollment form with required fields
+  // Step 1: Open enrollment form with required fields (or skip if all data exists)
   async function handleEnrollClick(alunoId: string) {
     const aluno = alunosInteressados.find(a => a.id === alunoId);
     if (!aluno) return;
@@ -128,16 +128,52 @@ export function ModalAlunosInteressados({
       return;
     }
 
-    // Open the enrollment form — pre-fill from existing data
+    // Fetch existing data to pre-fill the form
     let email = '', genero = '', dataNascimento = '', cep = '';
     try {
       const alunoData = await api.get(`/api/alunos/${alunoId}`);
       email = alunoData.email || '';
-      genero = alunoData.genero || '';
+      // Normalize legacy gender values ('m' -> 'masculino', 'f' -> 'feminino')
+      const rawGenero = (alunoData.genero || '').toLowerCase();
+      genero = rawGenero === 'm' ? 'masculino' : rawGenero === 'f' ? 'feminino' : rawGenero;
       dataNascimento = alunoData.data_nascimento ? new Date(alunoData.data_nascimento).toISOString().split('T')[0] : '';
       cep = alunoData.cep || '';
     } catch { /* ignore */ }
 
+    // If all required fields are already filled, skip the form and enroll directly
+    const hasAllData = email && email.includes('@') && genero && dataNascimento && cep && cep.replace(/\D/g, '').length >= 5;
+    if (hasAllData) {
+      setEnrollingStudents(prev => new Set(prev).add(alunoId));
+      try {
+        await api.post(`/api/interests/enroll`, {
+          aluno_id: alunoId,
+          curso_id: cursoId,
+          turma_id: turmaId,
+          email: email.trim(),
+          genero,
+          data_nascimento: dataNascimento,
+          cep: cep.replace(/\D/g, '')
+        });
+        toast.success('Aluno matriculado na turma!');
+        setAlunosInteressados(prev => prev.filter(a => a.id !== alunoId));
+        setEnrolledCount(prev => prev + 1);
+        onStudentEnrolled();
+        if (onPaymentRequested) {
+          onPaymentRequested(alunoId, aluno.nome, cursoId, cursoPreco, turmaId);
+        }
+      } catch (error) {
+        toast.error('Erro ao matricular aluno');
+      } finally {
+        setEnrollingStudents(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(alunoId);
+          return newSet;
+        });
+      }
+      return;
+    }
+
+    // Open the enrollment form with pre-filled data
     setEnrollForm({
       isOpen: true,
       alunoId,

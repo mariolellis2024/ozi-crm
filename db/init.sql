@@ -340,3 +340,12 @@ CREATE TABLE IF NOT EXISTS contact_history (
 );
 
 CREATE INDEX IF NOT EXISTS idx_contact_history_aluno ON contact_history(aluno_id);
+
+-- =====================================================
+-- Fix legacy gender values ('m' -> 'masculino', 'f' -> 'feminino')
+-- =====================================================
+UPDATE alunos SET genero = 'masculino' WHERE genero = 'm';
+UPDATE alunos SET genero = 'feminino' WHERE genero = 'f';
+UPDATE alunos SET genero = 'masculino' WHERE genero = 'M';
+UPDATE alunos SET genero = 'feminino' WHERE genero = 'F';
+
