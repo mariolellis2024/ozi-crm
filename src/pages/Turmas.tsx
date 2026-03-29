@@ -670,7 +670,7 @@ export function Turmas() {
     return new Date(dateString + 'T00:00:00').toLocaleDateString('pt-BR');
   }
 
-  const totalFaturamentoPotencial = turmas.reduce((total, turma) => total + turma.potencial_faturamento, 0);
+  const totalFaturamentoPotencial = turmas.reduce((total, turma) => total + (turma.cadeiras * (turma.curso?.preco || 0)), 0);
   const totalVagas = turmas.reduce((total, turma) => total + turma.cadeiras, 0);
   const totalMatriculados = turmas.reduce((total, turma) => total + (turma.alunos_enrolled?.length || 0), 0);
   const ocupacaoMedia = totalVagas > 0 ? (totalMatriculados / totalVagas) * 100 : 0;
@@ -914,7 +914,7 @@ export function Turmas() {
                   {(() => {
                     const alunosMatriculados = turma.alunos_enrolled?.length || 0;
                     const precoUnitario = turma.curso?.preco || 0;
-                    const faturamentoPotencial = turma.potencial_faturamento;
+                    const faturamentoPotencial = turma.cadeiras * precoUnitario;
                     const faturamentoRealizado = alunosMatriculados * precoUnitario;
                     
                     // Calcular custos com professores

@@ -57,7 +57,10 @@ export function Dashboard({ user }: DashboardProps) {
     }
   }
 
-  const totalFaturamento = turmas.reduce((acc, turma) => acc + turma.potencial_faturamento, 0);
+  const totalFaturamento = turmas.reduce((acc, turma: any) => {
+    const curso = cursos.find(c => c.id === turma.curso_id);
+    return acc + (turma.cadeiras * (curso?.preco || turma.curso?.preco || 0));
+  }, 0);
   const vagasOcupadas = 0;
   const ocupacaoMedia = 0;
 
