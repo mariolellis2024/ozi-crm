@@ -476,6 +476,76 @@ export function FormularioPublico() {
           </div>
         </section>
 
+        {/* Social Proof */}
+        {(() => {
+          const alumni = (formInfo.social_proof && formInfo.social_proof.length > 0)
+            ? formInfo.social_proof
+            : FALLBACK_ALUMNI;
+          return (
+            <section className="lp-section">
+              <div className="lp-c">
+                <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                  <p className="lp-label">Quem já passou por aqui</p>
+                  <h2 className="lp-heading" style={{ fontSize: 'clamp(1.4rem, 3.5vw, 2rem)', fontWeight: 700, marginBottom: '6px' }}>
+                    Grandes nomes já passaram pela <span className="lp-hl">OZI.</span>
+                  </h2>
+                  <p style={{ fontSize: '1rem', color: 'var(--tx2)', fontStyle: 'italic' }}>Quem sabe você não é o próximo.</p>
+                </div>
+
+                <div className="lp-alumni-grid">
+                  {alumni.map((a: SocialProofItem) => {
+                    const initials = a.nome.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                    return (
+                      <div key={a.id} className="lp-alumni-card">
+                        {a.foto_url ? (
+                          <div className="lp-alumni-photo-wrap">
+                            <img src={a.foto_url} alt={a.nome} className="lp-alumni-photo" />
+                            <div className="lp-alumni-gradient" />
+                            <div className="lp-alumni-photo-name">
+                              <div className="lp-alumni-name">{a.nome}</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="lp-alumni-avatar">{initials}</div>
+                        )}
+                        <div className="lp-alumni-content">
+                          {!a.foto_url && <div className="lp-alumni-name" style={{ marginBottom: 6 }}>{a.nome}</div>}
+                          {(a.metricas || []).map((s: { platform: string; value: string; url?: string }, j: number) => (
+                            <div key={j} className="lp-alumni-stat">
+                              {s.url ? (
+                                <a href={s.url} target="_blank" rel="noopener noreferrer">
+                                  <strong>{s.value}</strong> no {s.platform}
+                                </a>
+                              ) : (
+                                <><strong>{s.value}</strong> no {s.platform}</>
+                              )}
+                            </div>
+                          ))}
+                          {a.total_seguidores && (
+                            <div className="lp-alumni-total">
+                              {a.total_seguidores}
+                              <span className="lp-alumni-total-label">total de seguidores</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="lp-stats-row">
+                  {SOCIAL_PROOF_STATS.map((s, i) => (
+                    <div key={i} className="lp-stat">
+                      <div className="lp-stat-num">{s.value}</div>
+                      <div className="lp-stat-label">{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          );
+        })()}
+
         {/* Pricing Section */}
         {hasPricing && (
           <section className="lp-section" style={{ textAlign: 'center' }}>
@@ -554,76 +624,6 @@ export function FormularioPublico() {
             </div>
           </section>
         )}
-
-        {/* Social Proof */}
-        {(() => {
-          const alumni = (formInfo.social_proof && formInfo.social_proof.length > 0)
-            ? formInfo.social_proof
-            : FALLBACK_ALUMNI;
-          return (
-            <section className="lp-section">
-              <div className="lp-c">
-                <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-                  <p className="lp-label">Quem já passou por aqui</p>
-                  <h2 className="lp-heading" style={{ fontSize: 'clamp(1.4rem, 3.5vw, 2rem)', fontWeight: 700, marginBottom: '6px' }}>
-                    Grandes nomes já passaram pela <span className="lp-hl">OZI.</span>
-                  </h2>
-                  <p style={{ fontSize: '1rem', color: 'var(--tx2)', fontStyle: 'italic' }}>Quem sabe você não é o próximo.</p>
-                </div>
-
-                <div className="lp-alumni-grid">
-                  {alumni.map((a: SocialProofItem) => {
-                    const initials = a.nome.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-                    return (
-                      <div key={a.id} className="lp-alumni-card">
-                        {a.foto_url ? (
-                          <div className="lp-alumni-photo-wrap">
-                            <img src={a.foto_url} alt={a.nome} className="lp-alumni-photo" />
-                            <div className="lp-alumni-gradient" />
-                            <div className="lp-alumni-photo-name">
-                              <div className="lp-alumni-name">{a.nome}</div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="lp-alumni-avatar">{initials}</div>
-                        )}
-                        <div className="lp-alumni-content">
-                          {!a.foto_url && <div className="lp-alumni-name" style={{ marginBottom: 6 }}>{a.nome}</div>}
-                          {(a.metricas || []).map((s: { platform: string; value: string; url?: string }, j: number) => (
-                            <div key={j} className="lp-alumni-stat">
-                              {s.url ? (
-                                <a href={s.url} target="_blank" rel="noopener noreferrer">
-                                  <strong>{s.value}</strong> no {s.platform}
-                                </a>
-                              ) : (
-                                <><strong>{s.value}</strong> no {s.platform}</>
-                              )}
-                            </div>
-                          ))}
-                          {a.total_seguidores && (
-                            <div className="lp-alumni-total">
-                              {a.total_seguidores}
-                              <span className="lp-alumni-total-label">total de seguidores</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="lp-stats-row">
-                  {SOCIAL_PROOF_STATS.map((s, i) => (
-                    <div key={i} className="lp-stat">
-                      <div className="lp-stat-num">{s.value}</div>
-                      <div className="lp-stat-label">{s.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-          );
-        })()}
 
         {/* Form Section */}
         <section className="lp-section" ref={formSectionRef} id="cadastro">
