@@ -6,7 +6,6 @@ import toast, { Toaster } from 'react-hot-toast';
 interface SocialProofItem {
   id: string;
   nome: string;
-  cargo: string | null;
   foto_url: string | null;
   metricas: { platform: string; value: string }[];
   total_seguidores: string | null;
@@ -60,10 +59,10 @@ const SOCIAL_PROOF_STATS = [
 ];
 
 const FALLBACK_ALUMNI: SocialProofItem[] = [
-  { id: '1', nome: 'Patricio Carvalho', cargo: 'Criador de conteúdo', foto_url: null, metricas: [{ platform: 'Instagram', value: '4.7M' }, { platform: 'YouTube', value: '3.93M' }], total_seguidores: '8.63M', ordem: 0 },
-  { id: '2', nome: 'Ir Kelly Patricia', cargo: 'Instituto Hesed', foto_url: null, metricas: [{ platform: 'Instagram', value: '4.9M' }, { platform: 'YouTube', value: '5.02M' }], total_seguidores: '9.92M', ordem: 1 },
-  { id: '3', nome: 'Raul Gazolla', cargo: 'Ator, Produtor e Palestrante', foto_url: null, metricas: [{ platform: 'Instagram', value: '1.8M' }], total_seguidores: null, ordem: 2 },
-  { id: '4', nome: 'Lucas Fernandes', cargo: 'Escritor, Apresentador Globoplay', foto_url: null, metricas: [{ platform: 'Instagram', value: '2M' }], total_seguidores: null, ordem: 3 },
+  { id: '1', nome: 'Patricio Carvalho', foto_url: null, metricas: [{ platform: 'Instagram', value: '4.7M' }, { platform: 'YouTube', value: '3.93M' }], total_seguidores: '8.63M', ordem: 0 },
+  { id: '2', nome: 'Ir Kelly Patricia', foto_url: null, metricas: [{ platform: 'Instagram', value: '4.9M' }, { platform: 'YouTube', value: '5.02M' }], total_seguidores: '9.92M', ordem: 1 },
+  { id: '3', nome: 'Raul Gazolla', foto_url: null, metricas: [{ platform: 'Instagram', value: '1.8M' }], total_seguidores: null, ordem: 2 },
+  { id: '4', nome: 'Lucas Fernandes', foto_url: null, metricas: [{ platform: 'Instagram', value: '2M' }], total_seguidores: null, ordem: 3 },
 ];
 
 function formatPriceInstallment(preco: number, parcelas: number = 12, taxa: number = 0.0297): { parcela: string; total: string; economia: string; economiaPct: string } {
@@ -292,8 +291,8 @@ export function FormularioPublico() {
           --bg: #0d1117;
           --bg-card: #161b22;
           --bg-card-h: #1c2333;
-          --ac: #3dffa2;
-          --ac-dim: rgba(61,255,162,.12);
+          --ac: #2CD3C7;
+          --ac-dim: rgba(44,211,199,.12);
           --gold: #f0c850;
           --gold-dim: rgba(240,200,80,.12);
           --tx: #e6edf3;
@@ -577,7 +576,7 @@ export function FormularioPublico() {
                           <div className="lp-alumni-avatar">{initials}</div>
                         )}
                         <div className="lp-alumni-name">{a.nome}</div>
-                        <div className="lp-alumni-role">{a.cargo}</div>
+
                         {(a.metricas || []).map((s: { platform: string; value: string }, j: number) => (
                           <div key={j} className="lp-alumni-stat">
                             <strong>{s.value}</strong> no {s.platform}

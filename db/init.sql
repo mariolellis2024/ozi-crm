@@ -362,7 +362,6 @@ CREATE TABLE IF NOT EXISTS social_proof_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   group_id uuid NOT NULL REFERENCES social_proof_groups(id) ON DELETE CASCADE,
   nome text NOT NULL,
-  cargo text,
   foto_url text,
   metricas jsonb DEFAULT '[]',
   total_seguidores text,

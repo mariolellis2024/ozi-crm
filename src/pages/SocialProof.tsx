@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
 import { Plus, Pencil, Trash2, Loader2, X, ImagePlus, ChevronRight, ChevronDown, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -15,7 +16,6 @@ interface SocialProofItem {
   id: string;
   group_id: string;
   nome: string;
-  cargo: string | null;
   foto_url: string | null;
   metricas: { platform: string; value: string }[];
   total_seguidores: string | null;
@@ -24,16 +24,51 @@ interface SocialProofItem {
 
 interface ItemFormState {
   nome: string;
-  cargo: string;
   foto_url: string;
-  total_seguidores: string;
   metricas: { platform: string; value: string }[];
 }
 
 const EMPTY_ITEM: ItemFormState = {
-  nome: '', cargo: '', foto_url: '', total_seguidores: '',
+  nome: '', foto_url: '',
   metricas: [{ platform: '', value: '' }]
 };
+
+/** Parse "4.7M" → 4700000, "500K" → 500000, "3.94" → 3940000 (assume M if no suffix) */
+function parseFollowerValue(val: string): number {
+  const cleaned = val.trim().replace(/,/g, '.');
+  const match = cleaned.match(/^([\d.]+)\s*(m|k|mil)?$/i);
+  if (!match) return 0;
+  const num = parseFloat(match[1]);
+  if (isNaN(num)) return 0;
+  const suffix = (match[2] || '').toLowerCase();
+  if (suffix === 'm') return num * 1_000_000;
+  if (suffix === 'k' || suffix === 'mil') return num * 1_000;
+  // If no suffix and value < 100, assume millions (e.g., "3.94" → 3.94M)
+  if (num < 100) return num * 1_000_000;
+  return num;
+}
+
+/** Format 8630000 → "8.63M", 500000 → "500K" */
+function formatFollowerTotal(total: number): string {
+  if (total >= 1_000_000) {
+    const m = total / 1_000_000;
+    return m % 1 === 0 ? `${m}M` : `${parseFloat(m.toFixed(2))}M`;
+  }
+  if (total >= 1_000) {
+    const k = total / 1_000;
+    return k % 1 === 0 ? `${k}K` : `${parseFloat(k.toFixed(1))}K`;
+  }
+  return String(total);
+}
+
+/** Calculate total from metricas list */
+function calcTotalSeguidores(metricas: { platform: string; value: string }[]): string | null {
+  const valid = metricas.filter(m => m.platform.trim() && m.value.trim());
+  if (valid.length === 0) return null;
+  const total = valid.reduce((sum, m) => sum + parseFollowerValue(m.value), 0);
+  if (total === 0) return null;
+  return formatFollowerTotal(total);
+}
 
 export function SocialProofPage() {
   const [groups, setGroups] = useState<SocialProofGroup[]>([]);
@@ -135,9 +170,7 @@ export function SocialProofPage() {
     setEditingItemId(item.id);
     setItemForm({
       nome: item.nome,
-      cargo: item.cargo || '',
       foto_url: item.foto_url || '',
-      total_seguidores: item.total_seguidores || '',
       metricas: item.metricas.length > 0 ? item.metricas : [{ platform: '', value: '' }]
     });
     setIsItemModalOpen(true);
@@ -147,9 +180,14 @@ export function SocialProofPage() {
     e.preventDefault();
     if (!itemForm.nome.trim() || !activeGroupId) return;
 
+    const filteredMetricas = itemForm.metricas.filter(m => m.platform.trim() && m.value.trim());
+    const total_seguidores = calcTotalSeguidores(filteredMetricas);
+
     const payload = {
-      ...itemForm,
-      metricas: itemForm.metricas.filter(m => m.platform.trim() && m.value.trim()),
+      nome: itemForm.nome,
+      foto_url: itemForm.foto_url || null,
+      metricas: filteredMetricas,
+      total_seguidores,
       ordem: editingItemId
         ? groupItems[activeGroupId]?.find(i => i.id === editingItemId)?.ordem || 0
         : (groupItems[activeGroupId]?.length || 0)
@@ -165,7 +203,7 @@ export function SocialProofPage() {
       }
       setIsItemModalOpen(false);
       loadItems(activeGroupId);
-      loadGroups(); // update count
+      loadGroups();
     } catch { toast.error('Erro ao salvar'); }
   }
 
@@ -212,6 +250,9 @@ export function SocialProofPage() {
     } catch { toast.error('Erro ao enviar foto'); }
     finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
   }
+
+  // Computed total for preview
+  const computedTotal = calcTotalSeguidores(itemForm.metricas);
 
   if (loading) {
     return (
@@ -303,15 +344,13 @@ export function SocialProofPage() {
                                   )}
                                   <div>
                                     <p className="text-white text-sm font-medium">{item.nome}</p>
-                                    <p className="text-gray-500 text-xs">{item.cargo || '—'}</p>
+                                    <p className="text-gray-500 text-xs">
+                                      {item.metricas.map(m => `${m.value} ${m.platform}`).join(' · ')}
+                                      {item.total_seguidores && ` · Total: ${item.total_seguidores}`}
+                                    </p>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  {item.metricas.length > 0 && (
-                                    <span className="text-xs text-gray-400 hidden sm:block">
-                                      {item.metricas.map(m => `${m.value} ${m.platform}`).join(' · ')}
-                                    </span>
-                                  )}
+                                <div className="flex items-center gap-2">
                                   <button onClick={() => openEditItem(item)} className="p-1 text-gray-500 hover:text-white">
                                     <Pencil className="h-3 w-3" />
                                   </button>
@@ -333,8 +372,8 @@ export function SocialProofPage() {
         )}
       </div>
 
-      {/* Group Modal */}
-      {isGroupModalOpen && (
+      {/* Group Modal — React Portal */}
+      {isGroupModalOpen && createPortal(
         <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={() => setIsGroupModalOpen(false)}>
           <div className="bg-dark-card rounded-2xl p-6 w-full max-w-sm shadow-xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
@@ -354,11 +393,12 @@ export function SocialProofPage() {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Item Modal */}
-      {isItemModalOpen && (
+      {/* Item Modal — React Portal */}
+      {isItemModalOpen && createPortal(
         <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={() => setIsItemModalOpen(false)}>
           <div className="bg-dark-card rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
@@ -390,13 +430,6 @@ export function SocialProofPage() {
                 />
               </div>
 
-              <input
-                type="text" value={itemForm.cargo}
-                onChange={e => setItemForm(prev => ({ ...prev, cargo: e.target.value }))}
-                placeholder="Cargo / Atuação"
-                className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-accent"
-              />
-
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-sm text-gray-400 font-medium">Métricas de Redes Sociais</label>
@@ -427,19 +460,22 @@ export function SocialProofPage() {
                 </div>
               </div>
 
-              <input
-                type="text" value={itemForm.total_seguidores}
-                onChange={e => setItemForm(prev => ({ ...prev, total_seguidores: e.target.value }))}
-                placeholder="Total de seguidores (ex: 8.63M)"
-                className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-accent"
-              />
+              {/* Auto-calculated total */}
+              {computedTotal && (
+                <div className="flex items-center gap-2 py-2 px-3 bg-teal-accent/5 border border-teal-accent/20 rounded-lg">
+                  <span className="text-xs text-gray-400">Total calculado:</span>
+                  <span className="text-sm font-bold text-teal-accent">{computedTotal}</span>
+                  <span className="text-xs text-gray-500">seguidores</span>
+                </div>
+              )}
 
               <button type="submit" className="w-full bg-teal-accent text-dark font-medium rounded-lg px-4 py-2.5 hover:bg-teal-accent/90 transition-colors">
                 {editingItemId ? 'Atualizar' : 'Adicionar'}
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <ConfirmationModal

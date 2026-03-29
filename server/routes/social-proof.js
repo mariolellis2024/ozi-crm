@@ -92,13 +92,13 @@ router.get('/groups/:groupId/items', async (req, res) => {
 router.post('/groups/:groupId/items', async (req, res) => {
   try {
     const { groupId } = req.params;
-    const { nome, cargo, foto_url, metricas, total_seguidores, ordem } = req.body;
+    const { nome, foto_url, metricas, total_seguidores, ordem } = req.body;
     if (!nome) return res.status(400).json({ error: 'Nome é obrigatório' });
 
     const result = await pool.query(
-      `INSERT INTO social_proof_items (group_id, nome, cargo, foto_url, metricas, total_seguidores, ordem)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [groupId, nome, cargo || null, foto_url || null, JSON.stringify(metricas || []), total_seguidores || null, ordem || 0]
+      `INSERT INTO social_proof_items (group_id, nome, foto_url, metricas, total_seguidores, ordem)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [groupId, nome, foto_url || null, JSON.stringify(metricas || []), total_seguidores || null, ordem || 0]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -111,12 +111,12 @@ router.post('/groups/:groupId/items', async (req, res) => {
 router.put('/items/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, cargo, foto_url, metricas, total_seguidores, ordem } = req.body;
+    const { nome, foto_url, metricas, total_seguidores, ordem } = req.body;
 
     const result = await pool.query(
-      `UPDATE social_proof_items SET nome = $1, cargo = $2, foto_url = $3, metricas = $4, total_seguidores = $5, ordem = $6
-       WHERE id = $7 RETURNING *`,
-      [nome, cargo || null, foto_url || null, JSON.stringify(metricas || []), total_seguidores || null, ordem || 0, id]
+      `UPDATE social_proof_items SET nome = $1, foto_url = $2, metricas = $3, total_seguidores = $4, ordem = $5
+       WHERE id = $6 RETURNING *`,
+      [nome, foto_url || null, JSON.stringify(metricas || []), total_seguidores || null, ordem || 0, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Não encontrado' });
     res.json(result.rows[0]);
