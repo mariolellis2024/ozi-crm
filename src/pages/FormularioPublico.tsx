@@ -315,7 +315,7 @@ export function FormularioPublico() {
 
         /* Nav */
         .lp-nav { padding: 16px 0; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--brd); }
-        .lp-nav-logo { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; letter-spacing: 3px; color: var(--tx); }
+        .lp-nav-logo { height: 32px; width: auto; }
         .lp-nav-cta { padding: 10px 24px; background: var(--ac); color: #0d1117; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: opacity 0.3s; text-decoration: none; }
         .lp-nav-cta:hover { opacity: 0.85; }
 
@@ -422,7 +422,7 @@ export function FormularioPublico() {
         {/* Nav */}
         <nav className="lp-c">
           <div className="lp-nav">
-            <span className="lp-nav-logo">OZI</span>
+            <img src="/icon.webp" alt="OZI" className="lp-nav-logo" />
             <button onClick={scrollToForm} className="lp-nav-cta">Lista de Espera</button>
           </div>
         </nav>
