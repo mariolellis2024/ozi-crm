@@ -236,4 +236,44 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// POST /api/dashboard/fix-enrolled-by — assign enrollments with NULL enrolled_by to the requesting user
+router.post('/fix-enrolled-by', async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    const result = await pool.query(
+      `UPDATE aluno_curso_interests SET enrolled_by = $1 WHERE status = 'enrolled' AND enrolled_by IS NULL RETURNING id`,
+      [userId]
+    );
+
+    res.json({ 
+      fixed: result.rows.length,
+      message: `${result.rows.length} matrícula(s) atribuída(s) ao seu usuário`
+    });
+  } catch (error) {
+    console.error('Error fixing enrolled_by:', error);
+    res.status(500).json({ error: 'Erro ao corrigir matrículas' });
+  }
+});
+
+// GET /api/dashboard/debug-enrolled — debug enrolled_by values
+router.get('/debug-enrolled', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT aci.id, aci.status, aci.enrolled_by, u.email as enrolled_by_email, a.nome as aluno_nome
+      FROM aluno_curso_interests aci
+      LEFT JOIN users u ON u.id = aci.enrolled_by
+      LEFT JOIN alunos a ON a.id = aci.aluno_id
+      WHERE aci.status = 'enrolled'
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error debugging enrolled:', error);
+    res.status(500).json({ error: 'Erro' });
+  }
+});
+
 export default router;
