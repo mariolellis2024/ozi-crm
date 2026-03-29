@@ -248,11 +248,16 @@ export function FormularioPublico() {
 
   if (error || !formInfo) {
     return (
-      <div className="lp-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', textAlign: 'center', padding: '2rem' }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh',
+        textAlign: 'center', padding: '2rem',
+        background: '#0d1117', color: '#e6edf3',
+        fontFamily: "'DM Sans', -apple-system, sans-serif"
+      }}>
         <div>
           <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>😔</div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Formulário não encontrado</h1>
-          <p style={{ color: 'var(--tx2)' }}>{error || 'Este link não é válido ou o formulário foi desativado.'}</p>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', color: '#e6edf3' }}>Formulário não encontrado</h1>
+          <p style={{ color: '#8b949e' }}>{error || 'Este link não é válido ou o formulário foi desativado.'}</p>
         </div>
       </div>
     );
@@ -260,16 +265,21 @@ export function FormularioPublico() {
 
   if (submitted) {
     return (
-      <div className="lp-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', textAlign: 'center', padding: '2rem' }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh',
+        textAlign: 'center', padding: '2rem',
+        background: '#0d1117', color: '#e6edf3',
+        fontFamily: "'DM Sans', -apple-system, sans-serif"
+      }}>
         <div>
-          <CheckCircle className="h-20 w-20 mx-auto mb-6" style={{ color: 'var(--ac)' }} />
-          <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.75rem' }}>Você está na lista! 🎉</h1>
-          <p style={{ color: 'var(--tx2)', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-            Seu interesse no curso <strong style={{ color: 'var(--ac)' }}>{formInfo.curso.nome}</strong> foi registrado.
+          <CheckCircle className="h-20 w-20 mx-auto mb-6" style={{ color: '#2CD3C7' }} />
+          <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.75rem', color: '#e6edf3' }}>Você está na lista! 🎉</h1>
+          <p style={{ color: '#8b949e', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+            Seu interesse no curso <strong style={{ color: '#2CD3C7' }}>{formInfo.curso.nome}</strong> foi registrado.
           </p>
-          <p style={{ color: 'var(--tx2)' }}>Entraremos em contato pelo WhatsApp assim que a turma estiver confirmada.</p>
-          <div style={{ marginTop: '2rem', padding: '0.75rem 1.5rem', borderRadius: '100px', background: 'var(--bg-card)', display: 'inline-block' }}>
-            <span style={{ color: 'var(--tx2)', fontSize: '0.9rem' }}>📍 {formInfo.unidade.nome}</span>
+          <p style={{ color: '#8b949e' }}>Entraremos em contato pelo WhatsApp assim que a turma estiver confirmada.</p>
+          <div style={{ marginTop: '2rem', padding: '0.75rem 1.5rem', borderRadius: '100px', background: '#161b22', display: 'inline-block' }}>
+            <span style={{ color: '#8b949e', fontSize: '0.9rem' }}>📍 {formInfo.unidade.nome}</span>
           </div>
         </div>
       </div>
