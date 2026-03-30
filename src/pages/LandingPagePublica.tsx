@@ -403,7 +403,7 @@ export function LandingPagePublica() {
         .bb-layout { display: grid; grid-template-columns: 1fr; gap: 28px; align-items: center; }
         .bb-layout.has-img { grid-template-columns: 1fr 1fr; }
         .bb-img { width: 100%; max-height: 260px; object-fit: contain; filter: drop-shadow(0 8px 24px rgba(0,0,0,.4)); }
-        .bdl { padding: 8px 14px; background: var(--gold-dim); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; font-size: .82rem; font-weight: 600; color: var(--gold); display: inline-flex; align-items: center; gap: 8px; }
+        .bdl { margin-top: 20px; padding: 8px 14px; background: var(--gold-dim); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; font-size: .82rem; font-weight: 600; color: var(--gold); display: inline-flex; align-items: center; gap: 8px; }
 
         /* Pricing */
         .pri { padding: 80px 0; border-top: 1px solid var(--brd); text-align: center; }
