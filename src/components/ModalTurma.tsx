@@ -28,6 +28,14 @@ interface ModalTurmaProps {
     investimento_anuncios_realizado: string;
     professores: ProfessorAssignment[];
     days_of_week: number[];
+    horario_inicio: string;
+    horario_fim: string;
+    local_aula: string;
+    endereco_aula: string;
+    carga_horaria_total: string;
+    acompanhamento_inicio: string;
+    acompanhamento_fim: string;
+    sessoes_online: string;
   };
   setFormData: React.Dispatch<React.SetStateAction<{
     name: string;
@@ -42,6 +50,14 @@ interface ModalTurmaProps {
     investimento_anuncios_realizado: string;
     professores: ProfessorAssignment[];
     days_of_week: number[];
+    horario_inicio: string;
+    horario_fim: string;
+    local_aula: string;
+    endereco_aula: string;
+    carga_horaria_total: string;
+    acompanhamento_inicio: string;
+    acompanhamento_fim: string;
+    sessoes_online: string;
   }>>;
   cursos: Array<{ id: string; nome: string; carga_horaria: number }>;
   salas: Array<{ id: string; nome: string; cadeiras: number; unidade_id?: string; unidade_nome?: string }>;
@@ -420,6 +436,52 @@ export function ModalTurma({
                 setFormData({ ...formData, professores: newProfessores });
               }}
             />
+
+            {/* Contract-specific fields (collapsible) */}
+            <details className="border border-gray-700 rounded-lg">
+              <summary className="px-4 py-3 text-sm font-medium text-purple-400 cursor-pointer hover:bg-dark-lighter transition-colors rounded-lg">
+                📄 Dados para o Contrato (opcional)
+              </summary>
+              <div className="p-4 pt-2 space-y-4 border-t border-gray-700">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Horário Início</label>
+                    <input type="time" value={formData.horario_inicio} onChange={(e) => setFormData({ ...formData, horario_inicio: e.target.value })} className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Horário Fim</label>
+                    <input type="time" value={formData.horario_fim} onChange={(e) => setFormData({ ...formData, horario_fim: e.target.value })} className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Local das Aulas</label>
+                    <input type="text" value={formData.local_aula} onChange={(e) => setFormData({ ...formData, local_aula: e.target.value })} placeholder="Ex: Sala 3 - Prédio A" className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Carga Horária Total</label>
+                    <input type="number" value={formData.carga_horaria_total} onChange={(e) => setFormData({ ...formData, carga_horaria_total: e.target.value })} placeholder="horas" className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Endereço Completo das Aulas</label>
+                  <input type="text" value={formData.endereco_aula} onChange={(e) => setFormData({ ...formData, endereco_aula: e.target.value })} placeholder="Endereço onde ocorrem as aulas" className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Início Acompanhamento Online</label>
+                    <input type="date" value={formData.acompanhamento_inicio} onChange={(e) => setFormData({ ...formData, acompanhamento_inicio: e.target.value })} className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Término Acompanhamento Online</label>
+                    <input type="date" value={formData.acompanhamento_fim} onChange={(e) => setFormData({ ...formData, acompanhamento_fim: e.target.value })} className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Dia e Horário das Sessões Online</label>
+                  <input type="text" value={formData.sessoes_online} onChange={(e) => setFormData({ ...formData, sessoes_online: e.target.value })} placeholder="Ex: Terças 20h" className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                </div>
+              </div>
+            </details>
+            
             
             <button
               type="submit"

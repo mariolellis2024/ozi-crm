@@ -284,6 +284,23 @@ ALTER TABLE alunos ADD COLUMN IF NOT EXISTS genero text;
 ALTER TABLE alunos ADD COLUMN IF NOT EXISTS data_nascimento date;
 ALTER TABLE alunos ADD COLUMN IF NOT EXISTS cep text;
 
+-- Contract-specific aluno fields
+ALTER TABLE alunos ADD COLUMN IF NOT EXISTS cpf text;
+ALTER TABLE alunos ADD COLUMN IF NOT EXISTS rg text;
+ALTER TABLE alunos ADD COLUMN IF NOT EXISTS endereco text;
+ALTER TABLE alunos ADD COLUMN IF NOT EXISTS cidade text;
+ALTER TABLE alunos ADD COLUMN IF NOT EXISTS uf text;
+ALTER TABLE alunos ADD COLUMN IF NOT EXISTS profissao text;
+
+-- Contract-specific turma fields
+ALTER TABLE turmas ADD COLUMN IF NOT EXISTS horario_inicio text;
+ALTER TABLE turmas ADD COLUMN IF NOT EXISTS horario_fim text;
+ALTER TABLE turmas ADD COLUMN IF NOT EXISTS local_aula text;
+ALTER TABLE turmas ADD COLUMN IF NOT EXISTS endereco_aula text;
+ALTER TABLE turmas ADD COLUMN IF NOT EXISTS carga_horaria_total integer;
+ALTER TABLE turmas ADD COLUMN IF NOT EXISTS acompanhamento_inicio date;
+ALTER TABLE turmas ADD COLUMN IF NOT EXISTS acompanhamento_fim date;
+ALTER TABLE turmas ADD COLUMN IF NOT EXISTS sessoes_online text;
 -- =====================================================
 -- Form Analytics (visits + formulario_id on interests)
 -- =====================================================

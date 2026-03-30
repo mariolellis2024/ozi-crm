@@ -123,12 +123,14 @@ router.post('/', async (req, res) => {
   try {
     const { name, curso_id, sala_id, cadeiras, period, start_date, end_date, potencial_faturamento, imposto, days_of_week, professores } = req.body;
 
-    const { investimento_anuncios, investimento_anuncios_realizado } = req.body;
+    const { investimento_anuncios, investimento_anuncios_realizado, horario_inicio, horario_fim, local_aula, endereco_aula, carga_horaria_total, acompanhamento_inicio, acompanhamento_fim, sessoes_online } = req.body;
     const result = await pool.query(
-      `INSERT INTO turmas (name, curso_id, sala_id, cadeiras, period, start_date, end_date, potencial_faturamento, imposto, investimento_anuncios, investimento_anuncios_realizado, days_of_week)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+      `INSERT INTO turmas (name, curso_id, sala_id, cadeiras, period, start_date, end_date, potencial_faturamento, imposto, investimento_anuncios, investimento_anuncios_realizado, days_of_week,
+       horario_inicio, horario_fim, local_aula, endereco_aula, carga_horaria_total, acompanhamento_inicio, acompanhamento_fim, sessoes_online)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING *`,
       [name, curso_id, sala_id || null, parseInt(cadeiras), period, start_date, end_date,
-       parseFloat(potencial_faturamento) || 0, parseFloat(imposto) || 0, parseFloat(investimento_anuncios) || 0, parseFloat(investimento_anuncios_realizado) || 0, days_of_week || null]
+       parseFloat(potencial_faturamento) || 0, parseFloat(imposto) || 0, parseFloat(investimento_anuncios) || 0, parseFloat(investimento_anuncios_realizado) || 0, days_of_week || null,
+       horario_inicio || null, horario_fim || null, local_aula || null, endereco_aula || null, carga_horaria_total ? parseInt(carga_horaria_total) : null, acompanhamento_inicio || null, acompanhamento_fim || null, sessoes_online || null]
     );
 
     const turmaId = result.rows[0].id;
@@ -178,13 +180,15 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const { name, curso_id, sala_id, cadeiras, period, start_date, end_date, potencial_faturamento, imposto, days_of_week, professores } = req.body;
 
-    const { investimento_anuncios, investimento_anuncios_realizado } = req.body;
+    const { investimento_anuncios, investimento_anuncios_realizado, horario_inicio, horario_fim, local_aula, endereco_aula, carga_horaria_total, acompanhamento_inicio, acompanhamento_fim, sessoes_online } = req.body;
     const result = await pool.query(
       `UPDATE turmas SET name = $1, curso_id = $2, sala_id = $3, cadeiras = $4, period = $5,
-       start_date = $6, end_date = $7, potencial_faturamento = $8, imposto = $9, investimento_anuncios = $10, investimento_anuncios_realizado = $11, days_of_week = $12
+       start_date = $6, end_date = $7, potencial_faturamento = $8, imposto = $9, investimento_anuncios = $10, investimento_anuncios_realizado = $11, days_of_week = $12,
+       horario_inicio = $14, horario_fim = $15, local_aula = $16, endereco_aula = $17, carga_horaria_total = $18, acompanhamento_inicio = $19, acompanhamento_fim = $20, sessoes_online = $21
        WHERE id = $13 RETURNING *`,
       [name, curso_id, sala_id || null, parseInt(cadeiras), period, start_date, end_date,
-       parseFloat(potencial_faturamento) || 0, parseFloat(imposto) || 0, parseFloat(investimento_anuncios) || 0, parseFloat(investimento_anuncios_realizado) || 0, days_of_week || null, id]
+       parseFloat(potencial_faturamento) || 0, parseFloat(imposto) || 0, parseFloat(investimento_anuncios) || 0, parseFloat(investimento_anuncios_realizado) || 0, days_of_week || null, id,
+       horario_inicio || null, horario_fim || null, local_aula || null, endereco_aula || null, carga_horaria_total ? parseInt(carga_horaria_total) : null, acompanhamento_inicio || null, acompanhamento_fim || null, sessoes_online || null]
     );
 
     if (result.rows.length === 0) {

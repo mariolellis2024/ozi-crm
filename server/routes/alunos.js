@@ -225,7 +225,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, nome, email, whatsapp, empresa, available_periods, unidade_id, genero, data_nascimento, cep, created_at
+      `SELECT id, nome, email, whatsapp, empresa, available_periods, unidade_id, genero, data_nascimento, cep, cpf, rg, endereco, cidade, uf, profissao, created_at
        FROM alunos WHERE id = $1`,
       [req.params.id]
     );
@@ -280,13 +280,16 @@ router.put('/bulk/periods', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, email, whatsapp, empresa, available_periods, unidade_id, genero, dataNascimento, cep } = req.body;
+    const { nome, email, whatsapp, empresa, available_periods, unidade_id, genero, dataNascimento, cep, cpf, rg, endereco, cidade, uf, profissao } = req.body;
     const result = await pool.query(
       `UPDATE alunos SET nome = $1, email = $2, whatsapp = $3, empresa = $4, available_periods = $5, unidade_id = $6,
-       genero = COALESCE($8, genero), data_nascimento = COALESCE($9, data_nascimento), cep = COALESCE($10, cep)
+       genero = COALESCE($8, genero), data_nascimento = COALESCE($9, data_nascimento), cep = COALESCE($10, cep),
+       cpf = COALESCE($11, cpf), rg = COALESCE($12, rg), endereco = COALESCE($13, endereco),
+       cidade = COALESCE($14, cidade), uf = COALESCE($15, uf), profissao = COALESCE($16, profissao)
        WHERE id = $7 RETURNING *`,
       [nome, email || null, whatsapp, empresa || null, available_periods || [], unidade_id || null, id, 
-       genero || null, dataNascimento || null, cep || null]
+       genero || null, dataNascimento || null, cep || null,
+       cpf || null, rg || null, endereco || null, cidade || null, uf || null, profissao || null]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Aluno não encontrado' });

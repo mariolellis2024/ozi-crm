@@ -136,7 +136,15 @@ export function Turmas() {
     investimento_anuncios: '',
     investimento_anuncios_realizado: '',
     professores: [] as ProfessorAssignment[],
-    days_of_week: [] as number[]
+    days_of_week: [] as number[],
+    horario_inicio: '',
+    horario_fim: '',
+    local_aula: '',
+    endereco_aula: '',
+    carga_horaria_total: '',
+    acompanhamento_inicio: '',
+    acompanhamento_fim: '',
+    sessoes_online: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({
@@ -403,7 +411,15 @@ export function Turmas() {
         imposto: Number(formData.imposto),
         investimento_anuncios: Number(formData.investimento_anuncios) || 0,
         investimento_anuncios_realizado: Number(formData.investimento_anuncios_realizado) || 0,
-        days_of_week: formData.days_of_week
+        days_of_week: formData.days_of_week,
+        horario_inicio: formData.horario_inicio || null,
+        horario_fim: formData.horario_fim || null,
+        local_aula: formData.local_aula || null,
+        endereco_aula: formData.endereco_aula || null,
+        carga_horaria_total: formData.carga_horaria_total ? Number(formData.carga_horaria_total) : null,
+        acompanhamento_inicio: formData.acompanhamento_inicio || null,
+        acompanhamento_fim: formData.acompanhamento_fim || null,
+        sessoes_online: formData.sessoes_online || null
       };
 
       // Check for conflicts
@@ -459,7 +475,15 @@ export function Turmas() {
         investimento_anuncios: '',
         investimento_anuncios_realizado: '',
         professores: [],
-        days_of_week: []
+        days_of_week: [],
+        horario_inicio: '',
+        horario_fim: '',
+        local_aula: '',
+        endereco_aula: '',
+        carga_horaria_total: '',
+        acompanhamento_inicio: '',
+        acompanhamento_fim: '',
+        sessoes_online: ''
       });
       setEditingId(null);
       loadData();
@@ -520,7 +544,15 @@ export function Turmas() {
         professor_id: tp.professor_id,
         hours: tp.hours
       })) || [],
-      days_of_week: turma.days_of_week || []
+      days_of_week: turma.days_of_week || [],
+      horario_inicio: (turma as any).horario_inicio || '',
+      horario_fim: (turma as any).horario_fim || '',
+      local_aula: (turma as any).local_aula || '',
+      endereco_aula: (turma as any).endereco_aula || '',
+      carga_horaria_total: (turma as any).carga_horaria_total?.toString() || '',
+      acompanhamento_inicio: (turma as any).acompanhamento_inicio || '',
+      acompanhamento_fim: (turma as any).acompanhamento_fim || '',
+      sessoes_online: (turma as any).sessoes_online || ''
     });
     setEditingId(turma.id);
     setIsModalOpen(true);
@@ -540,7 +572,15 @@ export function Turmas() {
       investimento_anuncios: '',
       investimento_anuncios_realizado: '',
       professores: [],
-      days_of_week: []
+      days_of_week: [],
+      horario_inicio: '',
+      horario_fim: '',
+      local_aula: '',
+      endereco_aula: '',
+      carga_horaria_total: '',
+      acompanhamento_inicio: '',
+      acompanhamento_fim: '',
+      sessoes_online: ''
     });
     setEditingId(null);
   }
