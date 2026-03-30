@@ -342,7 +342,7 @@ export function LandingPagePublica() {
         .hero-meta { display: flex; gap: 10px; flex-wrap: wrap; }
         .tag { display: flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--tx2); padding: 7px 14px; background: var(--bg-card); border: 1px solid var(--brd); border-radius: 100px; font-weight: 500; box-shadow: var(--shadow); }
         .hero-img-wrap { position: relative; }
-        .hero-img { width: 100%; height: 400px; border-radius: 20px; object-fit: cover; box-shadow: var(--shadow-hover); }
+        .hero-img { width: 100%; height: 400px; object-fit: contain; }
         .hero-ph { width: 100%; height: 400px; border-radius: 20px; border: 2px dashed var(--brd); background: var(--bg-card); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 28px; }
         .ph-i { font-size: 2rem; margin-bottom: 10px; opacity: .4; }
         .ph-l { font-size: .85rem; font-weight: 700; color: var(--tx); margin-bottom: 4px; }
