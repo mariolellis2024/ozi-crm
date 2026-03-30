@@ -38,6 +38,7 @@ const Pagamentos = lazyRetry(() => import('./pages/Pagamentos').then(m => ({ def
 const Formularios = lazyRetry(() => import('./pages/Formularios').then(m => ({ default: m.Formularios })), 'Formularios');
 const SocialProofPage = lazyRetry(() => import('./pages/SocialProof').then(m => ({ default: m.SocialProofPage })), 'SocialProofPage');
 const FormularioPublico = lazyRetry(() => import('./pages/FormularioPublico').then(m => ({ default: m.FormularioPublico })), 'FormularioPublico');
+const LandingPagePublica = lazyRetry(() => import('./pages/LandingPagePublica').then(m => ({ default: m.LandingPagePublica })), 'LandingPagePublica');
 
 interface User {
   id: string;
@@ -111,6 +112,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/f/:slug" element={<FormularioPublico />} />
+          <Route path="/lp/:slug" element={<LandingPagePublica />} />
           <Route path="*" element={
             <UnidadeProvider>
               <Suspense fallback={<PageLoader />}>

@@ -390,3 +390,63 @@ CREATE TABLE IF NOT EXISTS curso_modulos (
 );
 
 CREATE INDEX IF NOT EXISTS idx_curso_modulos_curso ON curso_modulos(curso_id);
+
+-- =====================================================
+-- Landing Pages — full-featured capture pages
+-- =====================================================
+CREATE TABLE IF NOT EXISTS landing_pages (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug text UNIQUE NOT NULL,
+  curso_id uuid NOT NULL REFERENCES cursos(id) ON DELETE CASCADE,
+  unidade_id uuid NOT NULL REFERENCES unidades(id) ON DELETE CASCADE,
+  ativo boolean DEFAULT true,
+
+  -- Hero section
+  hero_headline text,
+  hero_subheadline text,
+  hero_image_url text,
+
+  -- "Para quem" section
+  para_quem_headline text,
+  para_quem_texto text,
+  sem_curso_items jsonb DEFAULT '[]',
+  com_curso_items jsonb DEFAULT '[]',
+
+  -- Bônus section
+  bonus_titulo text,
+  bonus_descricao text,
+  bonus_entrega text,
+
+  -- Investimento section
+  investimento_headline text,
+  investimento_descricao text,
+  preco_parcelas integer DEFAULT 12,
+  preco_valor_parcela numeric,
+  preco_desconto text,
+  investimento_items jsonb DEFAULT '[]',
+
+  -- Social Proof section
+  social_proof_headline1 text,
+  social_proof_headline2 text,
+  social_proof_group_id uuid REFERENCES social_proof_groups(id) ON DELETE SET NULL,
+
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_landing_pages_slug ON landing_pages(slug);
+CREATE INDEX IF NOT EXISTS idx_landing_pages_curso ON landing_pages(curso_id);
+CREATE INDEX IF NOT EXISTS idx_landing_pages_unidade ON landing_pages(unidade_id);
+
+-- Landing page visit analytics
+CREATE TABLE IF NOT EXISTS landing_page_visits (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  landing_page_id uuid NOT NULL REFERENCES landing_pages(id) ON DELETE CASCADE,
+  visitor_ip text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_lp_visits_lp ON landing_page_visits(landing_page_id);
+
+-- Track which landing page generated the interest
+ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS landing_page_id uuid REFERENCES landing_pages(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_interests_landing_page ON aluno_curso_interests(landing_page_id) WHERE landing_page_id IS NOT NULL;

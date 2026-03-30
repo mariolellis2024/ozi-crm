@@ -26,6 +26,8 @@ import formulariosRoutes from './routes/formularios.js';
 import formsPublicRoutes from './routes/forms-public.js';
 import contactHistoryRoutes from './routes/contact-history.js';
 import socialProofRoutes from './routes/social-proof.js';
+import landingPagesRoutes from './routes/landing-pages.js';
+import landingPagesPublicRoutes from './routes/landing-pages-public.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -41,6 +43,7 @@ app.use(express.json());
 // Public routes
 app.use('/api/auth', authRoutes);
 app.use('/api/public/forms', formsPublicRoutes);
+app.use('/api/public/landing', landingPagesPublicRoutes);
 
 // Protected routes
 app.use('/api/alunos', authenticateToken, alunosRoutes);
@@ -61,6 +64,7 @@ app.use('/api/upload', authenticateToken, uploadRoutes);
 app.use('/api/formularios', authenticateToken, formulariosRoutes);
 app.use('/api/contact-history', authenticateToken, contactHistoryRoutes);
 app.use('/api/social-proof', authenticateToken, socialProofRoutes);
+app.use('/api/landing-pages', authenticateToken, landingPagesRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
