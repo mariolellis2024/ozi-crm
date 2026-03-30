@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Search, Users, BookOpen, UserMinus, AlertTriangle, Award } from 'lucide-react';
+import { X, Search, Users, BookOpen, UserMinus, AlertTriangle, FileSignature, Copy, ExternalLink, Loader2, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatPhone } from '../utils/format';
@@ -14,6 +14,13 @@ interface AlunoMatriculado {
   enrolled_by_name?: string;
 }
 
+interface Contrato {
+  id: string;
+  sign_url: string;
+  status: string;
+  signed_at: string | null;
+}
+
 interface ModalAlunosMatriculadosProps {
   isOpen: boolean;
   onClose: () => void;
@@ -23,6 +30,13 @@ interface ModalAlunosMatriculadosProps {
   cursoPreco: number;
   onStudentUnenrolled: () => void;
 }
+
+const CONTRACT_STATUS: Record<string, { label: string; icon: any; color: string }> = {
+  pending: { label: 'Pendente', icon: Clock, color: 'text-amber-400' },
+  signed: { label: 'Assinado', icon: CheckCircle, color: 'text-emerald-400' },
+  refused: { label: 'Recusado', icon: XCircle, color: 'text-red-400' },
+  expired: { label: 'Expirado', icon: XCircle, color: 'text-gray-400' },
+};
 
 export function ModalAlunosMatriculados({ 
   isOpen, 
@@ -38,6 +52,8 @@ export function ModalAlunosMatriculados({
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [unenrollingStudents, setUnenrollingStudents] = useState<Set<string>>(new Set());
+  const [generatingContract, setGeneratingContract] = useState<string | null>(null);
+  const [contracts, setContracts] = useState<Record<string, Contrato>>({});
   const [confirmUnenroll, setConfirmUnenroll] = useState<{
     isOpen: boolean;
     alunoId: string;
@@ -71,11 +87,47 @@ export function ModalAlunosMatriculados({
     try {
       const data = await api.get(`/api/interests/turma/${turmaId}/enrolled`);
       setAlunosMatriculados(data);
+      
+      // Load contracts for each student
+      const contractMap: Record<string, Contrato> = {};
+      for (const aluno of data) {
+        try {
+          const contrato = await api.get(`/api/contratos/by-enrollment/${aluno.id}/${turmaId}`);
+          if (contrato) contractMap[aluno.id] = contrato;
+        } catch {}
+      }
+      setContracts(contractMap);
     } catch (error) {
       toast.error('Erro ao carregar alunos matriculados');
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleGenerateContract(alunoId: string) {
+    setGeneratingContract(alunoId);
+    try {
+      const contrato = await api.post('/api/contratos/generate', {
+        aluno_id: alunoId,
+        turma_id: turmaId
+      });
+      setContracts(prev => ({ ...prev, [alunoId]: contrato }));
+      if (contrato.sign_url) {
+        await navigator.clipboard.writeText(contrato.sign_url);
+        toast.success('Contrato gerado! Link copiado para a área de transferência.');
+      } else {
+        toast.success('Contrato gerado!');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao gerar contrato');
+    } finally {
+      setGeneratingContract(null);
+    }
+  }
+
+  function handleCopyLink(url: string) {
+    navigator.clipboard.writeText(url);
+    toast.success('Link copiado!');
   }
 
   function handleUnenrollClick(alunoId: string, alunoNome: string) {
@@ -188,7 +240,12 @@ export function ModalAlunosMatriculados({
             </div>
           ) : filteredAlunos.length > 0 ? (
             <div className="space-y-3">
-               {filteredAlunos.map((aluno) => (
+               {filteredAlunos.map((aluno) => {
+                const contrato = contracts[aluno.id];
+                const statusCfg = contrato ? CONTRACT_STATUS[contrato.status] || CONTRACT_STATUS.pending : null;
+                const StatusIcon = statusCfg?.icon;
+                
+                return (
                 <div key={aluno.id} className="bg-dark-lighter rounded-lg p-4 border border-gray-700">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -217,6 +274,39 @@ export function ModalAlunosMatriculados({
                           <span>Matriculado por {aluno.enrolled_by_name.split(' ')[0]}</span>
                         </div>
                       )}
+                      
+                      {/* Contract button / status */}
+                      {contrato ? (
+                        <div className="flex items-center gap-1.5">
+                          {StatusIcon && <StatusIcon className={`h-4 w-4 ${statusCfg?.color}`} />}
+                          <span className={`text-xs font-medium ${statusCfg?.color}`}>{statusCfg?.label}</span>
+                          {contrato.sign_url && contrato.status === 'pending' && (
+                            <>
+                              <button onClick={() => handleCopyLink(contrato.sign_url)} className="p-1.5 text-gray-400 hover:text-teal-accent transition-colors" title="Copiar link">
+                                <Copy className="h-3.5 w-3.5" />
+                              </button>
+                              <a href={contrato.sign_url} target="_blank" rel="noopener noreferrer" className="p-1.5 text-gray-400 hover:text-teal-accent transition-colors" title="Abrir link">
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </a>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleGenerateContract(aluno.id)}
+                          disabled={generatingContract === aluno.id}
+                          className="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 text-xs font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                          title="Gerar contrato via ZapSign"
+                        >
+                          {generatingContract === aluno.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <FileSignature className="h-3.5 w-3.5" />
+                          )}
+                          <span>{generatingContract === aluno.id ? 'Gerando...' : 'Contrato'}</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={() => handleUnenrollClick(aluno.id, aluno.nome)}
                         disabled={unenrollingStudents.has(aluno.id)}
@@ -237,7 +327,7 @@ export function ModalAlunosMatriculados({
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           ) : (
             <div className="text-center py-8 text-gray-400">

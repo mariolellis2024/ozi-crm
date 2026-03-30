@@ -475,3 +475,27 @@ CREATE INDEX IF NOT EXISTS idx_prof_pag_professor ON professor_pagamentos(profes
 CREATE INDEX IF NOT EXISTS idx_prof_pag_turma ON professor_pagamentos(turma_id);
 CREATE INDEX IF NOT EXISTS idx_prof_pag_status ON professor_pagamentos(status);
 CREATE INDEX IF NOT EXISTS idx_prof_pag_due_date ON professor_pagamentos(due_date);
+
+-- =====================================================
+-- Contratos (ZapSign Integration)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS contratos (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  interest_id uuid REFERENCES aluno_curso_interests(id) ON DELETE SET NULL,
+  aluno_id uuid NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
+  turma_id uuid REFERENCES turmas(id) ON DELETE SET NULL,
+  zapsign_doc_token text,
+  zapsign_signer_token text,
+  sign_url text,
+  status text NOT NULL DEFAULT 'pending',
+  signed_at timestamptz,
+  original_file_url text,
+  signed_file_url text,
+  created_by uuid REFERENCES users(id) ON DELETE SET NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_contratos_aluno ON contratos(aluno_id);
+CREATE INDEX IF NOT EXISTS idx_contratos_turma ON contratos(turma_id);
+CREATE INDEX IF NOT EXISTS idx_contratos_status ON contratos(status);
+CREATE INDEX IF NOT EXISTS idx_contratos_doc_token ON contratos(zapsign_doc_token);
