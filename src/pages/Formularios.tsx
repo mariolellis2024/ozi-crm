@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { Plus, Pencil, Trash2, Link2, Copy, ExternalLink, FileText, ToggleLeft, ToggleRight, Code2, X, Eye, UserPlus, TrendingUp, Layout, ChevronDown, ChevronRight, Minus, ImagePlus, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Link2, Copy, CopyPlus, ExternalLink, FileText, ToggleLeft, ToggleRight, Code2, X, Eye, UserPlus, TrendingUp, Layout, ChevronDown, ChevronRight, Minus, ImagePlus, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { useUnidade } from '../contexts/UnidadeContext';
@@ -689,7 +689,7 @@ export function Formularios() {
                         onClick={() => handleDuplicate(item.id, item._type, item.slug)}
                         className="p-2 text-gray-400 hover:text-purple-400 transition-colors" title="Duplicar"
                       >
-                        <Copy className="h-4 w-4" />
+                        <CopyPlus className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => isLP ? handleToggleLPAtivo(item as any) : handleToggleFormAtivo(item as any)}
