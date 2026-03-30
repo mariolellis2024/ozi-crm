@@ -99,7 +99,9 @@ router.post('/generate', async (req, res) => {
         { de: '{{CIDADE_UF}}', para: cidadeUf },
         { de: '{{CEP_ALUNO}}', para: d.aluno_cep || '' },
         { de: '{{WHATSAPP_ALUNO}}', para: d.aluno_whatsapp || '' },
+        { de: '{{TELEFONE}}', para: d.aluno_whatsapp || '' },
         { de: '{{EMAIL_ALUNO}}', para: d.aluno_email || '' },
+        { de: '{{EMAIL}}', para: d.aluno_email || '' },
         { de: '{{PROFISSAO_ALUNO}}', para: d.aluno_profissao || '' },
         // Turma (Anexo II)
         { de: '{{CURSO_NOME}}', para: d.curso_nome || '' },
