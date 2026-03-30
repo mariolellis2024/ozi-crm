@@ -46,7 +46,7 @@ export function Layout({ children }: LayoutProps) {
     { icon: User, label: 'Alunos', path: '/alunos' },
     { icon: CalendarDays, label: 'Calendário', path: '/calendario' },
     { icon: GitBranch, label: 'Pipeline', path: '/pipeline' },
-    { icon: Wallet, label: 'Pagamentos', path: '/pagamentos' },
+    { icon: Wallet, label: 'Financeiro', path: '/pagamentos' },
     { icon: ClipboardList, label: 'Atividades', path: '/atividades' },
     { icon: BookOpen, label: 'Cursos', path: '/cursos' },
     { icon: GraduationCap, label: 'Professores', path: '/professores' },

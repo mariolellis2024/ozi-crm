@@ -451,3 +451,27 @@ CREATE INDEX IF NOT EXISTS idx_lp_visits_lp ON landing_page_visits(landing_page_
 -- Track which landing page generated the interest
 ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS landing_page_id uuid REFERENCES landing_pages(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_interests_landing_page ON aluno_curso_interests(landing_page_id) WHERE landing_page_id IS NOT NULL;
+
+-- =====================================================
+-- Professor Payments
+-- =====================================================
+CREATE TABLE IF NOT EXISTS professor_pagamentos (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  turma_professor_id uuid NOT NULL REFERENCES turma_professores(id) ON DELETE CASCADE,
+  professor_id uuid NOT NULL REFERENCES professores(id) ON DELETE CASCADE,
+  turma_id uuid NOT NULL REFERENCES turmas(id) ON DELETE CASCADE,
+  parcela integer NOT NULL DEFAULT 1,
+  valor numeric(10,2) NOT NULL,
+  due_date date NOT NULL,
+  status text NOT NULL DEFAULT 'pendente',
+  paid_date date,
+  recibo_url text,
+  nota_fiscal_url text,
+  notes text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_prof_pag_professor ON professor_pagamentos(professor_id);
+CREATE INDEX IF NOT EXISTS idx_prof_pag_turma ON professor_pagamentos(turma_id);
+CREATE INDEX IF NOT EXISTS idx_prof_pag_status ON professor_pagamentos(status);
+CREATE INDEX IF NOT EXISTS idx_prof_pag_due_date ON professor_pagamentos(due_date);

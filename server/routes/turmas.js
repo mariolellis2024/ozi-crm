@@ -137,10 +137,31 @@ router.post('/', async (req, res) => {
     if (professores && professores.length > 0) {
       const validProfs = professores.filter(p => p.professor_id && p.professor_id.trim() !== '');
       for (const prof of validProfs) {
-        await pool.query(
-          'INSERT INTO turma_professores (turma_id, professor_id, hours) VALUES ($1, $2, $3)',
+        const tpResult = await pool.query(
+          'INSERT INTO turma_professores (turma_id, professor_id, hours) VALUES ($1, $2, $3) RETURNING id',
           [turmaId, prof.professor_id, prof.hours || 0]
         );
+        // Auto-generate professor payments
+        const tpId = tpResult.rows[0].id;
+        const profData = await pool.query('SELECT valor_hora FROM professores WHERE id = $1', [prof.professor_id]);
+        if (profData.rows.length > 0) {
+          const totalValue = Number(prof.hours || 0) * Number(profData.rows[0].valor_hora);
+          if (totalValue > 0) {
+            const isSingleDay = start_date === end_date;
+            if (isSingleDay) {
+              await pool.query(
+                `INSERT INTO professor_pagamentos (turma_professor_id, professor_id, turma_id, parcela, valor, due_date) VALUES ($1, $2, $3, 1, $4, $5)`,
+                [tpId, prof.professor_id, turmaId, totalValue, start_date]
+              );
+            } else {
+              const half = Math.round(totalValue * 100 / 2) / 100;
+              await pool.query(
+                `INSERT INTO professor_pagamentos (turma_professor_id, professor_id, turma_id, parcela, valor, due_date) VALUES ($1, $2, $3, 1, $4, $5), ($1, $2, $3, 2, $6, $7)`,
+                [tpId, prof.professor_id, turmaId, half, start_date, totalValue - half, end_date]
+              );
+            }
+          }
+        }
       }
     }
 
@@ -171,14 +192,37 @@ router.put('/:id', async (req, res) => {
     }
 
     // Update professor assignments
+    // Delete old payments first (only unpaid ones stay via cascade, but we delete turma_professores which cascades)
+    await pool.query('DELETE FROM professor_pagamentos WHERE turma_id = $1', [id]);
     await pool.query('DELETE FROM turma_professores WHERE turma_id = $1', [id]);
     if (professores && professores.length > 0) {
       const validProfs = professores.filter(p => p.professor_id && p.professor_id.trim() !== '');
       for (const prof of validProfs) {
-        await pool.query(
-          'INSERT INTO turma_professores (turma_id, professor_id, hours) VALUES ($1, $2, $3)',
+        const tpResult = await pool.query(
+          'INSERT INTO turma_professores (turma_id, professor_id, hours) VALUES ($1, $2, $3) RETURNING id',
           [id, prof.professor_id, prof.hours || 0]
         );
+        // Auto-generate professor payments
+        const tpId = tpResult.rows[0].id;
+        const profData = await pool.query('SELECT valor_hora FROM professores WHERE id = $1', [prof.professor_id]);
+        if (profData.rows.length > 0) {
+          const totalValue = Number(prof.hours || 0) * Number(profData.rows[0].valor_hora);
+          if (totalValue > 0) {
+            const isSingleDay = start_date === end_date;
+            if (isSingleDay) {
+              await pool.query(
+                `INSERT INTO professor_pagamentos (turma_professor_id, professor_id, turma_id, parcela, valor, due_date) VALUES ($1, $2, $3, 1, $4, $5)`,
+                [tpId, prof.professor_id, id, totalValue, start_date]
+              );
+            } else {
+              const half = Math.round(totalValue * 100 / 2) / 100;
+              await pool.query(
+                `INSERT INTO professor_pagamentos (turma_professor_id, professor_id, turma_id, parcela, valor, due_date) VALUES ($1, $2, $3, 1, $4, $5), ($1, $2, $3, 2, $6, $7)`,
+                [tpId, prof.professor_id, id, half, start_date, totalValue - half, end_date]
+              );
+            }
+          }
+        }
       }
     }
 

@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { DollarSign, Check, Clock, AlertTriangle, Filter, Plus, Undo2, X, Trash2, AlertCircle, Search } from 'lucide-react';
+import { DollarSign, Check, Clock, AlertTriangle, Filter, Plus, Undo2, X, Trash2, AlertCircle, Search, FileText, Receipt, Upload, Loader2, Users, GraduationCap } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import toast from 'react-hot-toast';
 import { useUnidade } from '../contexts/UnidadeContext';
@@ -43,6 +43,33 @@ interface MissingPayment {
   total_registrado: number; total_pago: number; parcelas_count: number;
 }
 
+interface ProfPagamento {
+  id: string;
+  professor_id: string;
+  professor_nome: string;
+  professor_whatsapp: string;
+  turma_id: string;
+  turma_nome: string;
+  curso_nome: string;
+  unidade_nome: string;
+  parcela: number;
+  valor: number;
+  due_date: string;
+  status: string;
+  paid_date: string | null;
+  recibo_url: string | null;
+  nota_fiscal_url: string | null;
+}
+
+interface ProfSummary {
+  pago: number;
+  pendente: number;
+  atrasado: number;
+  total_pago: number;
+  total_pendente: number;
+  total_atrasado: number;
+}
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   pendente: { label: 'Pendente', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30', icon: Clock },
   pago: { label: 'Pago', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30', icon: Check },
@@ -51,6 +78,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }>
 
 export function Pagamentos() {
   const { selectedUnidadeId } = useUnidade();
+  const [activeTab, setActiveTab] = useState<'alunos' | 'professores'>('alunos');
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
   const [summary, setSummary] = useState<Summary>({ pendente: 0, pago: 0, atrasado: 0, total_pago: 0, total_pendente: 0, total_atrasado: 0 });
   const [filter, setFilter] = useState('');
@@ -181,19 +209,130 @@ export function Pagamentos() {
     return Array.from(map.entries()).map(([id, nome]) => ({ id, nome }));
   }, [pagamentos]);
 
+  // === PROFESSOR PAYMENTS STATE ===
+  const [profPagamentos, setProfPagamentos] = useState<ProfPagamento[]>([]);
+  const [profSummary, setProfSummary] = useState<ProfSummary>({ pago: 0, pendente: 0, atrasado: 0, total_pago: 0, total_pendente: 0, total_atrasado: 0 });
+  const [profFilter, setProfFilter] = useState('');
+  const [profSearch, setProfSearch] = useState('');
+  const [uploadingRecibo, setUploadingRecibo] = useState<string | null>(null);
+  const [uploadingNF, setUploadingNF] = useState<string | null>(null);
+  const reciboInputRef = useRef<HTMLInputElement>(null);
+  const nfInputRef = useRef<HTMLInputElement>(null);
+  const [activeUploadId, setActiveUploadId] = useState<string>('');
+
+  useEffect(() => { if (activeTab === 'professores') loadProfData(); }, [profFilter, selectedUnidadeId, activeTab]);
+
+  async function loadProfData() {
+    try {
+      let params = profFilter ? `?status=${profFilter}` : '';
+      if (selectedUnidadeId) params += (params ? '&' : '?') + `unidade_id=${selectedUnidadeId}`;
+      const data = await api.get(`/api/professor-pagamentos${params}`);
+      setProfPagamentos(data.data);
+      setProfSummary(data.summary);
+    } catch (error) {
+      console.error('Erro ao carregar pagamentos de professores:', error);
+    }
+  }
+
+  async function handleProfMarkPaid(id: string) {
+    try {
+      await api.put(`/api/professor-pagamentos/${id}/pay`, {});
+      toast.success('Pagamento confirmado!');
+      loadProfData();
+    } catch (error: any) { toast.error(error.message || 'Erro'); }
+  }
+
+  async function handleProfUndo(id: string) {
+    try {
+      await api.put(`/api/professor-pagamentos/${id}/undo`, {});
+      toast.success('Pagamento estornado');
+      loadProfData();
+    } catch (error: any) { toast.error(error.message || 'Erro'); }
+  }
+
+  async function handleFileUpload(file: File, id: string, type: 'recibo' | 'nota-fiscal') {
+    if (file.size > 10 * 1024 * 1024) { toast.error('Arquivo deve ter no máximo 10MB'); return; }
+    const setter = type === 'recibo' ? setUploadingRecibo : setUploadingNF;
+    setter(id);
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: fd
+      });
+      if (!response.ok) throw new Error('Erro ao fazer upload');
+      const data = await response.json();
+      const fieldName = type === 'recibo' ? 'recibo_url' : 'nota_fiscal_url';
+      await api.put(`/api/professor-pagamentos/${id}/${type}`, { [fieldName]: data.url });
+      toast.success(type === 'recibo' ? 'Recibo anexado!' : 'Nota fiscal anexada!');
+      loadProfData();
+    } catch (error: any) { toast.error(error.message || 'Erro ao enviar arquivo'); }
+    finally { setter(null); }
+  }
+
+  function triggerUpload(id: string, type: 'recibo' | 'nota-fiscal') {
+    setActiveUploadId(id);
+    if (type === 'recibo') reciboInputRef.current?.click();
+    else nfInputRef.current?.click();
+  }
+
+  const filteredProfPagamentos = useMemo(() => {
+    if (!profSearch.trim()) return profPagamentos;
+    const term = profSearch.toLowerCase();
+    return profPagamentos.filter(p => p.professor_nome.toLowerCase().includes(term) || p.curso_nome.toLowerCase().includes(term));
+  }, [profPagamentos, profSearch]);
+
+  const isSuperAdmin = useMemo(() => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return false;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.role === 'super_admin';
+    } catch { return false; }
+  }, []);
+
   return (
     <div className="p-8 fade-in">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-white">Pagamentos</h1>
-            <p className="text-gray-400 mt-2">Controle de parcelas e inadimplência</p>
+            <h1 className="text-3xl font-bold text-white">Financeiro</h1>
+            <p className="text-gray-400 mt-1">Controle de pagamentos de alunos e professores</p>
           </div>
-          <button onClick={openModal} className="bg-teal-accent text-dark px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-teal-400 transition-all font-medium shadow-glow hover:shadow-glow-intense">
-            <Plus className="h-5 w-5" />
-            Gerar Parcelas
-          </button>
+          {activeTab === 'alunos' && (
+            <button onClick={openModal} className="bg-teal-accent text-dark px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-teal-400 transition-all font-medium shadow-glow hover:shadow-glow-intense">
+              <Plus className="h-5 w-5" />
+              Gerar Parcelas
+            </button>
+          )}
         </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 mb-6 bg-dark-card rounded-xl p-1 w-fit">
+          <button
+            onClick={() => setActiveTab('alunos')}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              activeTab === 'alunos' ? 'bg-teal-accent text-dark shadow-md' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Users className="h-4 w-4" /> Alunos
+          </button>
+          {isSuperAdmin && (
+            <button
+              onClick={() => setActiveTab('professores')}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                activeTab === 'professores' ? 'bg-teal-accent text-dark shadow-md' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <GraduationCap className="h-4 w-4" /> Professores
+            </button>
+          )}
+        </div>
+
+        {activeTab === 'alunos' && (<>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -389,6 +528,182 @@ export function Pagamentos() {
             </tbody>
           </table>
         </div>
+        </>)}
+
+        {/* === PROFESSOR TAB === */}
+        {activeTab === 'professores' && (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-dark-card rounded-xl p-4 border border-emerald-500/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-xs">Pago</p>
+                    <p className="text-xl font-bold text-emerald-400">{formatCurrency(profSummary.total_pago)}</p>
+                    <p className="text-xs text-gray-500">{profSummary.pago} pagamento(s)</p>
+                  </div>
+                  <Check className="h-8 w-8 text-emerald-500/30" />
+                </div>
+              </div>
+              <div className="bg-dark-card rounded-xl p-4 border border-amber-500/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-xs">Pendente</p>
+                    <p className="text-xl font-bold text-amber-400">{formatCurrency(profSummary.total_pendente)}</p>
+                    <p className="text-xs text-gray-500">{profSummary.pendente} pagamento(s)</p>
+                  </div>
+                  <Clock className="h-8 w-8 text-amber-500/30" />
+                </div>
+              </div>
+              <div className="bg-dark-card rounded-xl p-4 border border-red-500/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-xs">Atrasado</p>
+                    <p className="text-xl font-bold text-red-400">{formatCurrency(profSummary.total_atrasado)}</p>
+                    <p className="text-xs text-gray-500">{profSummary.atrasado} pagamento(s)</p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-red-500/30" />
+                </div>
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-400" />
+                {['', 'pendente', 'pago', 'atrasado'].map(s => (
+                  <button key={s} onClick={() => setProfFilter(s)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      profFilter === s ? 'bg-teal-accent text-dark' : 'bg-dark-lighter text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {s === '' ? 'Todos' : STATUS_CONFIG[s]?.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex-1 min-w-[200px] max-w-sm">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                  <input
+                    type="text" placeholder="Buscar professor ou curso..."
+                    value={profSearch} onChange={e => setProfSearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 bg-dark-lighter border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-accent/50 placeholder-gray-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-dark-card rounded-2xl overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-dark-lighter">
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Professor</th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Turma / Curso</th>
+                    <th className="text-center py-3 px-4 text-gray-400 font-medium text-sm">Parcela</th>
+                    <th className="text-right py-3 px-4 text-gray-400 font-medium text-sm">Valor</th>
+                    <th className="text-center py-3 px-4 text-gray-400 font-medium text-sm">Vencimento</th>
+                    <th className="text-center py-3 px-4 text-gray-400 font-medium text-sm">Status</th>
+                    <th className="text-center py-3 px-4 text-gray-400 font-medium text-sm">Recibo</th>
+                    <th className="text-center py-3 px-4 text-gray-400 font-medium text-sm">NF</th>
+                    <th className="text-right py-3 px-4 text-gray-400 font-medium text-sm">Ação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProfPagamentos.map(p => {
+                    const overdue = p.status === 'pendente' && new Date(p.due_date + 'T23:59:59') < new Date();
+                    const cfg = STATUS_CONFIG[overdue ? 'atrasado' : p.status] || STATUS_CONFIG.pendente;
+                    const StatusIcon = cfg.icon;
+                    return (
+                      <tr key={p.id} className={`border-b border-dark-lighter/50 hover:bg-dark-lighter/30 transition-colors ${overdue ? 'bg-red-500/5' : ''}`}>
+                        <td className="py-3 px-4 text-white text-sm">{p.professor_nome}</td>
+                        <td className="py-3 px-4 text-sm">
+                          <span className="text-gray-300">{p.turma_nome}</span>
+                          <span className="text-gray-500 text-xs block">{p.curso_nome}</span>
+                        </td>
+                        <td className="py-3 px-4 text-center text-gray-400 text-sm">{p.parcela}</td>
+                        <td className="py-3 px-4 text-right text-white text-sm font-medium">{formatCurrency(p.valor)}</td>
+                        <td className="py-3 px-4 text-center text-sm">
+                          <span className={overdue ? 'text-red-400 font-medium' : 'text-gray-400'}>
+                            {new Date(p.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${cfg.color}`}>
+                            <StatusIcon className="h-3 w-3" />
+                            {overdue ? 'Atrasado' : cfg.label}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {uploadingRecibo === p.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-teal-accent mx-auto" />
+                          ) : p.recibo_url ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <a href={p.recibo_url} target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300" title="Ver recibo">
+                                <Receipt className="h-4 w-4" />
+                              </a>
+                              <button onClick={() => triggerUpload(p.id, 'recibo')} className="text-gray-500 hover:text-teal-accent" title="Trocar recibo">
+                                <Upload className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button onClick={() => triggerUpload(p.id, 'recibo')} className="text-gray-500 hover:text-teal-accent transition-colors" title="Anexar recibo">
+                              <Upload className="h-4 w-4 mx-auto" />
+                            </button>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {uploadingNF === p.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-teal-accent mx-auto" />
+                          ) : p.nota_fiscal_url ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <a href={p.nota_fiscal_url} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300" title="Ver NF">
+                                <FileText className="h-4 w-4" />
+                              </a>
+                              <button onClick={() => triggerUpload(p.id, 'nota-fiscal')} className="text-gray-500 hover:text-teal-accent" title="Trocar NF">
+                                <Upload className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button onClick={() => triggerUpload(p.id, 'nota-fiscal')} className="text-gray-500 hover:text-purple-400 transition-colors" title="Anexar NF">
+                              <Upload className="h-4 w-4 mx-auto" />
+                            </button>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {p.status === 'pago' ? (
+                              <button onClick={() => handleProfUndo(p.id)} className="p-1.5 text-gray-400 hover:text-amber-400 transition-colors" title="Estornar">
+                                <Undo2 className="h-4 w-4" />
+                              </button>
+                            ) : (
+                              <button onClick={() => handleProfMarkPaid(p.id)} className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-xs font-medium transition-colors">
+                                Confirmar ✓
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {profPagamentos.length === 0 && (
+                    <tr><td colSpan={9} className="py-12 text-center text-gray-500">
+                      <GraduationCap className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      Nenhum pagamento de professor {profFilter ? `com status "${profFilter}"` : 'registrado'}
+                      <p className="text-xs text-gray-600 mt-2">Os pagamentos são gerados automaticamente ao vincular professores a turmas.</p>
+                    </td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Hidden file inputs */}
+            <input ref={reciboInputRef} type="file" accept="image/*,application/pdf" className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f && activeUploadId) handleFileUpload(f, activeUploadId, 'recibo'); e.target.value = ''; }} />
+            <input ref={nfInputRef} type="file" accept="image/*,application/pdf" className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f && activeUploadId) handleFileUpload(f, activeUploadId, 'nota-fiscal'); e.target.value = ''; }} />
+          </>
+        )}
       </div>
 
       {/* Generate Modal */}

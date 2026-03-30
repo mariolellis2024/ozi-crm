@@ -28,6 +28,7 @@ import contactHistoryRoutes from './routes/contact-history.js';
 import socialProofRoutes from './routes/social-proof.js';
 import landingPagesRoutes from './routes/landing-pages.js';
 import landingPagesPublicRoutes from './routes/landing-pages-public.js';
+import professorPagamentosRoutes from './routes/professor-pagamentos.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -65,6 +66,7 @@ app.use('/api/formularios', authenticateToken, formulariosRoutes);
 app.use('/api/contact-history', authenticateToken, contactHistoryRoutes);
 app.use('/api/social-proof', authenticateToken, socialProofRoutes);
 app.use('/api/landing-pages', authenticateToken, landingPagesRoutes);
+app.use('/api/professor-pagamentos', authenticateToken, professorPagamentosRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
