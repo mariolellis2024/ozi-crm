@@ -363,7 +363,7 @@ export function FormularioPublico() {
         .lp-alumni-card:nth-child(4) { animation-delay: 0.4s; }
         .lp-alumni-card:hover { transform: translateY(-6px); box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px var(--ac-dim); border-color: rgba(44,211,199,0.15); }
         .lp-alumni-img-wrap { width: 100%; aspect-ratio: 1/1; position: relative; overflow: hidden; }
-        .lp-alumni-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(10%) contrast(1.05); transition: transform 0.5s ease, filter 0.5s ease; }
+        .lp-alumni-img-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; filter: grayscale(10%) contrast(1.05); transition: transform 0.5s ease, filter 0.5s ease; }
         .lp-alumni-card:hover .lp-alumni-img-wrap img { transform: scale(1.04); filter: grayscale(0%) contrast(1.1); }
         .lp-alumni-img-wrap::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 50%; background: linear-gradient(to top, var(--bg-card) 0%, transparent 100%); pointer-events: none; }
         .lp-alumni-placeholder { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; color: rgba(255,255,255,0.08); background: linear-gradient(135deg, #1a1a2e 0%, #16162a 100%); letter-spacing: -0.03em; }
