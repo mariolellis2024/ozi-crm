@@ -7,7 +7,7 @@ interface SocialProofItem {
   id: string;
   nome: string;
   foto_url: string | null;
-  metricas: { platform: string; value: string }[];
+  metricas: { platform: string; value: string; url?: string }[];
   total_seguidores: string | null;
   ordem: number;
 }

@@ -650,8 +650,10 @@ export function LandingPagePublica() {
                           const isYt = pl.includes('youtube');
                           const isIg = pl.includes('instagram');
                           const iconColor = isYt ? '#ff4444' : isIg ? '#e040a0' : 'var(--tx2)';
+                          const Tag = s.url ? 'a' : 'div';
+                          const linkProps = s.url ? { href: s.url, target: '_blank', rel: 'noopener noreferrer' } : {};
                           return (
-                            <div key={j} className="al-platform">
+                            <Tag key={j} className="al-platform" {...linkProps}>
                               <span className="al-platform-icon">
                                 {isYt ? (
                                   <svg viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -668,7 +670,7 @@ export function LandingPagePublica() {
                               </span>
                               {s.platform}
                               <span className="al-platform-count">{s.value}</span>
-                            </div>
+                            </Tag>
                           );
                         })}
                       </div>
