@@ -51,7 +51,7 @@ export function Layout({ children }: LayoutProps) {
     { icon: BookOpen, label: 'Cursos', path: '/cursos' },
     { icon: GraduationCap, label: 'Professores', path: '/professores' },
     { icon: DoorClosed, label: 'Salas', path: '/salas' },
-    { icon: FileText, label: 'Formulários', path: '/formularios' },
+    { icon: FileText, label: 'Captura', path: '/formularios' },
     { icon: Star, label: 'Social Proof', path: '/social-proof' },
   ];
 

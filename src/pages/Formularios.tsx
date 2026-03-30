@@ -227,7 +227,7 @@ export function Formularios() {
       <div className="max-w-5xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">Formulários</h1>
+            <h1 className="text-3xl font-bold text-white">Captura</h1>
             <p className="text-gray-400 mt-2">Landing pages para captura de leads</p>
           </div>
           {isSuperAdmin && (
@@ -236,7 +236,7 @@ export function Formularios() {
               className="bg-teal-accent text-dark px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-teal-400 transition-all duration-200 font-medium shadow-glow hover:shadow-glow-intense"
             >
               <Plus className="h-5 w-5" />
-              Novo Formulário
+              Nova Captura
             </button>
           )}
         </div>
@@ -356,7 +356,7 @@ export function Formularios() {
         <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
           <div className="bg-dark-card rounded-2xl p-6 w-full max-w-lg shadow-xl" onClick={e => e.stopPropagation()}>
             <h2 className="text-xl font-bold text-white mb-6">
-              {editingId ? 'Editar Formulário' : 'Novo Formulário'}
+              {editingId ? 'Editar Captura' : 'Nova Captura'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
