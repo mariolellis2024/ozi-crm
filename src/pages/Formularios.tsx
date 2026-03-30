@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { Plus, Pencil, Trash2, Link2, Copy, ExternalLink, FileText, ToggleLeft, ToggleRight, Code2, X, Eye, UserPlus, TrendingUp, Layout, ChevronDown, ChevronRight, Minus } from 'lucide-react';
+import { Plus, Pencil, Trash2, Link2, Copy, ExternalLink, FileText, ToggleLeft, ToggleRight, Code2, X, Eye, UserPlus, TrendingUp, Layout, ChevronDown, ChevronRight, Minus, ImagePlus, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { useUnidade } from '../contexts/UnidadeContext';
@@ -122,6 +122,10 @@ export function Formularios() {
   const [editingLPId, setEditingLPId] = useState<string | null>(null);
   const [lpData, setLPData] = useState({ ...emptyLPForm });
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ basico: true });
+
+  // Upload state
+  const [uploading, setUploading] = useState(false);
+  const heroFileInputRef = useRef<HTMLInputElement>(null);
 
   // Embed + confirm modals
   const [embedSlug, setEmbedSlug] = useState<string | null>(null);
@@ -382,6 +386,39 @@ export function Formularios() {
 
   function toggleSection(key: string) {
     setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  // Image upload handler
+  async function handleHeroImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: fd
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Erro ao fazer upload');
+      }
+      const data = await response.json();
+      setLPData(prev => ({ ...prev, hero_image_url: data.url }));
+      toast.success('Imagem enviada!');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao enviar imagem');
+    } finally {
+      setUploading(false);
+      if (heroFileInputRef.current) heroFileInputRef.current.value = '';
+    }
   }
 
   // Dynamic list helpers
@@ -691,9 +728,31 @@ export function Formularios() {
                     <textarea value={lpData.hero_subheadline} onChange={e => setLPData({ ...lpData, hero_subheadline: e.target.value })} className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-accent resize-none" rows={2} placeholder="Texto descritivo abaixo da headline" />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">URL da imagem</label>
-                    <input type="text" value={lpData.hero_image_url} onChange={e => setLPData({ ...lpData, hero_image_url: e.target.value })} className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-accent" placeholder="https://..." />
-                    <p className="text-xs text-gray-600 mt-1">Se vazio, usa a imagem do curso</p>
+                    <label className="block text-sm text-gray-400 mb-1">Imagem Hero</label>
+                    <div
+                      className="relative border-2 border-dashed border-gray-600 rounded-xl overflow-hidden cursor-pointer hover:border-teal-accent/50 transition-colors"
+                      onClick={() => !uploading && heroFileInputRef.current?.click()}
+                    >
+                      {lpData.hero_image_url ? (
+                        <div className="relative group">
+                          <img src={lpData.hero_image_url} alt="Hero" className="w-full h-36 object-contain bg-dark-lighter" />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                            <button type="button" onClick={e => { e.stopPropagation(); heroFileInputRef.current?.click(); }} className="px-3 py-1.5 bg-teal-accent text-dark rounded-lg text-xs font-medium">Trocar</button>
+                            <button type="button" onClick={e => { e.stopPropagation(); setLPData(prev => ({ ...prev, hero_image_url: '' })); }} className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-medium">Remover</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-28 text-gray-400">
+                          {uploading ? (
+                            <><Loader2 className="h-6 w-6 animate-spin mb-2 text-teal-accent" /><span className="text-xs">Enviando...</span></>
+                          ) : (
+                            <><ImagePlus className="h-6 w-6 mb-2" /><span className="text-xs">Clique para enviar uma imagem</span><span className="text-xs text-gray-600 mt-0.5">WebP, PNG, JPG · Máx. 5MB</span></>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <input ref={heroFileInputRef} type="file" accept="image/webp,image/png,image/jpeg,image/gif" onChange={handleHeroImageUpload} className="hidden" />
+                    <p className="text-xs text-gray-600 mt-1">Se vazio, usa a imagem do curso. Ideal: WebP com fundo transparente.</p>
                   </div>
                 </div>
               )}
