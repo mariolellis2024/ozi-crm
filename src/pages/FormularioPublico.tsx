@@ -337,7 +337,7 @@ export function FormularioPublico() {
         .lp-hero-sub { font-size: 1rem; color: var(--tx2); line-height: 1.8; margin-bottom: 24px; }
         .lp-hero-tags { display: flex; gap: 10px; flex-wrap: wrap; }
         .lp-tag { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--tx2); padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--brd); border-radius: 8px; font-weight: 500; }
-        .lp-hero-img { width: 100%; height: 360px; border-radius: 16px; object-fit: cover; border: 2px solid var(--brd); }
+        .lp-hero-img { width: 100%; height: 360px; object-fit: contain; }
         .lp-hero-placeholder { width: 100%; height: 360px; border-radius: 16px; border: 2px dashed var(--brd); background: var(--bg-card); display: flex; align-items: center; justify-content: center; color: var(--txm); font-size: 0.9rem; }
 
         /* Sections */
