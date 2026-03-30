@@ -52,6 +52,7 @@ interface LandingPage {
   bonus_titulo: string | null;
   bonus_descricao: string | null;
   bonus_entrega: string | null;
+  bonus_image_url: string | null;
   investimento_headline: string | null;
   investimento_descricao: string | null;
   preco_parcelas: number;
@@ -91,6 +92,7 @@ const emptyLPForm = {
   bonus_titulo: '',
   bonus_descricao: '',
   bonus_entrega: '',
+  bonus_image_url: '',
   investimento_headline: '',
   investimento_descricao: '',
   preco_parcelas: 12,
@@ -125,11 +127,15 @@ export function Formularios() {
 
   // Upload state
   const [uploading, setUploading] = useState(false);
+  const [uploadingBonus, setUploadingBonus] = useState(false);
   const heroFileInputRef = useRef<HTMLInputElement>(null);
+  const bonusFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Embed + confirm modals
+  // Embed + confirm + duplicate modals
   const [embedSlug, setEmbedSlug] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: '', nome: '', type: '' as '' | 'form' | 'lp' });
+  const [duplicateModal, setDuplicateModal] = useState<{ isOpen: boolean; id: string; type: 'form' | 'lp' | ''; slug: string }>({ isOpen: false, id: '', type: '', slug: '' });
+  const [duplicateSlug, setDuplicateSlug] = useState('');
 
   const isSuperAdmin = useMemo(() => {
     try {
@@ -282,6 +288,7 @@ export function Formularios() {
       bonus_titulo: lp.bonus_titulo || '',
       bonus_descricao: lp.bonus_descricao || '',
       bonus_entrega: lp.bonus_entrega || '',
+      bonus_image_url: lp.bonus_image_url || '',
       investimento_headline: lp.investimento_headline || '',
       investimento_descricao: lp.investimento_descricao || '',
       preco_parcelas: lp.preco_parcelas || 12,
@@ -371,6 +378,71 @@ export function Formularios() {
     }
   }
 
+  // === DUPLICATE ===
+
+  function handleDuplicate(id: string, type: 'form' | 'lp', currentSlug: string) {
+    setDuplicateModal({ isOpen: true, id, type, slug: currentSlug });
+    setDuplicateSlug(currentSlug + '-copia');
+  }
+
+  async function handleConfirmDuplicate() {
+    const slug = duplicateSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+    if (!slug) {
+      toast.error('Digite um slug válido');
+      return;
+    }
+    try {
+      if (duplicateModal.type === 'form') {
+        const original = formularios.find(f => f.id === duplicateModal.id);
+        if (!original) return;
+        await api.post('/api/formularios', {
+          slug,
+          curso_id: original.curso_id,
+          unidade_id: original.unidade_id,
+          titulo: original.titulo || '',
+          descricao: original.descricao || '',
+          social_proof_group_id: original.social_proof_group_id || ''
+        });
+        toast.success('Formulário duplicado!');
+        loadFormularios();
+      } else {
+        const original = landingPages.find(lp => lp.id === duplicateModal.id);
+        if (!original) return;
+        const items = (arr: any) => typeof arr === 'string' ? JSON.parse(arr) : (arr || []);
+        await api.post('/api/landing-pages', {
+          slug,
+          curso_id: original.curso_id,
+          unidade_id: original.unidade_id,
+          hero_headline: original.hero_headline || '',
+          hero_subheadline: original.hero_subheadline || '',
+          hero_image_url: original.hero_image_url || '',
+          para_quem_headline: original.para_quem_headline || '',
+          para_quem_texto: original.para_quem_texto || '',
+          sem_curso_items: items(original.sem_curso_items),
+          com_curso_items: items(original.com_curso_items),
+          bonus_titulo: original.bonus_titulo || '',
+          bonus_descricao: original.bonus_descricao || '',
+          bonus_entrega: original.bonus_entrega || '',
+          bonus_image_url: original.bonus_image_url || '',
+          investimento_headline: original.investimento_headline || '',
+          investimento_descricao: original.investimento_descricao || '',
+          preco_parcelas: original.preco_parcelas || 12,
+          preco_valor_parcela: original.preco_valor_parcela || '',
+          preco_desconto: original.preco_desconto || '',
+          investimento_items: items(original.investimento_items),
+          social_proof_headline1: original.social_proof_headline1 || '',
+          social_proof_headline2: original.social_proof_headline2 || '',
+          social_proof_group_id: original.social_proof_group_id || ''
+        });
+        toast.success('Landing page duplicada!');
+        loadLandingPages();
+      }
+      setDuplicateModal({ isOpen: false, id: '', type: '', slug: '' });
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao duplicar');
+    }
+  }
+
   // === HELPERS ===
 
   function copyLink(slug: string, prefix: string) {
@@ -418,6 +490,39 @@ export function Formularios() {
     } finally {
       setUploading(false);
       if (heroFileInputRef.current) heroFileInputRef.current.value = '';
+    }
+  }
+
+  // Bonus image upload handler
+  async function handleBonusImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+    setUploadingBonus(true);
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: fd
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Erro ao fazer upload');
+      }
+      const data = await response.json();
+      setLPData(prev => ({ ...prev, bonus_image_url: data.url }));
+      toast.success('Imagem do bônus enviada!');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao enviar imagem');
+    } finally {
+      setUploadingBonus(false);
+      if (bonusFileInputRef.current) bonusFileInputRef.current.value = '';
     }
   }
 
@@ -580,6 +685,12 @@ export function Formularios() {
                   )}
                   {isSuperAdmin && (
                     <>
+                      <button
+                        onClick={() => handleDuplicate(item.id, item._type, item.slug)}
+                        className="p-2 text-gray-400 hover:text-purple-400 transition-colors" title="Duplicar"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
                       <button
                         onClick={() => isLP ? handleToggleLPAtivo(item as any) : handleToggleFormAtivo(item as any)}
                         className={`p-2 transition-colors ${item.ativo ? 'text-emerald-400' : 'text-gray-500'}`}
@@ -790,6 +901,33 @@ export function Formularios() {
                     <label className="block text-sm text-gray-400 mb-1">Entrega</label>
                     <input type="text" value={lpData.bonus_entrega} onChange={e => setLPData({ ...lpData, bonus_entrega: e.target.value })} className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-accent" placeholder="📦 Entrega: Avatar de IA configurado" />
                   </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Imagem do Bônus</label>
+                    <div
+                      className="relative border-2 border-dashed border-gray-600 rounded-xl overflow-hidden cursor-pointer hover:border-teal-accent/50 transition-colors"
+                      onClick={() => !uploadingBonus && bonusFileInputRef.current?.click()}
+                    >
+                      {lpData.bonus_image_url ? (
+                        <div className="relative group">
+                          <img src={lpData.bonus_image_url} alt="Bônus" className="w-full h-28 object-contain bg-dark-lighter" />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                            <button type="button" onClick={e => { e.stopPropagation(); bonusFileInputRef.current?.click(); }} className="px-3 py-1.5 bg-teal-accent text-dark rounded-lg text-xs font-medium">Trocar</button>
+                            <button type="button" onClick={e => { e.stopPropagation(); setLPData(prev => ({ ...prev, bonus_image_url: '' })); }} className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-medium">Remover</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-20 text-gray-400">
+                          {uploadingBonus ? (
+                            <><Loader2 className="h-5 w-5 animate-spin mb-1 text-teal-accent" /><span className="text-xs">Enviando...</span></>
+                          ) : (
+                            <><ImagePlus className="h-5 w-5 mb-1" /><span className="text-xs">Clique para enviar imagem do bônus</span><span className="text-xs text-gray-600">WebP, PNG, JPG · Máx. 5MB</span></>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <input ref={bonusFileInputRef} type="file" accept="image/webp,image/png,image/jpeg,image/gif" onChange={handleBonusImageUpload} className="hidden" />
+                    <p className="text-xs text-gray-600 mt-1">Exibida ao lado direito do bônus no desktop, acima no mobile.</p>
+                  </div>
                 </div>
               )}
 
@@ -919,6 +1057,37 @@ export function Formularios() {
                   <Copy className="h-3 w-3" />
                 </button>
               </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Duplicate Modal */}
+      {duplicateModal.isOpen && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={() => setDuplicateModal({ isOpen: false, id: '', type: '', slug: '' })}>
+          <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-white">Duplicar {duplicateModal.type === 'lp' ? 'Landing Page' : 'Formulário'}</h3>
+              <button onClick={() => setDuplicateModal({ isOpen: false, id: '', type: '', slug: '' })} className="text-gray-400 hover:text-white"><X className="h-5 w-5" /></button>
+            </div>
+            <p className="text-sm text-gray-400 mb-4">Uma cópia será criada com todos os dados. Digite a nova URL:</p>
+            <div className="mb-2">
+              <label className="block text-sm text-gray-400 mb-1">Nova URL (slug)</label>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 text-sm">/{duplicateModal.type === 'lp' ? 'lp' : 'f'}/</span>
+                <input
+                  type="text"
+                  value={duplicateSlug}
+                  onChange={e => setDuplicateSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  className="flex-1 bg-dark-lighter border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setDuplicateModal({ isOpen: false, id: '', type: '', slug: '' })} className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-dark-lighter transition-colors text-sm">Cancelar</button>
+              <button onClick={handleConfirmDuplicate} className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">Duplicar</button>
             </div>
           </div>
         </div>,

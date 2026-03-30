@@ -53,6 +53,7 @@ interface LPData {
     titulo: string | null;
     descricao: string | null;
     entrega: string | null;
+    image_url: string | null;
   };
   investimento: {
     headline: string | null;
@@ -398,6 +399,9 @@ export function LandingPagePublica() {
         .bt { display: inline-block; padding: 5px 14px; background: linear-gradient(135deg,var(--gold),#ffe082); border-radius: 100px; font-size: .68rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #1a1a1a; margin-bottom: 18px; }
         .bb h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 14px; }
         .bb>p { font-size: .95rem; color: #8b949e; line-height: 1.8; max-width: 600px; margin-bottom: 20px; }
+        .bb-layout { display: grid; grid-template-columns: 1fr; gap: 28px; align-items: center; }
+        .bb-layout.has-img { grid-template-columns: 1fr 1fr; }
+        .bb-img { width: 100%; max-height: 260px; object-fit: contain; filter: drop-shadow(0 8px 24px rgba(0,0,0,.4)); }
         .bdl { padding: 8px 14px; background: var(--gold-dim); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; font-size: .82rem; font-weight: 600; color: var(--gold); display: inline-flex; align-items: center; gap: 8px; }
 
         /* Pricing */
@@ -483,7 +487,7 @@ export function LandingPagePublica() {
         .fc-b { padding: 10px 24px; background: var(--ac); color: #fff; border: none; border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 700; text-decoration: none; letter-spacing: .5px; white-space: nowrap; transition: opacity .3s; cursor: pointer; }
         .fc-b:hover { opacity: .85; }
 
-        @media(max-width:768px) { .hero-layout { grid-template-columns: 1fr; } .cg,.mg { grid-template-columns: 1fr; } .ar { grid-template-columns: 1fr 1fr; } .sr { gap: 32px; } .pc { padding: 32px 28px; } .bb { padding: 28px 22px; } .fc { flex-direction: column; gap: 8px; padding: 10px 18px; } .hero { padding: 48px 0 40px; } .c { padding: 0 20px; } }
+        @media(max-width:768px) { .hero-layout { grid-template-columns: 1fr; } .cg,.mg { grid-template-columns: 1fr; } .ar { grid-template-columns: 1fr 1fr; } .sr { gap: 32px; } .pc { padding: 32px 28px; } .bb { padding: 28px 22px; } .bb-layout.has-img { grid-template-columns: 1fr; } .bb-layout.has-img .bb-img-wrap { order: -1; } .fc { flex-direction: column; gap: 8px; padding: 10px 18px; } .hero { padding: 48px 0 40px; } .c { padding: 0 20px; } }
       `}</style>
 
       <div>
@@ -586,10 +590,19 @@ export function LandingPagePublica() {
         {/* Bônus */}
         {hasBonus && (
           <section className="bon"><div className="c"><div className="bb">
-            <span className="bt">Bônus Exclusivo</span>
-            <h3>{data.bonus.titulo}</h3>
-            {data.bonus.descricao && <p>{data.bonus.descricao}</p>}
-            {data.bonus.entrega && <div className="bdl">{data.bonus.entrega}</div>}
+            <div className={`bb-layout ${data.bonus.image_url ? 'has-img' : ''}`}>
+              <div>
+                <span className="bt">Bônus Exclusivo</span>
+                <h3>{data.bonus.titulo}</h3>
+                {data.bonus.descricao && <p>{data.bonus.descricao}</p>}
+                {data.bonus.entrega && <div className="bdl">{data.bonus.entrega}</div>}
+              </div>
+              {data.bonus.image_url && (
+                <div className="bb-img-wrap">
+                  <img src={data.bonus.image_url} alt={data.bonus.titulo || 'Bônus'} className="bb-img" />
+                </div>
+              )}
+            </div>
           </div></div></section>
         )}
 

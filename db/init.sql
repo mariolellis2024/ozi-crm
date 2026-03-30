@@ -416,6 +416,7 @@ CREATE TABLE IF NOT EXISTS landing_pages (
   bonus_titulo text,
   bonus_descricao text,
   bonus_entrega text,
+  bonus_image_url text,
 
   -- Investimento section
   investimento_headline text,

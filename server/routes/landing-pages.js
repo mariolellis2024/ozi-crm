@@ -64,7 +64,7 @@ router.post('/', async (req, res) => {
       slug, curso_id, unidade_id,
       hero_headline, hero_subheadline, hero_image_url,
       para_quem_headline, para_quem_texto, sem_curso_items, com_curso_items,
-      bonus_titulo, bonus_descricao, bonus_entrega,
+      bonus_titulo, bonus_descricao, bonus_entrega, bonus_image_url,
       investimento_headline, investimento_descricao,
       preco_parcelas, preco_valor_parcela, preco_desconto, investimento_items,
       social_proof_headline1, social_proof_headline2, social_proof_group_id
@@ -86,18 +86,18 @@ router.post('/', async (req, res) => {
         slug, curso_id, unidade_id,
         hero_headline, hero_subheadline, hero_image_url,
         para_quem_headline, para_quem_texto, sem_curso_items, com_curso_items,
-        bonus_titulo, bonus_descricao, bonus_entrega,
+        bonus_titulo, bonus_descricao, bonus_entrega, bonus_image_url,
         investimento_headline, investimento_descricao,
         preco_parcelas, preco_valor_parcela, preco_desconto, investimento_items,
         social_proof_headline1, social_proof_headline2, social_proof_group_id
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
       RETURNING *`,
       [
         slug, curso_id, unidade_id,
         hero_headline || null, hero_subheadline || null, hero_image_url || null,
         para_quem_headline || null, para_quem_texto || null,
         JSON.stringify(sem_curso_items || []), JSON.stringify(com_curso_items || []),
-        bonus_titulo || null, bonus_descricao || null, bonus_entrega || null,
+        bonus_titulo || null, bonus_descricao || null, bonus_entrega || null, bonus_image_url || null,
         investimento_headline || null, investimento_descricao || null,
         preco_parcelas || 12, preco_valor_parcela || null, preco_desconto || null,
         JSON.stringify(investimento_items || []),
@@ -120,7 +120,7 @@ router.put('/:id', async (req, res) => {
       slug, curso_id, unidade_id, ativo,
       hero_headline, hero_subheadline, hero_image_url,
       para_quem_headline, para_quem_texto, sem_curso_items, com_curso_items,
-      bonus_titulo, bonus_descricao, bonus_entrega,
+      bonus_titulo, bonus_descricao, bonus_entrega, bonus_image_url,
       investimento_headline, investimento_descricao,
       preco_parcelas, preco_valor_parcela, preco_desconto, investimento_items,
       social_proof_headline1, social_proof_headline2, social_proof_group_id
@@ -140,17 +140,17 @@ router.put('/:id', async (req, res) => {
         slug=$1, curso_id=$2, unidade_id=$3, ativo=$4,
         hero_headline=$5, hero_subheadline=$6, hero_image_url=$7,
         para_quem_headline=$8, para_quem_texto=$9, sem_curso_items=$10, com_curso_items=$11,
-        bonus_titulo=$12, bonus_descricao=$13, bonus_entrega=$14,
-        investimento_headline=$15, investimento_descricao=$16,
-        preco_parcelas=$17, preco_valor_parcela=$18, preco_desconto=$19, investimento_items=$20,
-        social_proof_headline1=$21, social_proof_headline2=$22, social_proof_group_id=$23
-       WHERE id=$24 RETURNING *`,
+        bonus_titulo=$12, bonus_descricao=$13, bonus_entrega=$14, bonus_image_url=$15,
+        investimento_headline=$16, investimento_descricao=$17,
+        preco_parcelas=$18, preco_valor_parcela=$19, preco_desconto=$20, investimento_items=$21,
+        social_proof_headline1=$22, social_proof_headline2=$23, social_proof_group_id=$24
+       WHERE id=$25 RETURNING *`,
       [
         slug, curso_id, unidade_id, ativo !== false,
         hero_headline || null, hero_subheadline || null, hero_image_url || null,
         para_quem_headline || null, para_quem_texto || null,
         JSON.stringify(sem_curso_items || []), JSON.stringify(com_curso_items || []),
-        bonus_titulo || null, bonus_descricao || null, bonus_entrega || null,
+        bonus_titulo || null, bonus_descricao || null, bonus_entrega || null, bonus_image_url || null,
         investimento_headline || null, investimento_descricao || null,
         preco_parcelas || 12, preco_valor_parcela || null, preco_desconto || null,
         JSON.stringify(investimento_items || []),

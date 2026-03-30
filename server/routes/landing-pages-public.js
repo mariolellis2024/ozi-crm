@@ -84,7 +84,8 @@ router.get('/:slug', async (req, res) => {
       bonus: {
         titulo: row.bonus_titulo,
         descricao: row.bonus_descricao,
-        entrega: row.bonus_entrega
+        entrega: row.bonus_entrega,
+        image_url: row.bonus_image_url
       },
       investimento: {
         headline: row.investimento_headline,
