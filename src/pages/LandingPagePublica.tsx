@@ -338,6 +338,7 @@ export function LandingPagePublica() {
         .hero-layout { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; }
         .badge { display: inline-block; padding: 6px 16px; border: 1px solid var(--brd); border-radius: 100px; font-size: .72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--tx2); background: var(--bg-card); margin-bottom: 24px; box-shadow: var(--shadow); }
         .hero h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2.2rem,5vw,3.4rem); font-weight: 700; line-height: 1.1; margin-bottom: 20px; letter-spacing: -.03em; color: var(--tx); }
+        .hero-img-col { display: flex; align-items: center; }
         .hl { color: var(--green); }
         .hero-sub { font-size: 1.05rem; color: var(--tx2); line-height: 1.8; margin-bottom: 28px; }
         .hero-meta { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -487,7 +488,7 @@ export function LandingPagePublica() {
         .fc-b { padding: 10px 24px; background: var(--ac); color: #fff; border: none; border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 700; text-decoration: none; letter-spacing: .5px; white-space: nowrap; transition: opacity .3s; cursor: pointer; }
         .fc-b:hover { opacity: .85; }
 
-        @media(max-width:768px) { .hero-layout { grid-template-columns: 1fr; } .cg,.mg { grid-template-columns: 1fr; } .ar { grid-template-columns: 1fr 1fr; } .sr { gap: 32px; } .pc { padding: 32px 28px; } .bb { padding: 28px 22px; } .bb-layout.has-img { grid-template-columns: 1fr; } .bb-layout.has-img .bb-img-wrap { order: -1; } .fc { flex-direction: column; gap: 8px; padding: 10px 18px; } .hero { padding: 48px 0 40px; } .c { padding: 0 20px; } }
+        @media(max-width:768px) { .hero-layout { grid-template-columns: 1fr; } .hero-img-col { order: -1; } .cg,.mg { grid-template-columns: 1fr; } .ar { grid-template-columns: 1fr 1fr; } .sr { gap: 32px; } .pc { padding: 32px 28px; } .bb { padding: 28px 22px; } .bb-layout.has-img { grid-template-columns: 1fr; } .bb-layout.has-img .bb-img-wrap { order: -1; } .fc { flex-direction: column; gap: 8px; padding: 10px 18px; } .hero { padding: 48px 0 40px; } .c { padding: 0 20px; } }
       `}</style>
 
       <div>
@@ -498,8 +499,9 @@ export function LandingPagePublica() {
         </div></nav>
 
         {/* Hero */}
-        <section className="hero" ref={heroRef}><div className="c"><div className="hero-layout"><div>
+        <section className="hero" ref={heroRef}><div className="c">
           <span className="badge">Curso Presencial</span>
+          <div className="hero-layout"><div>
           <h1 dangerouslySetInnerHTML={{ __html: data.hero.headline || data.curso.nome }} />
           {data.hero.subheadline && <p className="hero-sub">{data.hero.subheadline}</p>}
           <div className="hero-meta">
@@ -509,7 +511,7 @@ export function LandingPagePublica() {
             {totalSemanas > 0 && <span className="tag">📅 {totalSemanas} semana{totalSemanas > 1 ? 's' : ''} · {horasPorDia}h/dia</span>}
           </div>
         </div>
-        <div>
+        <div className="hero-img-col">
           {(data.hero.image_url || data.curso.imagem_url) ? (
             <img src={data.hero.image_url || data.curso.imagem_url!} alt={data.curso.nome} className="hero-img" />
           ) : (

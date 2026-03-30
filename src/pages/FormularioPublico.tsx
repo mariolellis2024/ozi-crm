@@ -332,6 +332,7 @@ export function FormularioPublico() {
         /* Hero */
         .lp-hero { padding: 60px 0 48px; }
         .lp-hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; align-items: center; }
+        .lp-hero-img-col { display: flex; align-items: center; }
         .lp-badge { display: inline-block; padding: 6px 16px; border: 1px solid var(--ac); border-radius: 100px; font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--ac); background: var(--ac-dim); margin-bottom: 20px; }
         .lp-hero h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700; line-height: 1.2; margin-bottom: 16px; }
         .lp-hero-sub { font-size: 1rem; color: var(--tx2); line-height: 1.8; margin-bottom: 24px; }
@@ -426,6 +427,7 @@ export function FormularioPublico() {
         /* Responsive */
         @media (max-width: 768px) {
           .lp-hero-grid { grid-template-columns: 1fr; }
+          .lp-hero-img-col { order: -1; }
           .lp-hero-img, .lp-hero-placeholder { height: 240px; }
           .lp-alumni-grid { grid-template-columns: repeat(2, 1fr); }
           .lp-modules-grid { grid-template-columns: 1fr; }
@@ -449,11 +451,11 @@ export function FormularioPublico() {
         {/* Hero */}
         <section className="lp-hero" ref={heroRef}>
           <div className="lp-c">
+            <span className="lp-badge">
+              Curso Presencial · {formInfo.unidade.cidade || formInfo.unidade.nome}
+            </span>
             <div className="lp-hero-grid">
               <div>
-                <span className="lp-badge">
-                  Curso Presencial · {formInfo.unidade.cidade || formInfo.unidade.nome}
-                </span>
                 <h1 className="lp-heading">
                   {formInfo.titulo || formInfo.curso.nome}
                 </h1>
@@ -474,7 +476,7 @@ export function FormularioPublico() {
                   </span>
                 </div>
               </div>
-              <div>
+              <div className="lp-hero-img-col">
                 {formInfo.curso.imagem_url ? (
                   <img
                     src={formInfo.curso.imagem_url}
