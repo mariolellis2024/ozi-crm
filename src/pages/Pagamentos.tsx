@@ -224,6 +224,9 @@ export function Pagamentos() {
 
   async function loadProfData() {
     try {
+      // Auto-sync: generate payments for any turma_professores missing payments
+      try { await api.post('/api/professor-pagamentos/sync', {}); } catch {}
+      
       let params = profFilter ? `?status=${profFilter}` : '';
       if (selectedUnidadeId) params += (params ? '&' : '?') + `unidade_id=${selectedUnidadeId}`;
       const data = await api.get(`/api/professor-pagamentos${params}`);
@@ -290,7 +293,7 @@ export function Pagamentos() {
       const token = localStorage.getItem('auth_token');
       if (!token) return false;
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.role === 'super_admin';
+      return !!payload.is_super_admin;
     } catch { return false; }
   }, []);
 

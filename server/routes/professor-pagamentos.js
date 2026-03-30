@@ -214,4 +214,48 @@ router.post('/generate', async (req, res) => {
   }
 });
 
+// POST /api/professor-pagamentos/sync — generate payments for ALL existing turma_professores missing payments
+router.post('/sync', async (req, res) => {
+  try {
+    const tpResult = await pool.query(
+      `SELECT tp.id, tp.professor_id, tp.turma_id, tp.hours,
+              t.start_date, t.end_date, p.valor_hora
+       FROM turma_professores tp
+       JOIN turmas t ON t.id = tp.turma_id
+       JOIN professores p ON p.id = tp.professor_id
+       WHERE tp.id NOT IN (SELECT DISTINCT turma_professor_id FROM professor_pagamentos)
+       AND tp.hours > 0`
+    );
+
+    let generated = 0;
+    for (const tp of tpResult.rows) {
+      const totalValue = Number(tp.hours) * Number(tp.valor_hora);
+      if (totalValue <= 0) continue;
+
+      const startStr = new Date(tp.start_date).toISOString().split('T')[0];
+      const endStr = new Date(tp.end_date).toISOString().split('T')[0];
+      const isSingleDay = startStr === endStr;
+
+      if (isSingleDay) {
+        await pool.query(
+          `INSERT INTO professor_pagamentos (turma_professor_id, professor_id, turma_id, parcela, valor, due_date) VALUES ($1, $2, $3, 1, $4, $5)`,
+          [tp.id, tp.professor_id, tp.turma_id, totalValue, tp.start_date]
+        );
+      } else {
+        const half = Math.round(totalValue * 100 / 2) / 100;
+        await pool.query(
+          `INSERT INTO professor_pagamentos (turma_professor_id, professor_id, turma_id, parcela, valor, due_date) VALUES ($1, $2, $3, 1, $4, $5), ($1, $2, $3, 2, $6, $7)`,
+          [tp.id, tp.professor_id, tp.turma_id, half, tp.start_date, totalValue - half, tp.end_date]
+        );
+      }
+      generated++;
+    }
+
+    res.json({ success: true, generated, message: `${generated} vínculo(s) sincronizado(s)` });
+  } catch (error) {
+    console.error('Error syncing professor payments:', error);
+    res.status(500).json({ error: 'Erro ao sincronizar pagamentos' });
+  }
+});
+
 export default router;
