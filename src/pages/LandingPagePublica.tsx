@@ -488,7 +488,7 @@ export function LandingPagePublica() {
         .fc-b { padding: 10px 24px; background: var(--ac); color: #fff; border: none; border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 700; text-decoration: none; letter-spacing: .5px; white-space: nowrap; transition: opacity .3s; cursor: pointer; }
         .fc-b:hover { opacity: .85; }
 
-        @media(max-width:768px) { .hero-layout { grid-template-columns: 1fr; } .hero-img-col { order: -1; } .cg,.mg { grid-template-columns: 1fr; } .ar { grid-template-columns: 1fr 1fr; } .sr { gap: 32px; } .pc { padding: 32px 28px; } .bb { padding: 28px 22px; } .bb-layout.has-img { grid-template-columns: 1fr; } .bb-layout.has-img .bb-img-wrap { order: -1; } .fc { flex-direction: column; gap: 8px; padding: 10px 18px; } .hero { padding: 48px 0 40px; } .c { padding: 0 20px; } }
+        @media(max-width:768px) { .hero-layout { grid-template-columns: 1fr; gap: 16px; } .hero-img-col { order: -1; } .hero-img { height: auto; max-height: 320px; } .badge { margin-bottom: 12px; } .cg,.mg { grid-template-columns: 1fr; } .ar { grid-template-columns: 1fr 1fr; } .sr { gap: 32px; } .pc { padding: 32px 28px; } .bb { padding: 28px 22px; } .bb-layout.has-img { grid-template-columns: 1fr; } .bb-layout.has-img .bb-img-wrap { order: -1; } .fc { flex-direction: column; gap: 8px; padding: 10px 18px; } .hero { padding: 20px 0 32px; } .c { padding: 0 20px; } }
       `}</style>
 
       <div>

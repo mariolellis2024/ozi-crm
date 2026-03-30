@@ -426,15 +426,16 @@ export function FormularioPublico() {
 
         /* Responsive */
         @media (max-width: 768px) {
-          .lp-hero-grid { grid-template-columns: 1fr; }
+          .lp-hero-grid { grid-template-columns: 1fr; gap: 16px; }
           .lp-hero-img-col { order: -1; }
-          .lp-hero-img, .lp-hero-placeholder { height: 240px; }
+          .lp-hero-img, .lp-hero-placeholder { height: auto; max-height: 280px; }
+          .lp-badge { margin-bottom: 12px; }
           .lp-alumni-grid { grid-template-columns: repeat(2, 1fr); }
           .lp-modules-grid { grid-template-columns: 1fr; }
           .lp-stats-row { gap: 24px; }
           .lp-price-card { padding: 28px 24px; width: 100%; }
           .lp-floating { flex-direction: column; gap: 8px; padding: 10px 18px; }
-          .lp-hero { padding: 40px 0 32px; }
+          .lp-hero { padding: 20px 0 32px; }
           .lp-c { padding: 0 16px; }
         }
       `}</style>
