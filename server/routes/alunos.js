@@ -306,6 +306,44 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// PATCH /api/alunos/:id — partial update (only provided fields)
+router.patch('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const allowedFields = ['cpf', 'rg', 'endereco', 'cidade', 'uf', 'profissao', 'data_nascimento', 'cep', 'genero', 'nome', 'email', 'whatsapp', 'empresa'];
+    const updates = [];
+    const values = [];
+    let idx = 1;
+
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updates.push(`${field} = $${idx}`);
+        values.push(req.body[field] || null);
+        idx++;
+      }
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'Nenhum campo para atualizar' });
+    }
+
+    values.push(id);
+    const result = await pool.query(
+      `UPDATE alunos SET ${updates.join(', ')} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Aluno não encontrado' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error patching aluno:', error);
+    res.status(500).json({ error: 'Erro ao atualizar aluno' });
+  }
+});
+
 // DELETE /api/alunos/:id
 router.delete('/:id', async (req, res) => {
   try {

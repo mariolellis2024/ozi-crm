@@ -213,7 +213,7 @@ export function Contratos() {
         return;
       }
 
-      await api.put(`/api/alunos/${dataForm.alunoId}`, {
+      await api.patch(`/api/alunos/${dataForm.alunoId}`, {
         cpf: dataForm.cpf,
         rg: dataForm.rg,
         endereco: dataForm.endereco,
