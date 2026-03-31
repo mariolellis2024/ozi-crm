@@ -167,10 +167,10 @@ router.post('/generate', async (req, res) => {
       ['DATA FIM ACOMPANHAMENTO', acompFim],
       ['DIA HORARIO SESSOES ONLINE', sessoesOnline],
       // Pagamento
-      ['TAXA RESERVA', taxa_reserva || ''],
-      ['SALDO PIX', saldo_pix || ''],
+      ['TAXA RESERVA', taxa_reserva ? `R$ ${parseFloat(taxa_reserva).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''],
+      ['SALDO PIX', saldo_pix ? `R$ ${parseFloat(saldo_pix).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''],
       ['PARCELAS CARTAO', parcelas_cartao || ''],
-      ['VALOR PARCELA', valor_parcela || ''],
+      ['VALOR PARCELA', valor_parcela ? `R$ ${parseFloat(valor_parcela).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''],
       // Jurídico
       ['COMARCA', comarca],
       ['ESTADO COMARCA', estadoComarca],
