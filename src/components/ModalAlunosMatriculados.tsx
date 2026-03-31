@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Search, Users, BookOpen, UserMinus, AlertTriangle, FileSignature, Copy, ExternalLink, Loader2, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { X, Search, Users, BookOpen, UserMinus, AlertTriangle, FileSignature, Copy, ExternalLink, Loader2, CheckCircle, XCircle, Clock, DollarSign } from 'lucide-react';
 import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatPhone } from '../utils/format';
@@ -65,6 +65,23 @@ export function ModalAlunosMatriculados({
     alunoNome: '',
     deletePayments: true
   });
+  const [contractForm, setContractForm] = useState<{
+    isOpen: boolean;
+    alunoId: string;
+    alunoNome: string;
+    taxa_reserva: string;
+    saldo_pix: string;
+    parcelas_cartao: string;
+    valor_parcela: string;
+  }>({
+    isOpen: false,
+    alunoId: '',
+    alunoNome: '',
+    taxa_reserva: '',
+    saldo_pix: '',
+    parcelas_cartao: '',
+    valor_parcela: ''
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -73,7 +90,6 @@ export function ModalAlunosMatriculados({
   }, [isOpen, turmaId]);
 
   useEffect(() => {
-    // Filter students based on search term
     const filtered = alunosMatriculados.filter(aluno =>
       aluno.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       aluno.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -88,7 +104,6 @@ export function ModalAlunosMatriculados({
       const data = await api.get(`/api/interests/turma/${turmaId}/enrolled`);
       setAlunosMatriculados(data);
       
-      // Load contracts for each student
       const contractMap: Record<string, Contrato> = {};
       for (const aluno of data) {
         try {
@@ -104,12 +119,30 @@ export function ModalAlunosMatriculados({
     }
   }
 
-  async function handleGenerateContract(alunoId: string) {
+  function handleOpenContractForm(alunoId: string, alunoNome: string) {
+    setContractForm({
+      isOpen: true,
+      alunoId,
+      alunoNome,
+      taxa_reserva: '',
+      saldo_pix: '',
+      parcelas_cartao: '',
+      valor_parcela: ''
+    });
+  }
+
+  async function handleGenerateContract() {
+    const { alunoId, taxa_reserva, saldo_pix, parcelas_cartao, valor_parcela } = contractForm;
     setGeneratingContract(alunoId);
+    setContractForm(prev => ({ ...prev, isOpen: false }));
     try {
       const contrato = await api.post('/api/contratos/generate', {
         aluno_id: alunoId,
-        turma_id: turmaId
+        turma_id: turmaId,
+        taxa_reserva: taxa_reserva || undefined,
+        saldo_pix: saldo_pix || undefined,
+        parcelas_cartao: parcelas_cartao || undefined,
+        valor_parcela: valor_parcela || undefined
       });
       setContracts(prev => ({ ...prev, [alunoId]: contrato }));
       if (contrato.sign_url) {
@@ -131,61 +164,26 @@ export function ModalAlunosMatriculados({
   }
 
   function handleUnenrollClick(alunoId: string, alunoNome: string) {
-    setConfirmUnenroll({
-      isOpen: true,
-      alunoId,
-      alunoNome,
-      deletePayments: true
-    });
+    setConfirmUnenroll({ isOpen: true, alunoId, alunoNome, deletePayments: true });
   }
 
   async function handleConfirmUnenroll() {
     const { alunoId } = confirmUnenroll;
     setUnenrollingStudents(prev => new Set(prev).add(alunoId));
-    
     try {
-      await api.put('/api/interests/unenroll', {
-        aluno_id: alunoId,
-        curso_id: cursoId
-      });
-      
+      await api.put('/api/interests/unenroll', { aluno_id: alunoId, curso_id: cursoId });
       toast.success('Aluno removido da turma com sucesso!');
-      
-      // Delete associated payments if requested
       if (confirmUnenroll.deletePayments) {
-        try {
-          await api.delete(`/api/pagamentos/by-enrollment/${alunoId}/${turmaId}`);
-        } catch (err) {
-          console.warn('Pagamentos não removidos:', err);
-        }
+        try { await api.delete(`/api/pagamentos/by-enrollment/${alunoId}/${turmaId}`); } catch {}
       }
-      
-      setAlunosMatriculados(prev => prev.filter(aluno => aluno.id !== alunoId));
+      setAlunosMatriculados(prev => prev.filter(a => a.id !== alunoId));
       onStudentUnenrolled();
     } catch (error) {
       toast.error('Erro ao remover aluno da turma');
     } finally {
-      setUnenrollingStudents(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(alunoId);
-        return newSet;
-      });
-      setConfirmUnenroll({
-        isOpen: false,
-        alunoId: '',
-        alunoNome: '',
-        deletePayments: true
-      });
+      setUnenrollingStudents(prev => { const s = new Set(prev); s.delete(alunoId); return s; });
+      setConfirmUnenroll({ isOpen: false, alunoId: '', alunoNome: '', deletePayments: true });
     }
-  }
-
-  function handleCancelUnenroll() {
-    setConfirmUnenroll({
-      isOpen: false,
-      alunoId: '',
-      alunoNome: '',
-      deletePayments: true
-    });
   }
 
   function handleClose() {
@@ -195,14 +193,8 @@ export function ModalAlunosMatriculados({
 
   return createPortal(
     isOpen ? (
-    <div 
-      className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4"
-      onClick={handleClose}
-    >
-      <div 
-        className="bg-dark-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={handleClose}>
+      <div className="bg-dark-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
             <Users className="h-6 w-6 text-green-400" />
@@ -211,11 +203,7 @@ export function ModalAlunosMatriculados({
               <p className="text-gray-400 text-sm">{cursoNome}</p>
             </div>
           </div>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-white transition-colors"
-            type="button"
-          >
+          <button onClick={handleClose} className="text-gray-400 hover:text-white transition-colors" type="button">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -240,7 +228,7 @@ export function ModalAlunosMatriculados({
             </div>
           ) : filteredAlunos.length > 0 ? (
             <div className="space-y-3">
-               {filteredAlunos.map((aluno) => {
+              {filteredAlunos.map((aluno) => {
                 const contrato = contracts[aluno.id];
                 const statusCfg = contrato ? CONTRACT_STATUS[contrato.status] || CONTRACT_STATUS.pending : null;
                 const StatusIcon = statusCfg?.icon;
@@ -275,7 +263,6 @@ export function ModalAlunosMatriculados({
                         </div>
                       )}
                       
-                      {/* Contract button / status */}
                       {contrato ? (
                         <div className="flex items-center gap-1.5">
                           {StatusIcon && <StatusIcon className={`h-4 w-4 ${statusCfg?.color}`} />}
@@ -293,7 +280,7 @@ export function ModalAlunosMatriculados({
                         </div>
                       ) : (
                         <button
-                          onClick={() => handleGenerateContract(aluno.id)}
+                          onClick={() => handleOpenContractForm(aluno.id, aluno.nome)}
                           disabled={generatingContract === aluno.id}
                           className="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 text-xs font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50"
                           title="Gerar contrato via ZapSign"
@@ -359,7 +346,87 @@ export function ModalAlunosMatriculados({
           </div>
         )}
 
-        {/* Modal de Confirmação */}
+        {/* Modal de Dados de Pagamento para Contrato */}
+        {contractForm.isOpen && (
+          <div className="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center p-4" onClick={() => setContractForm(prev => ({ ...prev, isOpen: false }))}>
+            <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-3 mb-4">
+                <DollarSign className="h-6 w-6 text-purple-400" />
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Dados do Pagamento</h3>
+                  <p className="text-sm text-gray-400">{contractForm.alunoNome}</p>
+                </div>
+              </div>
+              
+              <p className="text-xs text-gray-500 mb-4">
+                Preencha os valores de pagamento que aparecerão no contrato. Campos vazios ficarão em branco no documento.
+              </p>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Taxa de Reserva</label>
+                  <input
+                    type="text"
+                    value={contractForm.taxa_reserva}
+                    onChange={e => setContractForm(prev => ({ ...prev, taxa_reserva: e.target.value }))}
+                    placeholder="Ex: R$ 500,00"
+                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Saldo via PIX</label>
+                  <input
+                    type="text"
+                    value={contractForm.saldo_pix}
+                    onChange={e => setContractForm(prev => ({ ...prev, saldo_pix: e.target.value }))}
+                    placeholder="Ex: R$ 2.500,00"
+                    className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Parcelas (Cartão)</label>
+                    <input
+                      type="text"
+                      value={contractForm.parcelas_cartao}
+                      onChange={e => setContractForm(prev => ({ ...prev, parcelas_cartao: e.target.value }))}
+                      placeholder="Ex: 12x"
+                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Valor da Parcela</label>
+                    <input
+                      type="text"
+                      value={contractForm.valor_parcela}
+                      onChange={e => setContractForm(prev => ({ ...prev, valor_parcela: e.target.value }))}
+                      placeholder="Ex: R$ 250,00"
+                      className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 justify-end mt-6">
+                <button
+                  onClick={() => setContractForm(prev => ({ ...prev, isOpen: false }))}
+                  className="px-4 py-2 bg-dark-lighter text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors text-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleGenerateContract}
+                  className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm flex items-center gap-2"
+                >
+                  <FileSignature className="h-4 w-4" />
+                  Gerar Contrato
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Confirmação de Remoção */}
         {confirmUnenroll.isOpen && (
           <div className="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center p-4">
             <div className="bg-dark-card rounded-2xl p-6 w-full max-w-md">
@@ -390,7 +457,7 @@ export function ModalAlunosMatriculados({
 
               <div className="flex gap-3 justify-end">
                 <button
-                  onClick={handleCancelUnenroll}
+                  onClick={() => setConfirmUnenroll({ isOpen: false, alunoId: '', alunoNome: '', deletePayments: true })}
                   className="px-4 py-2 bg-dark-lighter text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
                 >
                   Cancelar

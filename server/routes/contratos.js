@@ -10,7 +10,7 @@ const ZAPSIGN_TEMPLATE_ID = process.env.ZAPSIGN_TEMPLATE_ID || '';
 // POST /api/contratos/generate — generate a contract via ZapSign
 router.post('/generate', async (req, res) => {
   try {
-    const { interest_id, aluno_id, turma_id } = req.body;
+    const { interest_id, aluno_id, turma_id, taxa_reserva, saldo_pix, parcelas_cartao, valor_parcela } = req.body;
 
     if (!ZAPSIGN_API_TOKEN || !ZAPSIGN_TEMPLATE_ID) {
       return res.status(400).json({ error: 'ZapSign não configurada. Defina ZAPSIGN_API_TOKEN e ZAPSIGN_TEMPLATE_ID nas variáveis de ambiente.' });
@@ -34,10 +34,12 @@ router.post('/generate', async (req, res) => {
              a.endereco as aluno_endereco, a.cidade as aluno_cidade, a.uf as aluno_uf,
              a.cep as aluno_cep, a.profissao as aluno_profissao,
              c.nome as curso_nome, c.preco as curso_preco, c.carga_horaria as curso_carga_horaria,
+             c.descricao as curso_descricao, c.modulos as curso_modulos,
              t.name as turma_nome, t.start_date, t.end_date, t.days_of_week,
              t.horario_inicio, t.horario_fim, t.local_aula, t.endereco_aula,
              t.carga_horaria_total, t.acompanhamento_inicio, t.acompanhamento_fim, t.sessoes_online,
              u.nome as unidade_nome, u.cidade as unidade_cidade, u.endereco as unidade_endereco,
+             u.comarca, u.estado_comarca,
              aci.id as interest_id
       FROM alunos a
       LEFT JOIN aluno_curso_interests aci ON aci.aluno_id = a.id AND aci.turma_id = $2
@@ -56,8 +58,6 @@ router.post('/generate', async (req, res) => {
     const today = new Date().toLocaleDateString('pt-BR');
     const startDate = d.start_date ? new Date(d.start_date).toLocaleDateString('pt-BR') : '';
     const endDate = d.end_date ? new Date(d.end_date).toLocaleDateString('pt-BR') : '';
-    const acompInicio = d.acompanhamento_inicio ? new Date(d.acompanhamento_inicio).toLocaleDateString('pt-BR') : '';
-    const acompFim = d.acompanhamento_fim ? new Date(d.acompanhamento_fim).toLocaleDateString('pt-BR') : '';
     const nascimento = d.aluno_nascimento ? new Date(d.aluno_nascimento).toLocaleDateString('pt-BR') : '';
     const preco = d.curso_preco ? `R$ ${parseFloat(d.curso_preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '';
     const cargaHoraria = d.carga_horaria_total || d.curso_carga_horaria || '';
@@ -71,6 +71,17 @@ router.post('/generate', async (req, res) => {
 
     // Cidade + UF do aluno
     const cidadeUf = [d.aluno_cidade, d.aluno_uf].filter(Boolean).join(' / ');
+
+    // QTD Encontros (based on carga_horaria / 3h per class)
+    const ch = parseInt(d.carga_horaria_total || d.curso_carga_horaria || 0);
+    const qtdEncontros = ch > 0 ? Math.ceil(ch / 3).toString() : '';
+
+    // Módulos (array → individual variables)
+    const modulos = d.curso_modulos || [];
+
+    // Comarca (from unidade, fallback to city)
+    const comarca = d.comarca || d.unidade_cidade || '';
+    const estadoComarca = d.estado_comarca || d.aluno_uf || '';
 
     // Format phone
     const phone = (d.aluno_whatsapp || '').replace(/\D/g, '');
@@ -90,7 +101,7 @@ router.post('/generate', async (req, res) => {
       external_id: `ozi-${aluno_id}-${turma_id}`,
       folder_path: '/OZI CRM/Contratos/',
       data: [
-        // Aluno (Anexo I)
+        // Aluno (9 variáveis)
         { de: '{{NOME_ALUNO}}', para: d.aluno_nome || '' },
         { de: '{{CPF_ALUNO}}', para: d.aluno_cpf || '' },
         { de: '{{RG_ALUNO}}', para: d.aluno_rg || '' },
@@ -98,16 +109,16 @@ router.post('/generate', async (req, res) => {
         { de: '{{ENDERECO_ALUNO}}', para: d.aluno_endereco || '' },
         { de: '{{CIDADE_UF}}', para: cidadeUf },
         { de: '{{CEP_ALUNO}}', para: d.aluno_cep || '' },
-        { de: '{{WHATSAPP_ALUNO}}', para: d.aluno_whatsapp || '' },
-        { de: '{{TELEFONE}}', para: d.aluno_whatsapp || '' },
-        { de: '{{EMAIL_ALUNO}}', para: d.aluno_email || '' },
-        { de: '{{EMAIL}}', para: d.aluno_email || '' },
         { de: '{{PROFISSAO_ALUNO}}', para: d.aluno_profissao || '' },
-        // Turma (Anexo II)
+        { de: '{{TELEFONE}}', para: d.aluno_whatsapp || '' },
+        { de: '{{EMAIL}}', para: d.aluno_email || '' },
+        // Curso (4 variáveis)
         { de: '{{CURSO_NOME}}', para: d.curso_nome || '' },
-        { de: '{{TURMA_NOME}}', para: d.turma_nome || '' },
-        { de: '{{TURMA_CIDADE}}', para: d.unidade_cidade || '' },
+        { de: '{{DESCRICAO_CURSO}}', para: d.curso_descricao || '' },
+        { de: '{{QTD_ENCONTROS}}', para: qtdEncontros },
         { de: '{{VALOR_CURSO}}', para: preco },
+        // Turma (8 variáveis)
+        { de: '{{TURMA_CIDADE}}', para: d.unidade_cidade || '' },
         { de: '{{DATA_INICIO}}', para: startDate },
         { de: '{{DATA_FIM}}', para: endDate },
         { de: '{{DIAS_SEMANA}}', para: diasSemana },
@@ -115,9 +126,25 @@ router.post('/generate', async (req, res) => {
         { de: '{{LOCAL_AULA}}', para: d.local_aula || '' },
         { de: '{{ENDERECO_AULA}}', para: d.endereco_aula || d.unidade_endereco || '' },
         { de: '{{CARGA_HORARIA}}', para: cargaHoraria ? `${cargaHoraria} horas` : '' },
-        { de: '{{ACOMPANHAMENTO_INICIO}}', para: acompInicio },
-        { de: '{{ACOMPANHAMENTO_FIM}}', para: acompFim },
-        { de: '{{SESSOES_ONLINE}}', para: d.sessoes_online || '' },
+        // Pagamento (4 variáveis)
+        { de: '{{TAXA_RESERVA}}', para: taxa_reserva || '' },
+        { de: '{{SALDO_PIX}}', para: saldo_pix || '' },
+        { de: '{{PARCELAS_CARTAO}}', para: parcelas_cartao || '' },
+        { de: '{{VALOR_PARCELA}}', para: valor_parcela || '' },
+        // Módulos (10 variáveis)
+        { de: '{{MODULO_01}}', para: modulos[0] || '' },
+        { de: '{{MODULO_02}}', para: modulos[1] || '' },
+        { de: '{{MODULO_03}}', para: modulos[2] || '' },
+        { de: '{{MODULO_04}}', para: modulos[3] || '' },
+        { de: '{{MODULO_05}}', para: modulos[4] || '' },
+        { de: '{{MODULO_06}}', para: modulos[5] || '' },
+        { de: '{{MODULO_07}}', para: modulos[6] || '' },
+        { de: '{{MODULO_08}}', para: modulos[7] || '' },
+        { de: '{{MODULO_09}}', para: modulos[8] || '' },
+        { de: '{{MODULO_10}}', para: modulos[9] || '' },
+        // Jurídico/Administrativo (3 variáveis)
+        { de: '{{COMARCA}}', para: comarca },
+        { de: '{{ESTADO_COMARCA}}', para: estadoComarca },
         { de: '{{DATA_CONTRATO}}', para: today },
       ]
     };

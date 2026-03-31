@@ -301,6 +301,14 @@ ALTER TABLE turmas ADD COLUMN IF NOT EXISTS carga_horaria_total integer;
 ALTER TABLE turmas ADD COLUMN IF NOT EXISTS acompanhamento_inicio date;
 ALTER TABLE turmas ADD COLUMN IF NOT EXISTS acompanhamento_fim date;
 ALTER TABLE turmas ADD COLUMN IF NOT EXISTS sessoes_online text;
+
+-- Contract: curso description + modules
+ALTER TABLE cursos ADD COLUMN IF NOT EXISTS descricao text;
+ALTER TABLE cursos ADD COLUMN IF NOT EXISTS modulos text[];
+
+-- Contract: legal jurisdiction (comarca)
+ALTER TABLE unidades ADD COLUMN IF NOT EXISTS comarca text;
+ALTER TABLE unidades ADD COLUMN IF NOT EXISTS estado_comarca text;
 -- =====================================================
 -- Form Analytics (visits + formulario_id on interests)
 -- =====================================================
