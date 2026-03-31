@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { GraduationCap, User, LogOut, BookOpen, Home, DoorClosed, Activity, Users, BarChart3, CalendarDays, GitBranch, ClipboardList, Wallet, Building2, ChevronDown, FileText, Menu, X, Star } from 'lucide-react';
+import { GraduationCap, User, LogOut, BookOpen, Home, DoorClosed, Activity, Users, BarChart3, CalendarDays, GitBranch, ClipboardList, Wallet, Building2, ChevronDown, FileText, Menu, X, Star, FileSignature } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PerformanceDashboard } from './PerformanceDashboard';
@@ -47,6 +47,7 @@ export function Layout({ children }: LayoutProps) {
     { icon: CalendarDays, label: 'Calendário', path: '/calendario' },
     { icon: GitBranch, label: 'Pipeline', path: '/pipeline' },
     { icon: Wallet, label: 'Financeiro', path: '/pagamentos' },
+    { icon: FileSignature, label: 'Contratos', path: '/contratos' },
     { icon: ClipboardList, label: 'Atividades', path: '/atividades' },
     { icon: BookOpen, label: 'Cursos', path: '/cursos' },
     { icon: GraduationCap, label: 'Professores', path: '/professores' },

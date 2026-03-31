@@ -260,4 +260,77 @@ router.get('/by-enrollment/:aluno_id/:turma_id', async (req, res) => {
   }
 });
 
+// GET /api/contratos/overview — all enrolled students with contract status
+router.get('/overview', async (req, res) => {
+  try {
+    const { unidade_id } = req.query;
+    let query = `
+      SELECT 
+        a.id as aluno_id, a.nome as aluno_nome, a.whatsapp as aluno_whatsapp, a.email as aluno_email,
+        t.id as turma_id, t.name as turma_nome,
+        cu.nome as curso_nome,
+        c.id as contrato_id, c.status as contrato_status, c.sign_url, c.created_at as contrato_created_at,
+        c.signed_at, c.zapsign_doc_token
+      FROM aluno_curso_interests aci
+      JOIN alunos a ON a.id = aci.aluno_id
+      JOIN turmas t ON t.id = aci.turma_id
+      JOIN cursos cu ON cu.id = t.curso_id
+      LEFT JOIN salas s ON s.id = t.sala_id
+      LEFT JOIN contratos c ON c.aluno_id = a.id AND c.turma_id = t.id AND c.status != 'cancelled'
+      WHERE aci.status = 'enrolled'
+    `;
+    const params = [];
+    if (unidade_id) {
+      params.push(unidade_id);
+      query += ` AND s.unidade_id = $${params.length}`;
+    }
+    query += ' ORDER BY t.name, a.nome';
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error loading contracts overview:', error);
+    res.status(500).json({ error: 'Erro ao carregar visão geral de contratos' });
+  }
+});
+
+// POST /api/contratos/:id/refresh — refresh contract status from ZapSign
+router.post('/:id/refresh', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const contrato = await pool.query('SELECT * FROM contratos WHERE id = $1', [id]);
+    if (contrato.rows.length === 0) return res.status(404).json({ error: 'Contrato não encontrado' });
+
+    const c = contrato.rows[0];
+    if (!c.zapsign_doc_token || !ZAPSIGN_API_TOKEN) {
+      return res.json(c);
+    }
+
+    const zsRes = await fetch(`${ZAPSIGN_API_URL}/api/v1/docs/${c.zapsign_doc_token}/`, {
+      headers: { 'Authorization': `Bearer ${ZAPSIGN_API_TOKEN}` }
+    });
+    if (zsRes.ok) {
+      const zsData = await zsRes.json();
+      let newStatus = c.status;
+      if (zsData.status === 'signed') newStatus = 'signed';
+      else if (zsData.status === 'refused') newStatus = 'refused';
+      else if (zsData.status === 'expired') newStatus = 'expired';
+
+      if (newStatus !== c.status) {
+        await pool.query(
+          `UPDATE contratos SET status = $2, signed_at = CASE WHEN $2 = 'signed' THEN NOW() ELSE signed_at END, signed_file_url = $3 WHERE id = $1`,
+          [id, newStatus, zsData.signed_file || null]
+        );
+        c.status = newStatus;
+        c.signed_file_url = zsData.signed_file || null;
+      }
+    }
+
+    res.json(c);
+  } catch (error) {
+    console.error('Error refreshing contract:', error);
+    res.status(500).json({ error: 'Erro ao atualizar status do contrato' });
+  }
+});
+
 export default router;

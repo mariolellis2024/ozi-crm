@@ -37,6 +37,7 @@ const Atividades = lazyRetry(() => import('./pages/Atividades').then(m => ({ def
 const Pagamentos = lazyRetry(() => import('./pages/Pagamentos').then(m => ({ default: m.Pagamentos })), 'Pagamentos');
 const Formularios = lazyRetry(() => import('./pages/Formularios').then(m => ({ default: m.Formularios })), 'Formularios');
 const SocialProofPage = lazyRetry(() => import('./pages/SocialProof').then(m => ({ default: m.SocialProofPage })), 'SocialProofPage');
+const Contratos = lazyRetry(() => import('./pages/Contratos').then(m => ({ default: m.Contratos })), 'Contratos');
 const FormularioPublico = lazyRetry(() => import('./pages/FormularioPublico').then(m => ({ default: m.FormularioPublico })), 'FormularioPublico');
 const LandingPagePublica = lazyRetry(() => import('./pages/LandingPagePublica').then(m => ({ default: m.LandingPagePublica })), 'LandingPagePublica');
 
@@ -131,6 +132,7 @@ export default function App() {
                   <Route path="/pagamentos" element={<PrivateRoute><Pagamentos /></PrivateRoute>} />
                   <Route path="/formularios" element={<PrivateRoute><Formularios /></PrivateRoute>} />
                   <Route path="/social-proof" element={<PrivateRoute><SocialProofPage /></PrivateRoute>} />
+                  <Route path="/contratos" element={<PrivateRoute><Contratos /></PrivateRoute>} />
                 </Routes>
               </Suspense>
               <Toaster position="top-right" />
