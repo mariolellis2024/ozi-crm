@@ -69,6 +69,9 @@ export function Contratos() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [generatingContract, setGeneratingContract] = useState<string | null>(null);
   const [refreshingAll, setRefreshingAll] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; item: ContractOverview | null }>({
+    isOpen: false, item: null
+  });
 
   // Data collection form (step 1)
   const [dataForm, setDataForm] = useState<{
@@ -286,18 +289,39 @@ export function Contratos() {
   }
 
   async function handleCancelAndRegenerate(item: ContractOverview) {
-    if (!confirm(`Cancelar o contrato atual de ${item.aluno_nome} e gerar um novo?`)) return;
+    setConfirmModal({ isOpen: true, item });
+  }
+
+  async function executeRegenerate() {
+    const item = confirmModal.item;
+    if (!item) return;
+    setConfirmModal({ isOpen: false, item: null });
     const key = `${item.aluno_id}-${item.turma_id}`;
     setGeneratingContract(key);
     try {
       await api.post(`/api/contratos/${item.contrato_id}/cancel`, {});
-      toast.success('Contrato anterior cancelado.');
+      toast.success('Contrato cancelado. Revise os dados e gere um novo.');
       await loadData();
-      // Re-fetch updated item and open flow
       const updated = await api.get(`/api/contratos/overview${selectedUnidadeId ? `?unidade_id=${selectedUnidadeId}` : ''}`);
       const updatedItem = updated.find((i: any) => i.aluno_id === item.aluno_id && i.turma_id === item.turma_id);
       if (updatedItem) {
-        handleContractClick({ ...updatedItem, curso_preco: parseFloat(updatedItem.curso_preco) || 0 });
+        const parsed = { ...updatedItem, curso_preco: parseFloat(updatedItem.curso_preco) || 0 };
+        // Always open data form first so user can fix any incorrect data
+        setDataForm({
+          isOpen: true,
+          alunoId: parsed.aluno_id,
+          alunoNome: parsed.aluno_nome,
+          turmaId: parsed.turma_id,
+          cpf: parsed.aluno_cpf || '',
+          rg: parsed.aluno_rg || '',
+          endereco: parsed.aluno_endereco || '',
+          cidade: parsed.aluno_cidade || '',
+          uf: parsed.aluno_uf || '',
+          profissao: parsed.aluno_profissao || '',
+          data_nascimento: parsed.aluno_nascimento ? parsed.aluno_nascimento.split('T')[0] : '',
+          cep: parsed.aluno_cep || '',
+          saving: false
+        });
       }
     } catch (error: any) {
       toast.error(error.message || 'Erro ao cancelar contrato');
@@ -638,6 +662,37 @@ export function Contratos() {
                 className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm flex items-center gap-2">
                 <FileSignature className="h-4 w-4" />
                 Gerar Contrato
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      {/* CONFIRMATION MODAL */}
+      {confirmModal.isOpen && confirmModal.item && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={() => setConfirmModal({ isOpen: false, item: null })}>
+          <div className="bg-dark-card rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-full bg-red-500/10">
+                <AlertTriangle className="h-5 w-5 text-red-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Regerar Contrato</h3>
+            </div>
+            <p className="text-sm text-gray-400 mb-1">
+              O contrato atual de <strong className="text-white">{confirmModal.item.aluno_nome}</strong> será cancelado.
+            </p>
+            <p className="text-sm text-gray-400 mb-6">
+              Você poderá revisar os dados antes de gerar o novo contrato.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setConfirmModal({ isOpen: false, item: null })}
+                className="px-4 py-2 bg-dark-lighter text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors text-sm">
+                Voltar
+              </button>
+              <button onClick={executeRegenerate}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm flex items-center gap-2">
+                <RotateCcw className="h-4 w-4" />
+                Cancelar e Regerar
               </button>
             </div>
           </div>
