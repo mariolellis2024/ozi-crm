@@ -6,6 +6,7 @@ const router = Router();
 const ZAPSIGN_API_URL = process.env.ZAPSIGN_API_URL || 'https://api.zapsign.com.br';
 const ZAPSIGN_API_TOKEN = process.env.ZAPSIGN_API_TOKEN || '';
 const ZAPSIGN_TEMPLATE_ID = process.env.ZAPSIGN_TEMPLATE_ID || '';
+const ZAPSIGN_SANDBOX = process.env.ZAPSIGN_SANDBOX === 'true';
 
 // POST /api/contratos/generate — generate a contract via ZapSign
 router.post('/generate', async (req, res) => {
@@ -90,6 +91,7 @@ router.post('/generate', async (req, res) => {
 
     // Create document via ZapSign template
     const zapsignBody = {
+      sandbox: ZAPSIGN_SANDBOX,
       template_id: ZAPSIGN_TEMPLATE_ID,
       signer_name: d.aluno_nome || 'Aluno',
       signer_email: d.aluno_email || '',
