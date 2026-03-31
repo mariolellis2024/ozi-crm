@@ -128,6 +128,15 @@ router.post('/generate', async (req, res) => {
       return tel || '';
     };
 
+    // Format money values robustly (handles "R$ 3.100,00", "3100", "3.100,00")
+    const formatMoney = (val) => {
+      if (!val) return '';
+      const cleaned = String(val).replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+      const num = parseFloat(cleaned);
+      if (isNaN(num)) return String(val);
+      return `R$ ${num.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    };
+
     // Build variable mapping — include BOTH space and underscore variants
     // to ensure compatibility with any template format
     const vars = [
@@ -166,11 +175,11 @@ router.post('/generate', async (req, res) => {
       ['DATA INICIO ACOMPANHAMENTO', acompInicio],
       ['DATA FIM ACOMPANHAMENTO', acompFim],
       ['DIA HORARIO SESSOES ONLINE', sessoesOnline],
-      // Pagamento
-      ['TAXA RESERVA', taxa_reserva ? `R$ ${parseFloat(taxa_reserva).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''],
-      ['SALDO PIX', saldo_pix ? `R$ ${parseFloat(saldo_pix).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''],
+      // Pagamento — format using formatMoney
+      ['TAXA RESERVA', formatMoney(taxa_reserva)],
+      ['SALDO PIX', formatMoney(saldo_pix)],
       ['PARCELAS CARTAO', parcelas_cartao || ''],
-      ['VALOR PARCELA', valor_parcela ? `R$ ${parseFloat(valor_parcela).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''],
+      ['VALOR PARCELA', formatMoney(valor_parcela)],
       // Jurídico
       ['COMARCA', comarca],
       ['ESTADO COMARCA', estadoComarca],
