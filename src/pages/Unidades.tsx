@@ -23,7 +23,7 @@ interface Unidade {
 export function Unidades() {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '', horas_disponiveis_dia: '', valor_hora_aluno: '' });
+  const [formData, setFormData] = useState({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', meta_dataset_id: '', google_analytics_id: '', horas_disponiveis_dia: '', valor_hora_aluno: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: '', nome: '' });
   const [testingCapi, setTestingCapi] = useState<string | null>(null);
@@ -77,7 +77,7 @@ export function Unidades() {
         toast.success('Unidade criada!');
       }
       setIsModalOpen(false);
-      setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '', horas_disponiveis_dia: '', valor_hora_aluno: '' });
+      setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', meta_dataset_id: '', google_analytics_id: '', horas_disponiveis_dia: '', valor_hora_aluno: '' });
       setEditingId(null);
       loadUnidades();
     } catch { toast.error('Erro ao salvar unidade'); }
@@ -88,6 +88,7 @@ export function Unidades() {
       nome: u.nome, cidade: u.cidade || '', endereco: u.endereco || '',
       meta_pixel_id: (u as any).meta_pixel_id || '',
       meta_capi_token: (u as any).meta_capi_token || '',
+      meta_dataset_id: (u as any).meta_dataset_id || '',
       google_analytics_id: (u as any).google_analytics_id || '',
       horas_disponiveis_dia: (u.horas_disponiveis_dia || 0).toString(),
       valor_hora_aluno: (u.valor_hora_aluno || 0).toString()
@@ -98,7 +99,7 @@ export function Unidades() {
 
   function handleCloseModal() {
     setIsModalOpen(false);
-    setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', google_analytics_id: '', horas_disponiveis_dia: '', valor_hora_aluno: '' });
+    setFormData({ nome: '', cidade: '', endereco: '', meta_pixel_id: '', meta_capi_token: '', meta_dataset_id: '', google_analytics_id: '', horas_disponiveis_dia: '', valor_hora_aluno: '' });
     setEditingId(null);
   }
 
@@ -305,6 +306,15 @@ export function Unidades() {
                         onChange={e => setFormData({ ...formData, meta_capi_token: e.target.value })}
                         className="w-full bg-dark-lighter text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-teal-accent outline-none text-sm"
                         placeholder="Token da API de Conversões"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Meta Dataset ID <span className="text-gray-600">(CRM Events)</span></label>
+                      <input
+                        value={formData.meta_dataset_id}
+                        onChange={e => setFormData({ ...formData, meta_dataset_id: e.target.value })}
+                        className="w-full bg-dark-lighter text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-teal-accent outline-none text-sm"
+                        placeholder="Ex: 1271929884326336"
                       />
                     </div>
                     <div>

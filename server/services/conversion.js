@@ -331,3 +331,116 @@ export async function sendMetaPurchase({
     console.error('Error sending Meta Purchase conversion:', error);
   }
 }
+
+/**
+ * Send a CRM Event to Meta Conversions API
+ * Triggered when a lead changes stages in the pipeline.
+ * Uses action_source: "system_generated" and event_source: "crm"
+ * per Meta's CRM integration guide.
+ * 
+ * @param {object} params
+ * @param {string} params.datasetId - Meta Dataset ID (or Pixel ID)
+ * @param {string} params.accessToken - Meta CAPI access token
+ * @param {string} params.eventName - CRM stage event name (e.g. "Lead", custom stages)
+ * @param {string} params.nome - Student name
+ * @param {string} params.whatsapp - Student phone
+ * @param {string} [params.email] - Student email
+ * @param {string} [params.metaLeadId] - Facebook Lead ID (from Lead Ads)
+ * @param {string} [params.externalId] - External unique ID (aluno ID)
+ * @param {string} [params.genero] - Gender
+ * @param {string} [params.dataNascimento] - Date of birth
+ * @param {string} [params.cidade] - City
+ * @param {string} [params.estado] - State
+ * @param {string} [params.cep] - Zip code
+ */
+export async function sendMetaCRMEvent({
+  datasetId, accessToken, eventName, nome, whatsapp, email,
+  metaLeadId, externalId, genero, dataNascimento, cidade, estado, cep
+}) {
+  if (!datasetId || !accessToken) return;
+
+  try {
+    const nameParts = nome.trim().split(/\s+/);
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+    const phone = normalizePhone(whatsapp);
+    const stateCode = resolveState(estado, cidade);
+    const normalizedCity = normalizeCity(cidade);
+
+    // Build user_data — CRM format uses arrays for em and ph
+    const userData = {};
+
+    // Hashed contact info (arrays per Meta CRM spec)
+    const hashedPhone = hashSha256(phone);
+    if (hashedPhone) userData.ph = [hashedPhone];
+
+    const hashedEmail = hashSha256(email);
+    if (hashedEmail) userData.em = [hashedEmail];
+
+    // Lead ID from Facebook Lead Ads (NOT hashed)
+    if (metaLeadId) userData.lead_id = parseInt(metaLeadId);
+
+    // Additional matching parameters (hashed)
+    if (firstName) userData.fn = [hashSha256(firstName)];
+    if (lastName) userData.ln = [hashSha256(lastName)];
+    if (normalizedCity) userData.ct = [hashSha256(normalizedCity)];
+    if (stateCode) userData.st = [hashSha256(stateCode)];
+    userData.country = [hashSha256('br')];
+
+    if (externalId) userData.external_id = [hashSha256(externalId)];
+
+    // Gender
+    if (genero) {
+      const g = genero.trim().toLowerCase().charAt(0);
+      if (g === 'f' || g === 'm') userData.ge = [hashSha256(g)];
+    }
+
+    // Date of birth (YYYYMMDD)
+    if (dataNascimento) {
+      const d = new Date(dataNascimento);
+      if (!isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        userData.db = [hashSha256(`${year}${month}${day}`)];
+      }
+    }
+
+    // CEP/Zip
+    if (cep) {
+      const zipClean = cep.replace(/\D/g, '');
+      if (zipClean) userData.zp = [hashSha256(zipClean)];
+    }
+
+    const eventPayload = {
+      event_name: eventName,
+      event_time: Math.floor(Date.now() / 1000),
+      action_source: 'system_generated',
+      user_data: userData,
+      custom_data: {
+        event_source: 'crm',
+        lead_event_source: 'OZI CRM'
+      }
+    };
+
+    const eventData = { data: [eventPayload] };
+
+    const url = `https://graph.facebook.com/v25.0/${datasetId}/events?access_token=${accessToken}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(eventData)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error(`Meta CRM Event error (${eventName}):`, result);
+    } else {
+      console.log(`✅ Meta CRM Event "${eventName}" sent (lead_id: ${metaLeadId || 'none'}):`, result);
+    }
+  } catch (error) {
+    console.error('Error sending Meta CRM event:', error);
+  }
+}
