@@ -33,7 +33,8 @@ export function Cursos() {
     carga_horaria: '',
     preco: '',
     categoria_id: '',
-    imagem_url: ''
+    imagem_url: '',
+    descricao: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({
@@ -96,7 +97,7 @@ export function Cursos() {
       }
 
       setIsModalOpen(false);
-      setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '' });
+      setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '', descricao: '' });
       setEditingId(null);
       loadCursos();
     } catch (error) {
@@ -137,7 +138,8 @@ export function Cursos() {
       carga_horaria: curso.carga_horaria.toString(),
       preco: formatCurrencyInput((curso.preco * 100).toString()),
       categoria_id: curso.categoria_id || '',
-      imagem_url: curso.imagem_url || ''
+      imagem_url: curso.imagem_url || '',
+      descricao: (curso as any).descricao || ''
     });
     setEditingId(curso.id);
     setIsModalOpen(true);
@@ -272,7 +274,7 @@ export function Cursos() {
           onSubmit={handleSubmit}
           onClose={() => {
             setIsModalOpen(false);
-            setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '' });
+            setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '', descricao: '' });
             setEditingId(null);
           }}
         />

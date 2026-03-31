@@ -21,6 +21,7 @@ interface ModalCursoProps {
     preco: string;
     categoria_id: string;
     imagem_url: string;
+    descricao: string;
   };
   setFormData: React.Dispatch<React.SetStateAction<{
     nome: string;
@@ -28,6 +29,7 @@ interface ModalCursoProps {
     preco: string;
     categoria_id: string;
     imagem_url: string;
+    descricao: string;
   }>>;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
@@ -356,6 +358,20 @@ export function ModalCurso({
               </div>
             </div>
           )}
+
+          <div>
+            <label htmlFor="descricao" className="block text-sm font-medium text-gray-400 mb-1">
+              Descrição do Curso <span className="text-gray-600">(usado no contrato)</span>
+            </label>
+            <textarea
+              id="descricao"
+              value={formData.descricao}
+              onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent resize-none"
+              rows={3}
+              placeholder="Descreva o curso para aparecer no contrato..."
+            />
+          </div>
 
           <div>
             <label htmlFor="carga_horaria" className="block text-sm font-medium text-gray-400 mb-1">
