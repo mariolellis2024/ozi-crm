@@ -95,24 +95,41 @@ router.post('/generate', async (req, res) => {
     const comarca = d.comarca || d.unidade_cidade || '';
     const estadoComarca = d.estado_comarca || d.aluno_uf || '';
 
-    // Format phone
+    // Format phone for ZapSign signer
     const phone = (d.aluno_whatsapp || '').replace(/\D/g, '');
     const phoneCountry = phone.length > 11 ? phone.substring(0, 2) : '55';
     const phoneNumber = phone.length > 11 ? phone.substring(2) : phone;
+
+    // Formatting helpers for contract display
+    const formatCPF = (cpf) => {
+      const digits = (cpf || '').replace(/\D/g, '').padStart(11, '0');
+      return `${digits.slice(0,3)}.${digits.slice(3,6)}.${digits.slice(6,9)}-${digits.slice(9,11)}`;
+    };
+    const formatCEP = (cep) => {
+      const digits = (cep || '').replace(/\D/g, '').padStart(8, '0');
+      return `${digits.slice(0,5)}-${digits.slice(5,8)}`;
+    };
+    const formatTelefone = (tel) => {
+      const digits = (tel || '').replace(/\D/g, '');
+      const num = digits.length > 11 ? digits.substring(2) : digits;
+      if (num.length === 11) return `(${num.slice(0,2)}) ${num.slice(2,7)}-${num.slice(7)}`;
+      if (num.length === 10) return `(${num.slice(0,2)}) ${num.slice(2,6)}-${num.slice(6)}`;
+      return tel || '';
+    };
 
     // Build variable mapping — include BOTH space and underscore variants
     // to ensure compatibility with any template format
     const vars = [
       // Aluno
       ['NOME ALUNO', d.aluno_nome || ''],
-      ['CPF ALUNO', d.aluno_cpf || ''],
+      ['CPF ALUNO', d.aluno_cpf ? formatCPF(d.aluno_cpf) : ''],
       ['RG ALUNO', d.aluno_rg || ''],
       ['DATA NASCIMENTO', nascimento],
       ['ENDERECO ALUNO', d.aluno_endereco || ''],
       ['CIDADE UF', cidadeUf],
-      ['CEP ALUNO', d.aluno_cep || ''],
+      ['CEP ALUNO', d.aluno_cep ? formatCEP(d.aluno_cep) : ''],
       ['PROFISSAO ALUNO', d.aluno_profissao || ''],
-      ['TELEFONE', d.aluno_whatsapp || ''],
+      ['TELEFONE', formatTelefone(d.aluno_whatsapp)],
       ['EMAIL', d.aluno_email || ''],
       // Curso
       ['CURSO NOME', d.curso_nome || ''],
