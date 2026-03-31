@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import pool, { parsePgArray } from '../db.js';
-import { sendMetaPurchase, sendMetaCRMEvent } from '../services/conversion.js';
+import { sendMetaPurchase } from '../services/conversion.js';
 
 const router = Router();
 
@@ -55,67 +55,6 @@ async function firePurchaseEvent(alunoId, cursoId) {
     });
   } catch (err) {
     console.error('Error firing Purchase event:', err);
-  }
-}
-
-/**
- * Map CRM pipeline status to Meta event name
- */
-const CRM_EVENT_MAP = {
-  interested: 'Lead',
-  enrolled: 'Purchase',
-  completed: 'Completed',
-  lost: 'Lost'
-};
-
-/**
- * Fire a Meta CRM Event when a lead changes pipeline stage.
- * Uses action_source: "system_generated" format.
- */
-async function fireCRMEvent(alunoId, newStatus) {
-  try {
-    const eventName = CRM_EVENT_MAP[newStatus];
-    if (!eventName) return;
-
-    const result = await pool.query(`
-      SELECT
-        a.nome, a.whatsapp, a.email, a.meta_lead_id,
-        a.genero, a.data_nascimento, a.cep,
-        u.meta_dataset_id, u.meta_pixel_id, u.meta_capi_token,
-        u.cidade as unidade_cidade
-      FROM alunos a
-      LEFT JOIN unidades u ON u.id = a.unidade_id
-      WHERE a.id = $1
-    `, [alunoId]);
-
-    if (result.rows.length === 0) return;
-    const r = result.rows[0];
-
-    // Use dataset_id (preferred) or pixel_id as fallback
-    const datasetId = r.meta_dataset_id || r.meta_pixel_id;
-    if (!datasetId || !r.meta_capi_token) return;
-
-    const cidadeParts = (r.unidade_cidade || '').split(' - ');
-    const cidade = cidadeParts[0]?.trim() || '';
-    const estado = cidadeParts[1]?.trim() || '';
-
-    await sendMetaCRMEvent({
-      datasetId,
-      accessToken: r.meta_capi_token,
-      eventName,
-      nome: r.nome,
-      whatsapp: r.whatsapp,
-      email: r.email || '',
-      metaLeadId: r.meta_lead_id || '',
-      externalId: alunoId,
-      genero: r.genero || '',
-      dataNascimento: r.data_nascimento || '',
-      cidade,
-      estado,
-      cep: r.cep || ''
-    });
-  } catch (err) {
-    console.error('Error firing CRM event:', err);
   }
 }
 
@@ -349,11 +288,8 @@ router.post('/enroll', async (req, res) => {
       return res.status(404).json({ error: 'Interesse não encontrado' });
     }
 
-    // Fire Purchase event to Meta CAPI (website attribution)
+    // Fire Purchase event to Meta CAPI
     firePurchaseEvent(aluno_id, curso_id);
-
-    // Fire CRM Event to Meta (system_generated attribution)
-    fireCRMEvent(aluno_id, 'enrolled');
 
     res.json(result.rows[0]);
   } catch (error) {
@@ -377,11 +313,8 @@ router.put('/enroll', async (req, res) => {
       return res.status(404).json({ error: 'Interesse não encontrado' });
     }
 
-    // Fire Purchase event to Meta CAPI (website attribution)
+    // Fire Purchase event to Meta CAPI
     firePurchaseEvent(aluno_id, curso_id);
-
-    // Fire CRM Event to Meta (system_generated attribution)
-    fireCRMEvent(aluno_id, 'enrolled');
 
     res.json(result.rows[0]);
   } catch (error) {
@@ -458,9 +391,6 @@ router.put('/:id/status', async (req, res) => {
     if (status === 'enrolled') {
       firePurchaseEvent(result.rows[0].aluno_id, result.rows[0].curso_id);
     }
-
-    // Fire CRM Event for any pipeline stage change
-    fireCRMEvent(result.rows[0].aluno_id, status);
 
     res.json(result.rows[0]);
   } catch (error) {

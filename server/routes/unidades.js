@@ -50,14 +50,14 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, cidade, endereco, meta_pixel_id, meta_capi_token, meta_dataset_id, google_analytics_id, horas_disponiveis_dia, valor_hora_aluno } = req.body;
+    const { nome, cidade, endereco, meta_pixel_id, meta_capi_token, google_analytics_id, horas_disponiveis_dia, valor_hora_aluno } = req.body;
     const result = await pool.query(
       `UPDATE unidades SET nome = $1, cidade = $2, endereco = $3,
        meta_pixel_id = $4, meta_capi_token = $5, google_analytics_id = $6,
-       horas_disponiveis_dia = $7, valor_hora_aluno = $8, meta_dataset_id = $9
-       WHERE id = $10 RETURNING *`,
+       horas_disponiveis_dia = $7, valor_hora_aluno = $8
+       WHERE id = $9 RETURNING *`,
       [nome, cidade || null, endereco || null, meta_pixel_id || null, meta_capi_token || null, google_analytics_id || null,
-       parseFloat(horas_disponiveis_dia) || 0, parseFloat(valor_hora_aluno) || 0, meta_dataset_id || null, id]
+       parseFloat(horas_disponiveis_dia) || 0, parseFloat(valor_hora_aluno) || 0, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Unidade não encontrada' });

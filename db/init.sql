@@ -524,7 +524,3 @@ CREATE INDEX IF NOT EXISTS idx_contratos_aluno ON contratos(aluno_id);
 CREATE INDEX IF NOT EXISTS idx_contratos_turma ON contratos(turma_id);
 CREATE INDEX IF NOT EXISTS idx_contratos_status ON contratos(status);
 CREATE INDEX IF NOT EXISTS idx_contratos_doc_token ON contratos(zapsign_doc_token);
-
--- Meta CRM Events integration
-ALTER TABLE alunos ADD COLUMN IF NOT EXISTS meta_lead_id text;
-ALTER TABLE unidades ADD COLUMN IF NOT EXISTS meta_dataset_id text;
