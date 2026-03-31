@@ -267,8 +267,11 @@ router.get('/overview', async (req, res) => {
     let query = `
       SELECT 
         a.id as aluno_id, a.nome as aluno_nome, a.whatsapp as aluno_whatsapp, a.email as aluno_email,
+        a.cpf as aluno_cpf, a.rg as aluno_rg, a.endereco as aluno_endereco,
+        a.cidade as aluno_cidade, a.uf as aluno_uf, a.profissao as aluno_profissao,
+        a.data_nascimento as aluno_nascimento, a.cep as aluno_cep,
         t.id as turma_id, t.name as turma_nome,
-        cu.nome as curso_nome,
+        cu.nome as curso_nome, cu.preco as curso_preco,
         c.id as contrato_id, c.status as contrato_status, c.sign_url, c.created_at as contrato_created_at,
         c.signed_at, c.zapsign_doc_token
       FROM aluno_curso_interests aci
