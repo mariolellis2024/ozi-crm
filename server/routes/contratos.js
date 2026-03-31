@@ -36,9 +36,10 @@ router.post('/generate', async (req, res) => {
              a.cep as aluno_cep, a.profissao as aluno_profissao,
              c.nome as curso_nome, c.preco as curso_preco, c.carga_horaria as curso_carga_horaria,
              c.descricao as curso_descricao, c.id as curso_id,
-             t.name as turma_nome, t.start_date, t.end_date, t.days_of_week,
+             t.name as turma_nome, t.start_date, t.end_date, t.days_of_week, t.period,
              t.horario_inicio, t.horario_fim, t.local_aula, t.endereco_aula,
              t.carga_horaria_total, t.acompanhamento_inicio, t.acompanhamento_fim, t.sessoes_online,
+             s.nome as sala_nome,
              u.nome as unidade_nome, u.cidade as unidade_cidade, u.endereco as unidade_endereco,
              u.comarca, u.estado_comarca,
              aci.id as interest_id
@@ -81,8 +82,18 @@ router.post('/generate', async (req, res) => {
     const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     const diasSemana = d.days_of_week ? d.days_of_week.map(n => dayNames[n] || '').join(', ') : '';
 
-    // Horário
-    const horario = (d.horario_inicio && d.horario_fim) ? `Das ${d.horario_inicio}h às ${d.horario_fim}h` : '';
+    // Horário — use explicit fields, fallback to period-based defaults
+    let horario = '';
+    if (d.horario_inicio && d.horario_fim) {
+      horario = `Das ${d.horario_inicio}h às ${d.horario_fim}h`;
+    } else if (d.period) {
+      const periodHours = { manha: 'Das 9h às 12h', tarde: 'Das 14:30h às 17:30h', noite: 'Das 19h às 22h' };
+      horario = periodHours[d.period] || '';
+    }
+
+    // Local e endereço — turma > sala > unidade
+    const localAula = d.local_aula || d.sala_nome || d.unidade_nome || '';
+    const enderecoAula = d.endereco_aula || d.unidade_endereco || '';
 
     // Cidade + UF do aluno
     const cidadeUf = [d.aluno_cidade, d.aluno_uf].filter(Boolean).join(' / ');
@@ -146,10 +157,10 @@ router.post('/generate', async (req, res) => {
       ['DIAS DA SEMANA', diasSemana],
       ['HORARIO', horario],
       ['HORARIO AULAS', horario],
-      ['LOCAL AULA', d.local_aula || ''],
-      ['LOCAL AULAS', d.local_aula || ''],
-      ['ENDERECO AULA', d.endereco_aula || d.unidade_endereco || ''],
-      ['ENDERECO LOCAL AULAS', d.endereco_aula || d.unidade_endereco || ''],
+      ['LOCAL AULA', localAula],
+      ['LOCAL AULAS', localAula],
+      ['ENDERECO AULA', enderecoAula],
+      ['ENDERECO LOCAL AULAS', enderecoAula],
       ['CARGA HORARIA', cargaHoraria ? `${cargaHoraria}` : ''],
       // Acompanhamento online
       ['DATA INICIO ACOMPANHAMENTO', acompInicio],
