@@ -193,6 +193,35 @@ router.post('/generate', async (req, res) => {
   }
 });
 
+// POST /api/contratos/:id/cancel — cancel a contract so a new one can be generated
+router.post('/:id/cancel', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const contrato = await pool.query('SELECT * FROM contratos WHERE id = $1', [id]);
+    if (contrato.rows.length === 0) return res.status(404).json({ error: 'Contrato não encontrado' });
+
+    const c = contrato.rows[0];
+
+    // Try to cancel in ZapSign
+    if (c.zapsign_doc_token && ZAPSIGN_API_TOKEN) {
+      try {
+        await fetch(`${ZAPSIGN_API_URL}/api/v1/docs/${c.zapsign_doc_token}/cancel/`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${ZAPSIGN_API_TOKEN}` }
+        });
+      } catch (e) { console.warn('ZapSign cancel failed:', e); }
+    }
+
+    // Mark as cancelled in DB
+    await pool.query(`UPDATE contratos SET status = 'cancelled' WHERE id = $1`, [id]);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error cancelling contract:', error);
+    res.status(500).json({ error: 'Erro ao cancelar contrato' });
+  }
+});
+
 // GET /api/contratos — list contracts
 router.get('/', async (req, res) => {
   try {

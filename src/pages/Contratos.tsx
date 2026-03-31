@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
-import { FileSignature, CheckCircle, XCircle, Clock, Copy, ExternalLink, Loader2, Search, Users, AlertTriangle, RefreshCw, DollarSign, UserCheck, AlertCircle } from 'lucide-react';
+import { FileSignature, CheckCircle, XCircle, Clock, Copy, ExternalLink, Loader2, Search, Users, AlertTriangle, RefreshCw, DollarSign, UserCheck, AlertCircle, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createPortal } from 'react-dom';
 import { formatPhone } from '../utils/format';
@@ -285,6 +285,27 @@ export function Contratos() {
     toast.success('Link copiado!');
   }
 
+  async function handleCancelAndRegenerate(item: ContractOverview) {
+    if (!confirm(`Cancelar o contrato atual de ${item.aluno_nome} e gerar um novo?`)) return;
+    const key = `${item.aluno_id}-${item.turma_id}`;
+    setGeneratingContract(key);
+    try {
+      await api.post(`/api/contratos/${item.contrato_id}/cancel`, {});
+      toast.success('Contrato anterior cancelado.');
+      await loadData();
+      // Re-fetch updated item and open flow
+      const updated = await api.get(`/api/contratos/overview${selectedUnidadeId ? `?unidade_id=${selectedUnidadeId}` : ''}`);
+      const updatedItem = updated.find((i: any) => i.aluno_id === item.aluno_id && i.turma_id === item.turma_id);
+      if (updatedItem) {
+        handleContractClick({ ...updatedItem, curso_preco: parseFloat(updatedItem.curso_preco) || 0 });
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao cancelar contrato');
+    } finally {
+      setGeneratingContract(null);
+    }
+  }
+
   async function handleRefreshAll() {
     setRefreshingAll(true);
     try {
@@ -440,6 +461,11 @@ export function Contratos() {
                                 className="p-2 text-gray-400 hover:text-teal-accent transition-colors rounded-lg hover:bg-teal-accent/10" title="Abrir">
                                 <ExternalLink className="h-4 w-4" />
                               </a>
+                              <button onClick={() => handleCancelAndRegenerate(item)}
+                                disabled={generatingContract === key}
+                                className="p-2 text-gray-400 hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10" title="Cancelar e regerar contrato">
+                                {generatingContract === key ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                              </button>
                             </div>
                           ) : item.signed_at ? (
                             <span className="text-[10px] text-emerald-400/70">{new Date(item.signed_at).toLocaleDateString('pt-BR')}</span>
