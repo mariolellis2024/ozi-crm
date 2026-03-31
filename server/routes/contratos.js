@@ -168,7 +168,8 @@ router.post('/generate', async (req, res) => {
 
     const zapsignData = await zapsignResponse.json();
     const signer = zapsignData.signers?.[0];
-    const signUrl = signer ? `https://app.zapsign.com.br/verificar/${signer.token}` : '';
+    const appDomain = ZAPSIGN_API_URL.includes('sandbox') ? 'sandbox.app.zapsign.com.br' : 'app.zapsign.com.br';
+    const signUrl = signer ? `https://${appDomain}/verificar/${signer.token}` : '';
 
     // Save to DB
     const result = await pool.query(`
