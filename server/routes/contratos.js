@@ -35,7 +35,7 @@ router.post('/generate', async (req, res) => {
              a.endereco as aluno_endereco, a.cidade as aluno_cidade, a.uf as aluno_uf,
              a.cep as aluno_cep, a.profissao as aluno_profissao,
              c.nome as curso_nome, c.preco as curso_preco, c.carga_horaria as curso_carga_horaria,
-             c.descricao as curso_descricao, c.modulos as curso_modulos,
+             c.descricao as curso_descricao, c.id as curso_id,
              t.name as turma_nome, t.start_date, t.end_date, t.days_of_week,
              t.horario_inicio, t.horario_fim, t.local_aula, t.endereco_aula,
              t.carga_horaria_total, t.acompanhamento_inicio, t.acompanhamento_fim, t.sessoes_online,
@@ -56,12 +56,26 @@ router.post('/generate', async (req, res) => {
     }
 
     const d = dataResult.rows[0];
+
+    // Fetch módulos from curso_modulos table
+    let modulos = [];
+    if (d.curso_id) {
+      const modulosResult = await pool.query(
+        'SELECT titulo FROM curso_modulos WHERE curso_id = $1 ORDER BY ordem ASC LIMIT 10',
+        [d.curso_id]
+      );
+      modulos = modulosResult.rows.map(m => m.titulo);
+    }
+
     const today = new Date().toLocaleDateString('pt-BR');
     const startDate = d.start_date ? new Date(d.start_date).toLocaleDateString('pt-BR') : '';
     const endDate = d.end_date ? new Date(d.end_date).toLocaleDateString('pt-BR') : '';
     const nascimento = d.aluno_nascimento ? new Date(d.aluno_nascimento).toLocaleDateString('pt-BR') : '';
     const preco = d.curso_preco ? `R$ ${parseFloat(d.curso_preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '';
     const cargaHoraria = d.carga_horaria_total || d.curso_carga_horaria || '';
+    const acompInicio = d.acompanhamento_inicio ? new Date(d.acompanhamento_inicio).toLocaleDateString('pt-BR') : '';
+    const acompFim = d.acompanhamento_fim ? new Date(d.acompanhamento_fim).toLocaleDateString('pt-BR') : '';
+    const sessoesOnline = d.sessoes_online || '';
 
     // Map days_of_week numbers to names
     const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -77,9 +91,6 @@ router.post('/generate', async (req, res) => {
     const ch = parseInt(d.carga_horaria_total || d.curso_carga_horaria || 0);
     const qtdEncontros = ch > 0 ? Math.ceil(ch / 3).toString() : '';
 
-    // Módulos (array → individual variables)
-    const modulos = d.curso_modulos || [];
-
     // Comarca (from unidade, fallback to city)
     const comarca = d.comarca || d.unidade_cidade || '';
     const estadoComarca = d.estado_comarca || d.aluno_uf || '';
@@ -88,6 +99,71 @@ router.post('/generate', async (req, res) => {
     const phone = (d.aluno_whatsapp || '').replace(/\D/g, '');
     const phoneCountry = phone.length > 11 ? phone.substring(0, 2) : '55';
     const phoneNumber = phone.length > 11 ? phone.substring(2) : phone;
+
+    // Build variable mapping — include BOTH space and underscore variants
+    // to ensure compatibility with any template format
+    const vars = [
+      // Aluno
+      ['NOME ALUNO', d.aluno_nome || ''],
+      ['CPF ALUNO', d.aluno_cpf || ''],
+      ['RG ALUNO', d.aluno_rg || ''],
+      ['DATA NASCIMENTO', nascimento],
+      ['ENDERECO ALUNO', d.aluno_endereco || ''],
+      ['CIDADE UF', cidadeUf],
+      ['CEP ALUNO', d.aluno_cep || ''],
+      ['PROFISSAO ALUNO', d.aluno_profissao || ''],
+      ['TELEFONE', d.aluno_whatsapp || ''],
+      ['EMAIL', d.aluno_email || ''],
+      // Curso
+      ['CURSO NOME', d.curso_nome || ''],
+      ['DESCRICAO CURSO', d.curso_descricao || ''],
+      ['QTD ENCONTROS', qtdEncontros],
+      ['VALOR CURSO', preco],
+      // Turma
+      ['TURMA CIDADE', d.unidade_cidade || ''],
+      ['DATA INICIO', startDate],
+      ['DATA FIM', endDate],
+      ['DATA INICIO CURSO', startDate],
+      ['DATA FIM CURSO', endDate],
+      ['DIAS SEMANA', diasSemana],
+      ['DIAS DA SEMANA', diasSemana],
+      ['HORARIO', horario],
+      ['HORARIO AULAS', horario],
+      ['LOCAL AULA', d.local_aula || ''],
+      ['LOCAL AULAS', d.local_aula || ''],
+      ['ENDERECO AULA', d.endereco_aula || d.unidade_endereco || ''],
+      ['ENDERECO LOCAL AULAS', d.endereco_aula || d.unidade_endereco || ''],
+      ['CARGA HORARIA', cargaHoraria ? `${cargaHoraria}` : ''],
+      // Acompanhamento online
+      ['DATA INICIO ACOMPANHAMENTO', acompInicio],
+      ['DATA FIM ACOMPANHAMENTO', acompFim],
+      ['DIA HORARIO SESSOES ONLINE', sessoesOnline],
+      // Pagamento
+      ['TAXA RESERVA', taxa_reserva || ''],
+      ['SALDO PIX', saldo_pix || ''],
+      ['PARCELAS CARTAO', parcelas_cartao || ''],
+      ['VALOR PARCELA', valor_parcela || ''],
+      // Jurídico
+      ['COMARCA', comarca],
+      ['ESTADO COMARCA', estadoComarca],
+      ['DATA CONTRATO', today],
+    ];
+
+    // Add módulos
+    for (let i = 0; i < 10; i++) {
+      const num = String(i + 1).padStart(2, '0');
+      vars.push([`MODULO ${num}`, modulos[i] || '']);
+    }
+
+    // Generate data array with both {{SPACE}} and {{UNDERSCORE}} variants
+    const data = [];
+    for (const [name, value] of vars) {
+      data.push({ de: `{{${name}}}`, para: value });
+      const underscored = name.replace(/ /g, '_');
+      if (underscored !== name) {
+        data.push({ de: `{{${underscored}}}`, para: value });
+      }
+    }
 
     // Create document via ZapSign template
     const zapsignBody = {
@@ -102,53 +178,7 @@ router.post('/generate', async (req, res) => {
       send_automatic_email: !!(d.aluno_email),
       external_id: `ozi-${aluno_id}-${turma_id}`,
       folder_path: '/OZI CRM/Contratos/',
-      data: [
-        // Aluno (9 variáveis)
-        { de: '{{NOME_ALUNO}}', para: d.aluno_nome || '' },
-        { de: '{{CPF_ALUNO}}', para: d.aluno_cpf || '' },
-        { de: '{{RG_ALUNO}}', para: d.aluno_rg || '' },
-        { de: '{{DATA_NASCIMENTO}}', para: nascimento },
-        { de: '{{ENDERECO_ALUNO}}', para: d.aluno_endereco || '' },
-        { de: '{{CIDADE_UF}}', para: cidadeUf },
-        { de: '{{CEP_ALUNO}}', para: d.aluno_cep || '' },
-        { de: '{{PROFISSAO_ALUNO}}', para: d.aluno_profissao || '' },
-        { de: '{{TELEFONE}}', para: d.aluno_whatsapp || '' },
-        { de: '{{EMAIL}}', para: d.aluno_email || '' },
-        // Curso (4 variáveis)
-        { de: '{{CURSO_NOME}}', para: d.curso_nome || '' },
-        { de: '{{DESCRICAO_CURSO}}', para: d.curso_descricao || '' },
-        { de: '{{QTD_ENCONTROS}}', para: qtdEncontros },
-        { de: '{{VALOR_CURSO}}', para: preco },
-        // Turma (8 variáveis)
-        { de: '{{TURMA_CIDADE}}', para: d.unidade_cidade || '' },
-        { de: '{{DATA_INICIO}}', para: startDate },
-        { de: '{{DATA_FIM}}', para: endDate },
-        { de: '{{DIAS_SEMANA}}', para: diasSemana },
-        { de: '{{HORARIO}}', para: horario },
-        { de: '{{LOCAL_AULA}}', para: d.local_aula || '' },
-        { de: '{{ENDERECO_AULA}}', para: d.endereco_aula || d.unidade_endereco || '' },
-        { de: '{{CARGA_HORARIA}}', para: cargaHoraria ? `${cargaHoraria} horas` : '' },
-        // Pagamento (4 variáveis)
-        { de: '{{TAXA_RESERVA}}', para: taxa_reserva || '' },
-        { de: '{{SALDO_PIX}}', para: saldo_pix || '' },
-        { de: '{{PARCELAS_CARTAO}}', para: parcelas_cartao || '' },
-        { de: '{{VALOR_PARCELA}}', para: valor_parcela || '' },
-        // Módulos (10 variáveis)
-        { de: '{{MODULO_01}}', para: modulos[0] || '' },
-        { de: '{{MODULO_02}}', para: modulos[1] || '' },
-        { de: '{{MODULO_03}}', para: modulos[2] || '' },
-        { de: '{{MODULO_04}}', para: modulos[3] || '' },
-        { de: '{{MODULO_05}}', para: modulos[4] || '' },
-        { de: '{{MODULO_06}}', para: modulos[5] || '' },
-        { de: '{{MODULO_07}}', para: modulos[6] || '' },
-        { de: '{{MODULO_08}}', para: modulos[7] || '' },
-        { de: '{{MODULO_09}}', para: modulos[8] || '' },
-        { de: '{{MODULO_10}}', para: modulos[9] || '' },
-        // Jurídico/Administrativo (3 variáveis)
-        { de: '{{COMARCA}}', para: comarca },
-        { de: '{{ESTADO_COMARCA}}', para: estadoComarca },
-        { de: '{{DATA_CONTRATO}}', para: today },
-      ]
+      data
     };
 
     const zapsignResponse = await fetch(`${ZAPSIGN_API_URL}/api/v1/models/create-doc/`, {
