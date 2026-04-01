@@ -87,7 +87,7 @@ router.get('/:slug', async (req, res) => {
 router.post('/:slug/register', async (req, res) => {
   try {
     const { slug } = req.params;
-    const { nome, whatsapp, available_periods, email, fbc, fbp } = req.body;
+    const { nome, whatsapp, available_periods, email, fbc, fbp, utm_source, utm_medium, utm_campaign, utm_content, utm_term } = req.body;
 
     if (!nome || !whatsapp) {
       return res.status(400).json({ error: 'Nome e WhatsApp são obrigatórios' });
@@ -157,11 +157,23 @@ router.post('/:slug/register', async (req, res) => {
     );
 
     if (existingInterest.rows.length === 0) {
-      // Create interest linked to the source form
+      // Create interest linked to the source form, with UTM tracking
       await pool.query(
-        `INSERT INTO aluno_curso_interests (aluno_id, curso_id, status, formulario_id)
-         VALUES ($1, $2, 'interested', $3)`,
-        [alunoId, form.curso_id, form.id]
+        `INSERT INTO aluno_curso_interests (aluno_id, curso_id, status, formulario_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term)
+         VALUES ($1, $2, 'interested', $3, $4, $5, $6, $7, $8)`,
+        [alunoId, form.curso_id, form.id, utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_term || null]
+      );
+    } else {
+      // Update UTMs only if not already set (preserve original attribution)
+      await pool.query(
+        `UPDATE aluno_curso_interests SET
+         utm_source = COALESCE(utm_source, $3),
+         utm_medium = COALESCE(utm_medium, $4),
+         utm_campaign = COALESCE(utm_campaign, $5),
+         utm_content = COALESCE(utm_content, $6),
+         utm_term = COALESCE(utm_term, $7)
+         WHERE aluno_id = $1 AND curso_id = $2`,
+        [alunoId, form.curso_id, utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_term || null]
       );
     }
 

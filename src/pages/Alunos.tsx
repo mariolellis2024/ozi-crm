@@ -26,6 +26,9 @@ interface Aluno {
     id: string;
     curso_id: string;
     status: InterestStatus;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
     curso?: {
       id: string;
       nome: string;
@@ -734,13 +737,22 @@ export function Alunos() {
                         <div className="space-y-1">
                           {aluno.curso_interests && aluno.curso_interests.length > 0 ? (
                             aluno.curso_interests.slice(0, 2).map(interest => (
-                              <div key={interest.id} className="flex items-center gap-2">
+                              <div key={interest.id} className="flex items-center gap-2 flex-wrap">
                                 <span className="text-white text-sm">
                                   {interest.curso?.nome}
                                 </span>
                                 <span className={`text-xs ${getStatusColor(interest.status)}`}>
                                   {getStatusLabel(interest.status)}
                                 </span>
+                                {(interest.utm_source || interest.utm_campaign) && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20" title={[
+                                    interest.utm_source && `Source: ${interest.utm_source}`,
+                                    interest.utm_medium && `Medium: ${interest.utm_medium}`,
+                                    interest.utm_campaign && `Campaign: ${interest.utm_campaign}`,
+                                  ].filter(Boolean).join(' · ')}>
+                                    📢 {[interest.utm_source, interest.utm_medium, interest.utm_campaign].filter(Boolean).join(' / ')}
+                                  </span>
+                                )}
                               </div>
                             ))
                           ) : (

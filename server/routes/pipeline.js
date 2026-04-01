@@ -13,6 +13,7 @@ router.get('/', async (req, res) => {
     const result = await pool.query(`
       SELECT 
         aci.id, aci.aluno_id, aci.curso_id, aci.status, aci.turma_id, aci.created_at,
+        aci.utm_source, aci.utm_medium, aci.utm_campaign, aci.utm_content, aci.utm_term,
         a.nome as aluno_nome, a.email as aluno_email, a.whatsapp as aluno_whatsapp,
         a.unidade_id as aluno_unidade_id,
         c.nome as curso_nome, c.preco as curso_preco,

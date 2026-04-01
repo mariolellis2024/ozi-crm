@@ -20,6 +20,11 @@ interface Interest {
   turma_id: string | null;
   created_at: string;
   unidade_nome: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
 }
 
 interface Curso {
@@ -551,6 +556,19 @@ export function Pipeline() {
                           <p className="text-[10px] mt-0.5">
                             <span className="px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
                               📍 {interest.unidade_nome}
+                            </span>
+                          </p>
+                        )}
+                        {(interest.utm_source || interest.utm_campaign) && (
+                          <p className="text-[10px] mt-0.5">
+                            <span className="px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20" title={[
+                              interest.utm_source && `Source: ${interest.utm_source}`,
+                              interest.utm_medium && `Medium: ${interest.utm_medium}`,
+                              interest.utm_campaign && `Campaign: ${interest.utm_campaign}`,
+                              interest.utm_content && `Content: ${interest.utm_content}`,
+                              interest.utm_term && `Term: ${interest.utm_term}`,
+                            ].filter(Boolean).join(' · ')}>
+                              📢 {[interest.utm_source, interest.utm_medium, interest.utm_campaign].filter(Boolean).join(' / ')}
                             </span>
                           </p>
                         )}

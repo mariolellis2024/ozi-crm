@@ -73,6 +73,7 @@ router.get('/', async (req, res) => {
 
       const dataResult = await pool.query(
         `SELECT aci.id as interest_id, aci.curso_id, aci.status, aci.created_at as interest_created_at,
+                aci.utm_source, aci.utm_medium, aci.utm_campaign,
                 a.id, a.nome, a.email, a.whatsapp, a.empresa, a.available_periods, a.unidade_id, a.created_at,
                 c.id as c_id, c.nome as c_nome, c.preco as c_preco,
                 un.nome as unidade_nome
@@ -107,6 +108,9 @@ router.get('/', async (req, res) => {
           id: row.interest_id,
           curso_id: row.curso_id,
           status: row.status,
+          utm_source: row.utm_source,
+          utm_medium: row.utm_medium,
+          utm_campaign: row.utm_campaign,
           curso: row.c_id ? { id: row.c_id, nome: row.c_nome, preco: parseFloat(row.c_preco) } : null
         });
       });
@@ -185,6 +189,7 @@ router.get('/', async (req, res) => {
         const studentIds = dataResult.rows.map(a => a.id);
         const interestsResult = await pool.query(
           `SELECT aci.id, aci.aluno_id, aci.curso_id, aci.status,
+                  aci.utm_source, aci.utm_medium, aci.utm_campaign,
                   c.id as c_id, c.nome as c_nome, c.preco as c_preco
            FROM aluno_curso_interests aci
            LEFT JOIN cursos c ON c.id = aci.curso_id
@@ -199,6 +204,9 @@ router.get('/', async (req, res) => {
             id: row.id,
             curso_id: row.curso_id,
             status: row.status,
+            utm_source: row.utm_source,
+            utm_medium: row.utm_medium,
+            utm_campaign: row.utm_campaign,
             curso: row.c_id ? { id: row.c_id, nome: row.c_nome, preco: parseFloat(row.c_preco) } : null
           });
         });

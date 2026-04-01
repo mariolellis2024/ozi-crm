@@ -207,6 +207,14 @@ export function FormularioPublico() {
         if (fbclid) fbc = `fb.1.${Date.now()}.${fbclid}`;
       }
 
+      // Capture UTM parameters from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const utm_source = urlParams.get('utm_source') || '';
+      const utm_medium = urlParams.get('utm_medium') || '';
+      const utm_campaign = urlParams.get('utm_campaign') || '';
+      const utm_content = urlParams.get('utm_content') || '';
+      const utm_term = urlParams.get('utm_term') || '';
+
       const response = await fetch(`/api/public/forms/${slug}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -214,7 +222,8 @@ export function FormularioPublico() {
           nome: nome.trim(),
           whatsapp: whatsapp.replace(/\D/g, ''),
           available_periods: periods,
-          fbc, fbp
+          fbc, fbp,
+          utm_source, utm_medium, utm_campaign, utm_content, utm_term
         })
       });
 

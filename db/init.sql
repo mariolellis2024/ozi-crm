@@ -524,3 +524,14 @@ CREATE INDEX IF NOT EXISTS idx_contratos_aluno ON contratos(aluno_id);
 CREATE INDEX IF NOT EXISTS idx_contratos_turma ON contratos(turma_id);
 CREATE INDEX IF NOT EXISTS idx_contratos_status ON contratos(status);
 CREATE INDEX IF NOT EXISTS idx_contratos_doc_token ON contratos(zapsign_doc_token);
+
+-- =====================================================
+-- UTM Tracking — track ad campaign origin per interest
+-- =====================================================
+ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS utm_source text;
+ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS utm_medium text;
+ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS utm_campaign text;
+ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS utm_content text;
+ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS utm_term text;
+
+CREATE INDEX IF NOT EXISTS idx_interests_utm_campaign ON aluno_curso_interests(utm_campaign) WHERE utm_campaign IS NOT NULL;
