@@ -620,7 +620,7 @@ export function Pipeline() {
                 <div className="p-4 border-b border-dark-lighter">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className={`font-semibold ${cfg.color}`}>{cfg.label}</h3>
-                    <span className={`text-xs px-2 py-1 rounded-full border ${cfg.bgColor} font-medium`}>
+                    <span className={`text-xs px-2 py-1 rounded-full border ${cfg.bgColor} ${cfg.color} font-bold`}>
                       {items.length}
                     </span>
                   </div>
