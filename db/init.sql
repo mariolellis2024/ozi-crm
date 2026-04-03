@@ -535,3 +535,9 @@ ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS utm_content text;
 ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS utm_term text;
 
 CREATE INDEX IF NOT EXISTS idx_interests_utm_campaign ON aluno_curso_interests(utm_campaign) WHERE utm_campaign IS NOT NULL;
+
+-- =====================================================
+-- Facebook Instant Forms — lead deduplication
+-- =====================================================
+ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS fb_lead_id text;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_interests_fb_lead ON aluno_curso_interests(fb_lead_id) WHERE fb_lead_id IS NOT NULL;

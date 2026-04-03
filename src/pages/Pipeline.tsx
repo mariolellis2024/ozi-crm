@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { Filter, X, MessageCircle, ClipboardList, AlertTriangle } from 'lucide-react';
+import { Filter, X, MessageCircle, ClipboardList, AlertTriangle, Upload, Loader2 } from 'lucide-react';
 import { formatPhone, formatCurrency } from '../utils/format';
 import toast from 'react-hot-toast';
 import { useUnidade } from '../contexts/UnidadeContext';
@@ -74,6 +74,7 @@ const COLUMNS = ['interested', 'enrolled', 'completed', 'lost'];
 export function Pipeline() {
   const { selectedUnidadeId } = useUnidade();
   const [interests, setInterests] = useState<Interest[]>([]);
+  const [unidades, setUnidades] = useState<{ id: string; nome: string }[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [allTurmas, setAllTurmas] = useState<Turma[]>([]);
   const [selectedCurso, setSelectedCurso] = useState('');
@@ -158,6 +159,25 @@ export function Pipeline() {
     }
   }
 
+  // Import modal state
+  const [importModal, setImportModal] = useState<{
+    isOpen: boolean;
+    url: string;
+    cursoId: string;
+    unidadeId: string;
+    step: 'form' | 'preview' | 'done';
+    loading: boolean;
+    leads: any[];
+    newCount: number;
+    dupCount: number;
+    importedCount: number;
+    skippedCount: number;
+  }>({
+    isOpen: false, url: '', cursoId: '', unidadeId: '',
+    step: 'form', loading: false, leads: [], newCount: 0, dupCount: 0,
+    importedCount: 0, skippedCount: 0
+  });
+
   useEffect(() => {
     loadData();
   }, [selectedUnidadeId]);
@@ -165,13 +185,15 @@ export function Pipeline() {
   async function loadData() {
     try {
       const unidadeParam = selectedUnidadeId ? `?unidade_id=${selectedUnidadeId}` : '';
-      const [cursosData, interestsData, turmasData] = await Promise.all([
+      const [cursosData, interestsData, turmasData, unidadesData] = await Promise.all([
         api.get('/api/cursos'),
         api.get(`/api/pipeline${unidadeParam}`),
-        api.get(`/api/turmas${unidadeParam}`)
+        api.get(`/api/turmas${unidadeParam}`),
+        api.get('/api/unidades')
       ]);
       setCursos(cursosData);
       setInterests(interestsData);
+      setUnidades(unidadesData);
       // Map turma data: extract unidade_nome and enrolled_count from nested objects
       const mappedTurmas = turmasData.map((t: any) => ({
         ...t,
@@ -183,6 +205,63 @@ export function Pipeline() {
     } catch (error) {
       console.error('Erro ao carregar pipeline:', error);
     }
+  }
+
+  async function handleImportPreview() {
+    if (!importModal.url.trim()) {
+      toast.error('Cole a URL da planilha');
+      return;
+    }
+    setImportModal(prev => ({ ...prev, loading: true }));
+    try {
+      const data = await api.post('/api/import-leads/preview', { url: importModal.url });
+      setImportModal(prev => ({
+        ...prev,
+        step: 'preview',
+        leads: data.leads,
+        newCount: data.new_count,
+        dupCount: data.duplicate_count,
+        loading: false
+      }));
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao ler planilha');
+      setImportModal(prev => ({ ...prev, loading: false }));
+    }
+  }
+
+  async function handleImportExecute() {
+    if (!importModal.cursoId || !importModal.unidadeId) {
+      toast.error('Selecione o curso e a unidade');
+      return;
+    }
+    setImportModal(prev => ({ ...prev, loading: true }));
+    try {
+      const data = await api.post('/api/import-leads/execute', {
+        leads: importModal.leads,
+        curso_id: importModal.cursoId,
+        unidade_id: importModal.unidadeId
+      });
+      setImportModal(prev => ({
+        ...prev,
+        step: 'done',
+        importedCount: data.imported,
+        skippedCount: data.skipped,
+        loading: false
+      }));
+      toast.success(`${data.imported} leads importados!`);
+      loadData();
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao importar');
+      setImportModal(prev => ({ ...prev, loading: false }));
+    }
+  }
+
+  function closeImportModal() {
+    setImportModal({
+      isOpen: false, url: '', cursoId: '', unidadeId: '',
+      step: 'form', loading: false, leads: [], newCount: 0, dupCount: 0,
+      importedCount: 0, skippedCount: 0
+    });
   }
 
   async function openEnrollModal(interest: Interest) {
@@ -482,6 +561,13 @@ export function Pipeline() {
             <h1 className="text-3xl font-bold text-white">Pipeline de Vendas</h1>
             <p className="text-gray-400 mt-2">Arraste os alunos entre as colunas para alterar o status</p>
           </div>
+          <button
+            onClick={() => setImportModal(prev => ({ ...prev, isOpen: true }))}
+            className="flex items-center gap-2 px-4 py-2.5 bg-sky-500 text-white rounded-xl hover:bg-sky-600 transition-colors font-medium text-sm"
+          >
+            <Upload className="h-4 w-4" />
+            Importar Leads
+          </button>
         </div>
 
         {/* Filters */}
@@ -932,6 +1018,177 @@ export function Pipeline() {
                 {deletePaymentsModal.loading ? 'Deletando...' : 'Sim, deletar tudo'}
               </button>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Import Leads Modal */}
+      {importModal.isOpen && createPortal(
+        <div className="fixed inset-0 z-[10000] bg-black/60 flex items-center justify-center p-4" onClick={closeImportModal}>
+          <div className="bg-dark-card rounded-2xl p-6 w-full max-w-2xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <Upload className="h-5 w-5 text-sky-400" />
+                <h2 className="text-lg font-semibold text-white">Importar Leads do Facebook</h2>
+              </div>
+              <button onClick={closeImportModal} className="text-gray-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {importModal.step === 'form' && (
+              <div className="space-y-4">
+                <p className="text-gray-400 text-sm">
+                  Cole o link público da planilha Google Sheets com os leads exportados do Facebook Instant Forms.
+                </p>
+                <div>
+                  <label className="block text-sm text-gray-300 mb-1">URL da Planilha *</label>
+                  <input
+                    type="url"
+                    value={importModal.url}
+                    onChange={e => setImportModal(prev => ({ ...prev, url: e.target.value }))}
+                    placeholder="https://docs.google.com/spreadsheets/d/..."
+                    className="w-full bg-dark-lighter border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500/50 focus:outline-none"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-1">Curso *</label>
+                    <select
+                      value={importModal.cursoId}
+                      onChange={e => setImportModal(prev => ({ ...prev, cursoId: e.target.value }))}
+                      className="w-full bg-dark-lighter border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500/50 focus:outline-none"
+                    >
+                      <option value="">Selecione o curso</option>
+                      {cursos.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-1">Unidade *</label>
+                    <select
+                      value={importModal.unidadeId}
+                      onChange={e => setImportModal(prev => ({ ...prev, unidadeId: e.target.value }))}
+                      className="w-full bg-dark-lighter border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500/50 focus:outline-none"
+                    >
+                      <option value="">Selecione a unidade</option>
+                      {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <button
+                  onClick={handleImportPreview}
+                  disabled={importModal.loading || !importModal.url.trim()}
+                  className="w-full px-4 py-2.5 bg-sky-500 text-white font-medium rounded-xl hover:bg-sky-600 transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {importModal.loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Buscando dados...</> : 'Buscar Dados da Planilha'}
+                </button>
+              </div>
+            )}
+
+            {importModal.step === 'preview' && (
+              <div className="flex flex-col flex-1 min-h-0">
+                {/* Summary */}
+                <div className="flex gap-3 mb-4">
+                  <div className="flex-1 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center">
+                    <div className="text-2xl font-bold text-emerald-400">{importModal.newCount}</div>
+                    <div className="text-xs text-emerald-400/70">Novos leads</div>
+                  </div>
+                  <div className="flex-1 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center">
+                    <div className="text-2xl font-bold text-amber-400">{importModal.dupCount}</div>
+                    <div className="text-xs text-amber-400/70">Já importados</div>
+                  </div>
+                  <div className="flex-1 p-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-center">
+                    <div className="text-2xl font-bold text-sky-400">{importModal.leads.length}</div>
+                    <div className="text-xs text-sky-400/70">Total na planilha</div>
+                  </div>
+                </div>
+
+                {/* Leads table */}
+                <div className="flex-1 overflow-y-auto rounded-xl border border-dark-lighter mb-4">
+                  <table className="w-full text-sm">
+                    <thead className="bg-dark-lighter sticky top-0">
+                      <tr>
+                        <th className="text-left px-3 py-2 text-gray-400 font-medium">Nome</th>
+                        <th className="text-left px-3 py-2 text-gray-400 font-medium">WhatsApp</th>
+                        <th className="text-left px-3 py-2 text-gray-400 font-medium">Campanha</th>
+                        <th className="text-left px-3 py-2 text-gray-400 font-medium">Plataforma</th>
+                        <th className="text-center px-3 py-2 text-gray-400 font-medium">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800">
+                      {importModal.leads.map((lead, i) => (
+                        <tr key={i} className={lead.is_duplicate ? 'opacity-40' : ''}>
+                          <td className="px-3 py-2 text-white">{lead.nome}</td>
+                          <td className="px-3 py-2 text-gray-300">{formatPhone(lead.whatsapp)}</td>
+                          <td className="px-3 py-2">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                              {lead.campaign_name || '—'}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className={`text-xs ${lead.platform === 'instagram' ? 'text-pink-400' : 'text-blue-400'}`}>
+                              {lead.platform}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            {lead.is_duplicate ? (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">Duplicado</span>
+                            ) : (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Novo</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setImportModal(prev => ({ ...prev, step: 'form', leads: [] }))}
+                    className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 rounded-xl hover:bg-dark-lighter transition-colors text-sm"
+                  >
+                    ← Voltar
+                  </button>
+                  <button
+                    onClick={handleImportExecute}
+                    disabled={importModal.loading || importModal.newCount === 0 || !importModal.cursoId || !importModal.unidadeId}
+                    className="flex-1 px-4 py-2.5 bg-emerald-500 text-white font-medium rounded-xl hover:bg-emerald-600 transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {importModal.loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Importando...</> : `Importar ${importModal.newCount} lead${importModal.newCount !== 1 ? 's' : ''}`}
+                  </button>
+                </div>
+
+                {(!importModal.cursoId || !importModal.unidadeId) && (
+                  <p className="text-amber-400 text-xs text-center mt-2">⚠ Selecione o curso e a unidade antes de importar (volte ao passo anterior)</p>
+                )}
+              </div>
+            )}
+
+            {importModal.step === 'done' && (
+              <div className="text-center py-8">
+                <div className="text-5xl mb-4">🎉</div>
+                <h3 className="text-xl font-bold text-white mb-2">Importação concluída!</h3>
+                <div className="flex justify-center gap-6 mb-6">
+                  <div>
+                    <div className="text-2xl font-bold text-emerald-400">{importModal.importedCount}</div>
+                    <div className="text-xs text-gray-400">Importados</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-amber-400">{importModal.skippedCount}</div>
+                    <div className="text-xs text-gray-400">Ignorados</div>
+                  </div>
+                </div>
+                <button
+                  onClick={closeImportModal}
+                  className="px-6 py-2.5 bg-teal-accent text-dark font-medium rounded-xl hover:bg-teal-400 transition-colors text-sm"
+                >
+                  Fechar
+                </button>
+              </div>
+            )}
           </div>
         </div>,
         document.body

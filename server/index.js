@@ -31,6 +31,7 @@ import landingPagesPublicRoutes from './routes/landing-pages-public.js';
 import professorPagamentosRoutes from './routes/professor-pagamentos.js';
 import contratosRoutes from './routes/contratos.js';
 import zapsignWebhookRoutes from './routes/zapsign-webhook.js';
+import importLeadsRoutes from './routes/import-leads.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -71,6 +72,7 @@ app.use('/api/social-proof', authenticateToken, socialProofRoutes);
 app.use('/api/landing-pages', authenticateToken, landingPagesRoutes);
 app.use('/api/professor-pagamentos', authenticateToken, professorPagamentosRoutes);
 app.use('/api/contratos', authenticateToken, contratosRoutes);
+app.use('/api/import-leads', authenticateToken, importLeadsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
