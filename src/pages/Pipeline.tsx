@@ -78,6 +78,7 @@ export function Pipeline() {
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [allTurmas, setAllTurmas] = useState<Turma[]>([]);
   const [selectedCurso, setSelectedCurso] = useState('');
+  const [selectedUnidade, setSelectedUnidade] = useState('');
   const [draggedItem, setDraggedItem] = useState<Interest | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
@@ -540,9 +541,11 @@ export function Pipeline() {
     return `https://wa.me/${full}`;
   }
 
-  const filtered = selectedCurso
-    ? interests.filter(i => i.curso_id === selectedCurso)
-    : interests;
+  const filtered = interests.filter(i => {
+    if (selectedCurso && i.curso_id !== selectedCurso) return false;
+    if (selectedUnidade && i.aluno_unidade_id !== selectedUnidade) return false;
+    return true;
+  });
 
   function getColumnItems(status: string) {
     return filtered.filter(i => i.status === status);
@@ -581,6 +584,16 @@ export function Pipeline() {
             <option value="">Todos os cursos</option>
             {cursos.map(c => (
               <option key={c.id} value={c.id}>{c.nome}</option>
+            ))}
+          </select>
+          <select
+            value={selectedUnidade}
+            onChange={(e) => setSelectedUnidade(e.target.value)}
+            className="bg-dark-card text-white px-4 py-2 rounded-xl border border-dark-lighter focus:ring-2 focus:ring-teal-accent outline-none text-sm"
+          >
+            <option value="">Todas as unidades</option>
+            {unidades.map(u => (
+              <option key={u.id} value={u.id}>{u.nome}</option>
             ))}
           </select>
           <span className="text-gray-500 text-sm">{filtered.length} registros</span>
