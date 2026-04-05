@@ -36,6 +36,7 @@ const PERIOD_LABELS: Record<string, string> = {
   manha: 'Manhã',
   tarde: 'Tarde',
   noite: 'Noite',
+  dia_inteiro: 'Dia Inteiro',
 };
 
 export function DashboardPage() {

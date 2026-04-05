@@ -49,7 +49,8 @@ interface Turma {
 const PERIOD_LABELS: Record<string, string> = {
   manha: 'Manhã',
   tarde: 'Tarde',
-  noite: 'Noite'
+  noite: 'Noite',
+  dia_inteiro: 'Dia Inteiro'
 };
 
 function periodLabel(p: string) {

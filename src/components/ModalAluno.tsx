@@ -6,7 +6,7 @@ import { LoadingButton } from './LoadingButton';
 import { InputField } from './InputField';
 import toast from 'react-hot-toast';
 
-type Period = 'manha' | 'tarde' | 'noite';
+type Period = 'manha' | 'tarde' | 'noite' | 'dia_inteiro';
 
 interface Unidade {
   id: string;
@@ -47,7 +47,8 @@ interface ModalAlunoProps {
 const PERIODS: { value: Period; label: string; color: string }[] = [
   { value: 'manha', label: 'Manhã', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30' },
   { value: 'tarde', label: 'Tarde', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30' },
-  { value: 'noite', label: 'Noite', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30' }
+  { value: 'noite', label: 'Noite', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30' },
+  { value: 'dia_inteiro', label: 'Dia Inteiro', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30' }
 ];
 
 export function ModalAluno({ 

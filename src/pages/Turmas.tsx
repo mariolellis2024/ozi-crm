@@ -12,7 +12,7 @@ import { ModalAlunosMatriculados } from '../components/ModalAlunosMatriculados';
 import { ModalComissoesTurma } from '../components/ModalComissoesTurma';
 import { CalendarOcupacaoSalas } from '../components/CalendarOcupacaoSalas';
 
-type Period = 'manha' | 'tarde' | 'noite';
+type Period = 'manha' | 'tarde' | 'noite' | 'dia_inteiro';
 
 interface ProfessorAssignment {
   professor_id: string;
@@ -202,6 +202,14 @@ export function Turmas() {
     }
   }
 
+  // Helper: verifica se dois períodos conflitam (dia_inteiro conflita com manhã e tarde)
+  function periodsConflict(a: string, b: string): boolean {
+    if (a === b) return true;
+    if (a === 'dia_inteiro' && (b === 'manha' || b === 'tarde')) return true;
+    if (b === 'dia_inteiro' && (a === 'manha' || a === 'tarde')) return true;
+    return false;
+  }
+
   async function checkConflicts(turmaData: any, editingId?: string): Promise<boolean> {
     try {
       const normalizeDate = (dateStr: string) => {
@@ -224,7 +232,7 @@ export function Turmas() {
       // Verificação de conflitos de sala
       if (newSalaId) {
         for (const turma of filteredTurmas) {
-          if (turma.sala_id === newSalaId && turma.period === newPeriod) {
+          if (turma.sala_id === newSalaId && periodsConflict(turma.period, newPeriod)) {
             const existingStartDate = normalizeDate(turma.start_date);
             const existingEndDate = normalizeDate(turma.end_date);
 
@@ -246,7 +254,7 @@ export function Turmas() {
           if (!newProf.professor_id) continue;
 
           for (const turma of filteredTurmas) {
-            if (turma.period === newPeriod) {
+            if (periodsConflict(turma.period, newPeriod)) {
               const existingStartDate = normalizeDate(turma.start_date);
               const existingEndDate = normalizeDate(turma.end_date);
 
@@ -301,6 +309,7 @@ export function Turmas() {
         case 'manha': return 'Manhã';
         case 'tarde': return 'Tarde';
         case 'noite': return 'Noite';
+        case 'dia_inteiro': return 'Dia Inteiro';
         default: return period;
       }
     };
@@ -317,7 +326,7 @@ export function Turmas() {
     // Verificação de conflitos de sala
     if (newSalaId) {
       for (const turma of filteredTurmas) {
-        if (turma.sala_id === newSalaId && turma.period === newPeriod) {
+        if (turma.sala_id === newSalaId && periodsConflict(turma.period, newPeriod)) {
           const existingStartDate = normalizeDate(turma.start_date);
           const existingEndDate = normalizeDate(turma.end_date);
 
@@ -355,7 +364,7 @@ export function Turmas() {
         if (!newProf.professor_id) continue;
 
         for (const turma of filteredTurmas) {
-          if (turma.period === newPeriod) {
+          if (periodsConflict(turma.period, newPeriod)) {
             const existingStartDate = normalizeDate(turma.start_date);
             const existingEndDate = normalizeDate(turma.end_date);
 
@@ -699,6 +708,7 @@ export function Turmas() {
       case 'manha': return 'Manhã';
       case 'tarde': return 'Tarde';
       case 'noite': return 'Noite';
+      case 'dia_inteiro': return 'Dia Inteiro';
       default: return period;
     }
   }
@@ -708,6 +718,7 @@ export function Turmas() {
       case 'manha': return 'text-yellow-400';
       case 'tarde': return 'text-orange-400';
       case 'noite': return 'text-blue-400';
+      case 'dia_inteiro': return 'text-emerald-400';
       default: return 'text-gray-400';
     }
   }

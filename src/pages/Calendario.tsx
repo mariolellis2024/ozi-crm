@@ -15,7 +15,7 @@ interface Turma {
   name: string;
   curso_id: string;
   sala_id: string;
-  period: 'manha' | 'tarde' | 'noite';
+  period: 'manha' | 'tarde' | 'noite' | 'dia_inteiro';
   start_date: string;
   end_date: string;
   cadeiras: number;

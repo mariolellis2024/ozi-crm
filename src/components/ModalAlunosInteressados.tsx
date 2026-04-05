@@ -261,6 +261,11 @@ export function ModalAlunosInteressados({
     if (!aluno.available_periods || aluno.available_periods.length === 0) {
       return true;
     }
+    // Se a turma é dia_inteiro, o aluno precisa ter manhã + tarde OU dia_inteiro
+    if (turmaPeriod === 'dia_inteiro') {
+      return aluno.available_periods.includes('dia_inteiro') ||
+        (aluno.available_periods.includes('manha') && aluno.available_periods.includes('tarde'));
+    }
     // Verifica se o período da turma está na lista de períodos disponíveis do aluno
     return aluno.available_periods.includes(turmaPeriod);
   }
@@ -342,15 +347,17 @@ export function ModalAlunosInteressados({
                           <div className="flex flex-wrap gap-1 mt-2">
                             {(aluno.available_periods || []).map(period => {
                               const isAvailableForTurma = period === turmaPeriod;
-                              const periodColors = {
+                              const periodColors: Record<string, string> = {
                                 'manha': isAvailableForTurma ? 'bg-yellow-500/30 text-yellow-300 border-yellow-500/50' : 'bg-yellow-500/10 text-yellow-500/60 border-yellow-500/20',
                                 'tarde': isAvailableForTurma ? 'bg-orange-500/30 text-orange-300 border-orange-500/50' : 'bg-orange-500/10 text-orange-500/60 border-orange-500/20',
-                                'noite': isAvailableForTurma ? 'bg-blue-500/30 text-blue-300 border-blue-500/50' : 'bg-blue-500/10 text-blue-500/60 border-blue-500/20'
+                                'noite': isAvailableForTurma ? 'bg-blue-500/30 text-blue-300 border-blue-500/50' : 'bg-blue-500/10 text-blue-500/60 border-blue-500/20',
+                                'dia_inteiro': isAvailableForTurma ? 'bg-emerald-500/30 text-emerald-300 border-emerald-500/50' : 'bg-emerald-500/10 text-emerald-500/60 border-emerald-500/20'
                               };
-                              const periodLabels = {
+                              const periodLabels: Record<string, string> = {
                                 'manha': 'Manhã',
                                 'tarde': 'Tarde', 
-                                'noite': 'Noite'
+                                'noite': 'Noite',
+                                'dia_inteiro': 'Dia Inteiro'
                               };
                               
                               return (

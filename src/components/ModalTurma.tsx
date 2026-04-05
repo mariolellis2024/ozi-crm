@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { DaySelector, DAYS_OF_WEEK } from './turma/DaySelector';
 import { ProfessorList } from './turma/ProfessorList';
 
-type Period = 'manha' | 'tarde' | 'noite';
+type Period = 'manha' | 'tarde' | 'noite' | 'dia_inteiro';
 
 interface ProfessorAssignment {
   professor_id: string;
@@ -69,7 +69,8 @@ interface ModalTurmaProps {
 const PERIODS: { value: Period; label: string; color: string }[] = [
   { value: 'manha', label: 'Manhã', color: 'text-yellow-400' },
   { value: 'tarde', label: 'Tarde', color: 'text-orange-400' },
-  { value: 'noite', label: 'Noite', color: 'text-blue-400' }
+  { value: 'noite', label: 'Noite', color: 'text-blue-400' },
+  { value: 'dia_inteiro', label: 'Dia Inteiro', color: 'text-emerald-400' }
 ];
 
 export function ModalTurma({ 
@@ -104,7 +105,7 @@ export function ModalTurma({
   function calculateEndDate(startDate: string, daysOfWeek: number[], totalHours: number): string {
     if (!startDate || !daysOfWeek.length || !totalHours) return '';
     
-    const hoursPerClass = 3;
+    const hoursPerClass = formData.period === 'dia_inteiro' ? 6 : 3;
     const totalClasses = Math.ceil(totalHours / hoursPerClass);
     
     const start = new Date(startDate + 'T00:00:00');
@@ -144,7 +145,7 @@ export function ModalTurma({
         setFormData(prev => ({ ...prev, end_date: calculatedEndDate }));
       }
     }
-  }, [formData.start_date, formData.days_of_week, cargaHorariaCurso]);
+  }, [formData.start_date, formData.days_of_week, cargaHorariaCurso, formData.period]);
   
   function toggleDayOfWeek(dayValue: number) {
     const currentDays = formData.days_of_week || [];
@@ -399,7 +400,7 @@ export function ModalTurma({
                 />
                 {formData.start_date && formData.days_of_week.length > 0 && cargaHorariaCurso > 0 && (
                   <p className="text-xs text-gray-400 mt-1">
-                    Baseado em {Math.ceil(cargaHorariaCurso / 3)} aulas de 3h nos dias selecionados
+                    Baseado em {Math.ceil(cargaHorariaCurso / (formData.period === 'dia_inteiro' ? 6 : 3))} {formData.period === 'dia_inteiro' ? 'dias de 6h (manhã + tarde)' : 'aulas de 3h'} nos dias selecionados
                   </p>
                 )}
               </div>

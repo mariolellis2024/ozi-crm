@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Calendar, MapPin, Clock, Users, BookOpen } f
 /**
  * Tipos para o calendário de ocupação
  */
-type Period = 'manha' | 'tarde' | 'noite';
+type Period = 'manha' | 'tarde' | 'noite' | 'dia_inteiro';
 
 interface Sala {
   id: string;
@@ -61,6 +61,14 @@ const PERIODS = [
     textColor: 'text-blue-100'
   }
 ];
+
+const DIA_INTEIRO_CONFIG = {
+  value: 'dia_inteiro' as Period,
+  label: 'Dia Inteiro',
+  color: 'bg-gradient-to-r from-emerald-500/80 to-teal-500/80',
+  borderColor: 'border-emerald-400/50',
+  textColor: 'text-emerald-100'
+};
 
 /**
  * Componente de calendário visual para ocupação de salas
@@ -166,6 +174,7 @@ export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasPr
    * Obtém a configuração de cor para um período
    */
   const getPeriodConfig = (period: Period) => {
+    if (period === 'dia_inteiro') return DIA_INTEIRO_CONFIG;
     return PERIODS.find(p => p.value === period) || PERIODS[0];
   };
 
@@ -253,6 +262,10 @@ export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasPr
             <span className="text-gray-300 text-sm">{period.label}</span>
           </div>
         ))}
+        <div className="flex items-center gap-2">
+          <div className={`w-4 h-4 rounded ${DIA_INTEIRO_CONFIG.color} ${DIA_INTEIRO_CONFIG.borderColor} border`}></div>
+          <span className="text-gray-300 text-sm">{DIA_INTEIRO_CONFIG.label}</span>
+        </div>
       </div>
 
       {/* Calendário */}
@@ -315,55 +328,65 @@ export function CalendarOcupacaoSalas({ salas, turmas }: CalendarOcupacaoSalasPr
                       className="p-2 bg-dark-lighter rounded-lg border border-gray-700 min-h-[80px]"
                     >
                       <div className="space-y-1">
-                        {PERIODS.map(period => {
-                          const turmaNoPeriodo = turmasNoDia.find(t => t.period === period.value);
+                        {(() => {
+                          // Check for dia_inteiro turma
+                          const diaInteiroTurma = turmasNoDia.find(t => t.period === 'dia_inteiro');
                           
-                          if (turmaNoPeriodo) {
-                            const alunosMatriculados = turmaNoPeriodo.alunos_enrolled?.length || 0;
-                            const ocupacao = (alunosMatriculados / turmaNoPeriodo.cadeiras) * 100;
+                          return PERIODS.map(period => {
+                            // If there's a dia_inteiro turma, it occupies manha + tarde
+                            const turmaNoPeriodo = diaInteiroTurma && (period.value === 'manha' || period.value === 'tarde')
+                              ? diaInteiroTurma
+                              : turmasNoDia.find(t => t.period === period.value);
+                            
+                            const displayConfig = turmaNoPeriodo?.period === 'dia_inteiro' ? DIA_INTEIRO_CONFIG : period;
+                            
+                            if (turmaNoPeriodo) {
+                              const alunosMatriculados = turmaNoPeriodo.alunos_enrolled?.length || 0;
+                              const ocupacao = (alunosMatriculados / turmaNoPeriodo.cadeiras) * 100;
+                              
+                              return (
+                                <div
+                                  key={period.value}
+                                  className={`
+                                    ${displayConfig.color} ${displayConfig.borderColor} ${displayConfig.textColor}
+                                    border rounded-md p-2 text-xs relative overflow-hidden
+                                    hover:scale-105 transition-transform cursor-pointer
+                                    shadow-lg
+                                  `}
+                                  title={`${turmaNoPeriodo.name} - ${turmaNoPeriodo.curso?.nome}\n${alunosMatriculados}/${turmaNoPeriodo.cadeiras} alunos (${ocupacao.toFixed(0)}%)${turmaNoPeriodo.period === 'dia_inteiro' ? ' (Dia Inteiro)' : ''}`}
+                                >
+                                  {/* Barra de ocupação */}
+                                  <div 
+                                    className="absolute bottom-0 left-0 h-1 bg-white/40 transition-all duration-300"
+                                    style={{ width: `${ocupacao}%` }}
+                                  ></div>
+                                  
+                                  <div className="flex items-center gap-1 opacity-90">
+                                    <BookOpen className="h-2.5 w-2.5" />
+                                    <span className="truncate text-xs">
+                                      {turmaNoPeriodo.curso?.nome}
+                                    </span>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-1 mt-1 opacity-80">
+                                    <Users className="h-2.5 w-2.5" />
+                                    <span className="text-xs">
+                                      {alunosMatriculados}/{turmaNoPeriodo.cadeiras}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            }
                             
                             return (
                               <div
                                 key={period.value}
-                                className={`
-                                  ${period.color} ${period.borderColor} ${period.textColor}
-                                  border rounded-md p-2 text-xs relative overflow-hidden
-                                  hover:scale-105 transition-transform cursor-pointer
-                                  shadow-lg
-                                `}
-                                title={`${turmaNoPeriodo.name} - ${turmaNoPeriodo.curso?.nome}\n${alunosMatriculados}/${turmaNoPeriodo.cadeiras} alunos (${ocupacao.toFixed(0)}%)`}
+                                className="h-6 bg-gray-800/30 border border-gray-700/50 rounded-md flex items-center justify-center opacity-50"
                               >
-                                {/* Barra de ocupação */}
-                                <div 
-                                  className="absolute bottom-0 left-0 h-1 bg-white/40 transition-all duration-300"
-                                  style={{ width: `${ocupacao}%` }}
-                                ></div>
-                                
-                                <div className="flex items-center gap-1 opacity-90">
-                                  <BookOpen className="h-2.5 w-2.5" />
-                                  <span className="truncate text-xs">
-                                    {turmaNoPeriodo.curso?.nome}
-                                  </span>
-                                </div>
-                                
-                                <div className="flex items-center gap-1 mt-1 opacity-80">
-                                  <Users className="h-2.5 w-2.5" />
-                                  <span className="text-xs">
-                                    {alunosMatriculados}/{turmaNoPeriodo.cadeiras}
-                                  </span>
-                                </div>
                               </div>
                             );
-                          }
-                          
-                          return (
-                            <div
-                              key={period.value}
-                              className="h-6 bg-gray-800/30 border border-gray-700/50 rounded-md flex items-center justify-center opacity-50"
-                            >
-                            </div>
-                          );
-                        })}
+                          });
+                        })()}
                       </div>
                     </div>
                   );

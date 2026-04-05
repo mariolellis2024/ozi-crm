@@ -552,3 +552,11 @@ ALTER TABLE turmas ADD COLUMN IF NOT EXISTS leads_capturados INTEGER NOT NULL DE
 -- Auditórios não entram nos cálculos de potencial da unidade
 -- =====================================================
 ALTER TABLE salas ADD COLUMN IF NOT EXISTS tipo TEXT NOT NULL DEFAULT 'sala';
+
+-- =====================================================
+-- Período "Dia Inteiro" (manhã + tarde = 6h/dia)
+-- =====================================================
+DO $$ BEGIN
+  ALTER TYPE period_type ADD VALUE IF NOT EXISTS 'dia_inteiro';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
