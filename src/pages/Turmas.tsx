@@ -174,7 +174,27 @@ export function Turmas() {
         api.get(`/api/professores${unidadeParam}`)
       ]);
 
-      setTurmas(turmasData);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      const sortedTurmas = turmasData.sort((a: any, b: any) => {
+        const dateA = new Date(a.start_date + 'T00:00:00');
+        const dateB = new Date(b.start_date + 'T00:00:00');
+        
+        const aIsFuture = dateA >= now;
+        const bIsFuture = dateB >= now;
+
+        if (aIsFuture && !bIsFuture) return -1;
+        if (!aIsFuture && bIsFuture) return 1;
+        
+        if (aIsFuture && bIsFuture) {
+          return dateA.getTime() - dateB.getTime();
+        } else {
+          return dateB.getTime() - dateA.getTime();
+        }
+      });
+
+      setTurmas(sortedTurmas);
       setCursos(cursosData);
       setSalas(salasData);
       setProfessores(professoresData);
