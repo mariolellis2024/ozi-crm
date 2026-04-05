@@ -78,7 +78,7 @@ export function Pipeline() {
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [allTurmas, setAllTurmas] = useState<Turma[]>([]);
   const [selectedCurso, setSelectedCurso] = useState('');
-  const [selectedUnidade, setSelectedUnidade] = useState('');
+  const [selectedUnidade, setSelectedUnidade] = useState(selectedUnidadeId || '');
   const [draggedItem, setDraggedItem] = useState<Interest | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
@@ -181,6 +181,7 @@ export function Pipeline() {
 
   useEffect(() => {
     loadData();
+    setSelectedUnidade(selectedUnidadeId || '');
   }, [selectedUnidadeId]);
 
   async function loadData() {
@@ -589,7 +590,8 @@ export function Pipeline() {
           <select
             value={selectedUnidade}
             onChange={(e) => setSelectedUnidade(e.target.value)}
-            className="bg-dark-card text-white px-4 py-2 rounded-xl border border-dark-lighter focus:ring-2 focus:ring-teal-accent outline-none text-sm"
+            disabled={!!selectedUnidadeId}
+            className={`bg-dark-card text-white px-4 py-2 rounded-xl border border-dark-lighter focus:ring-2 focus:ring-teal-accent outline-none text-sm ${selectedUnidadeId ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
             <option value="">Todas as unidades</option>
             {unidades.map(u => (
