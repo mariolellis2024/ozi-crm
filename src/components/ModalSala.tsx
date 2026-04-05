@@ -9,11 +9,13 @@ interface ModalSalaProps {
     nome: string;
     cadeiras: string;
     unidade_id: string;
+    tipo: string;
   };
   setFormData: React.Dispatch<React.SetStateAction<{
     nome: string;
     cadeiras: string;
     unidade_id: string;
+    tipo: string;
   }>>;
   unidades: Array<{ id: string; nome: string }>;
   onSubmit: (e: React.FormEvent) => void;
@@ -66,6 +68,41 @@ export function ModalSala({
               className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
               required
             />
+          </div>
+
+          <div>
+            <label htmlFor="tipo" className="block text-sm font-medium text-gray-400 mb-1">
+              Tipo
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, tipo: 'sala' })}
+                className={`px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${
+                  formData.tipo === 'sala'
+                    ? 'bg-teal-accent/20 border-teal-accent text-teal-accent'
+                    : 'bg-dark-lighter border-gray-700 text-gray-400 hover:text-white hover:border-gray-600'
+                }`}
+              >
+                🏫 Sala Própria
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, tipo: 'auditorio' })}
+                className={`px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${
+                  formData.tipo === 'auditorio'
+                    ? 'bg-orange-500/20 border-orange-500 text-orange-400'
+                    : 'bg-dark-lighter border-gray-700 text-gray-400 hover:text-white hover:border-gray-600'
+                }`}
+              >
+                🎭 Auditório Alugado
+              </button>
+            </div>
+            {formData.tipo === 'auditorio' && (
+              <p className="text-[11px] text-orange-400/70 mt-1.5">
+                Auditórios alugados não entram nos cálculos de potencial da unidade
+              </p>
+            )}
           </div>
 
           <div>

@@ -8,8 +8,8 @@ router.get('/', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT u.*, 
-        (SELECT COUNT(*) FROM salas s WHERE s.unidade_id = u.id) as total_salas,
-        (SELECT COALESCE(SUM(s.cadeiras), 0) FROM salas s WHERE s.unidade_id = u.id) as total_cadeiras,
+        (SELECT COUNT(*) FROM salas s WHERE s.unidade_id = u.id AND s.tipo = 'sala') as total_salas,
+        (SELECT COALESCE(SUM(s.cadeiras), 0) FROM salas s WHERE s.unidade_id = u.id AND s.tipo = 'sala') as total_cadeiras,
         (SELECT COUNT(*) FROM turmas t 
          JOIN salas s ON s.id = t.sala_id 
          WHERE s.unidade_id = u.id) as total_turmas,

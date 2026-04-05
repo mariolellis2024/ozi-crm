@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
     const params = unidade_id ? [unidade_id] : [];
     
     const result = await pool.query(`
-      SELECT s.id, s.nome, s.cadeiras, s.unidade_id, s.created_at,
+      SELECT s.id, s.nome, s.cadeiras, s.tipo, s.unidade_id, s.created_at,
              u.nome as unidade_nome
       FROM salas s
       LEFT JOIN unidades u ON u.id = s.unidade_id
@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
 router.get('/simple', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT s.id, s.nome, s.cadeiras, s.unidade_id, u.nome as unidade_nome
+      SELECT s.id, s.nome, s.cadeiras, s.tipo, s.unidade_id, u.nome as unidade_nome
       FROM salas s LEFT JOIN unidades u ON u.id = s.unidade_id
       ORDER BY u.nome, s.nome
     `);
@@ -43,10 +43,10 @@ router.get('/simple', async (req, res) => {
 // POST /api/salas
 router.post('/', async (req, res) => {
   try {
-    const { nome, cadeiras, unidade_id } = req.body;
+    const { nome, cadeiras, unidade_id, tipo } = req.body;
     const result = await pool.query(
-      'INSERT INTO salas (nome, cadeiras, unidade_id) VALUES ($1, $2, $3) RETURNING *',
-      [nome, parseInt(cadeiras), unidade_id || null]
+      'INSERT INTO salas (nome, cadeiras, unidade_id, tipo) VALUES ($1, $2, $3, $4) RETURNING *',
+      [nome, parseInt(cadeiras), unidade_id || null, tipo || 'sala']
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -59,10 +59,10 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, cadeiras, unidade_id } = req.body;
+    const { nome, cadeiras, unidade_id, tipo } = req.body;
     const result = await pool.query(
-      'UPDATE salas SET nome = $1, cadeiras = $2, unidade_id = $3 WHERE id = $4 RETURNING *',
-      [nome, parseInt(cadeiras), unidade_id || null, id]
+      'UPDATE salas SET nome = $1, cadeiras = $2, unidade_id = $3, tipo = $4 WHERE id = $5 RETURNING *',
+      [nome, parseInt(cadeiras), unidade_id || null, tipo || 'sala', id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Sala não encontrada' });

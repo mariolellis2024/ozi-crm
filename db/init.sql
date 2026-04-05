@@ -546,3 +546,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_interests_fb_lead ON aluno_curso_interests
 -- Leads capturados por turma (para cálculo de CPL)
 -- =====================================================
 ALTER TABLE turmas ADD COLUMN IF NOT EXISTS leads_capturados INTEGER NOT NULL DEFAULT 0;
+
+-- =====================================================
+-- Tipo de sala: 'sala' (própria) ou 'auditorio' (alugado)
+-- Auditórios não entram nos cálculos de potencial da unidade
+-- =====================================================
+ALTER TABLE salas ADD COLUMN IF NOT EXISTS tipo TEXT NOT NULL DEFAULT 'sala';

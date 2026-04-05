@@ -10,6 +10,7 @@ interface Sala {
   id: string;
   nome: string;
   cadeiras: number;
+  tipo: string;
   unidade_id?: string;
   unidade_nome?: string;
 }
@@ -31,7 +32,8 @@ export function Salas() {
   const [formData, setFormData] = useState({
     nome: '',
     cadeiras: '',
-    unidade_id: ''
+    unidade_id: '',
+    tipo: 'sala'
   });
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -77,7 +79,7 @@ export function Salas() {
       }
 
       setIsModalOpen(false);
-      setFormData({ nome: '', cadeiras: '', unidade_id: '' });
+      setFormData({ nome: '', cadeiras: '', unidade_id: '', tipo: 'sala' });
       setEditingId(null);
       loadSalas();
     } catch (error) {
@@ -116,7 +118,8 @@ export function Salas() {
     setFormData({
       nome: sala.nome,
       cadeiras: sala.cadeiras.toString(),
-      unidade_id: sala.unidade_id || ''
+      unidade_id: sala.unidade_id || '',
+      tipo: sala.tipo || 'sala'
     });
     setEditingId(sala.id);
     setIsModalOpen(true);
@@ -124,7 +127,7 @@ export function Salas() {
 
   function handleCloseModal() {
     setIsModalOpen(false);
-    setFormData({ nome: '', cadeiras: '', unidade_id: '' });
+    setFormData({ nome: '', cadeiras: '', unidade_id: '', tipo: 'sala' });
     setEditingId(null);
   }
 
@@ -157,6 +160,11 @@ export function Salas() {
                   {sala.unidade_nome && (
                     <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 bg-teal-accent/10 text-teal-accent text-xs rounded-full">
                       📍 {sala.unidade_nome}
+                    </span>
+                  )}
+                  {sala.tipo === 'auditorio' && (
+                    <span className="inline-flex items-center gap-1 mt-2 ml-1 px-2 py-0.5 bg-orange-500/10 text-orange-400 text-xs rounded-full border border-orange-500/20">
+                      🎭 Auditório Alugado
                     </span>
                   )}
                 </div>

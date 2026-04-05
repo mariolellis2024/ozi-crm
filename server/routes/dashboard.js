@@ -84,7 +84,7 @@ router.get('/stats', async (req, res) => {
         u.id, u.nome, u.horas_disponiveis_dia, u.valor_hora_aluno,
         COALESCE(SUM(s.cadeiras), 0) as total_cadeiras
       FROM unidades u
-      LEFT JOIN salas s ON s.unidade_id = u.id
+      LEFT JOIN salas s ON s.unidade_id = u.id AND s.tipo = 'sala'
       ${unidade_id ? 'WHERE u.id = $1' : ''}
       GROUP BY u.id, u.nome, u.horas_disponiveis_dia, u.valor_hora_aluno
     `, params);
