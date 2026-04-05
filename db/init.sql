@@ -541,3 +541,8 @@ CREATE INDEX IF NOT EXISTS idx_interests_utm_campaign ON aluno_curso_interests(u
 -- =====================================================
 ALTER TABLE aluno_curso_interests ADD COLUMN IF NOT EXISTS fb_lead_id text;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_interests_fb_lead ON aluno_curso_interests(fb_lead_id) WHERE fb_lead_id IS NOT NULL;
+
+-- =====================================================
+-- Leads capturados por turma (para cálculo de CPL)
+-- =====================================================
+ALTER TABLE turmas ADD COLUMN IF NOT EXISTS leads_capturados INTEGER NOT NULL DEFAULT 0;

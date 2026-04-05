@@ -32,6 +32,7 @@ interface Turma {
   imposto: number;
   investimento_anuncios: number;
   investimento_anuncios_realizado: number;
+  leads_capturados: number;
   days_of_week?: number[];
   created_at: string;
   curso?: {
@@ -1100,6 +1101,53 @@ export function Turmas() {
                           {investAnunciosRealizado > investAnunciosPrevisto && investAnunciosPrevisto > 0 && (
                             <div className="text-[10px] text-red-400 text-right">
                               ⚠️ Acima do previsto em {formatCurrency(investAnunciosRealizado - investAnunciosPrevisto)}
+                            </div>
+                          )}
+                          
+                          {/* Leads + CPL */}
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-gray-400">Leads Capturados:</span>
+                            <span
+                              className="text-cyan-400 font-medium cursor-pointer hover:underline"
+                              onClick={(e) => {
+                                const span = e.currentTarget;
+                                const currentVal = turma.leads_capturados || 0;
+                                const input = document.createElement('input');
+                                input.type = 'number';
+                                input.value = String(currentVal);
+                                input.min = '0';
+                                input.step = '1';
+                                input.className = 'w-20 bg-dark-lighter border border-teal-accent rounded px-1.5 py-0.5 text-cyan-400 text-xs text-right focus:ring-1 focus:ring-teal-accent outline-none font-medium';
+                                const save = async () => {
+                                  const val = parseInt(input.value) || 0;
+                                  if (val !== currentVal) {
+                                    try {
+                                      await api.patch(`/api/turmas/${turma.id}/investimento`, { leads_capturados: val });
+                                      loadData();
+                                    } catch { toast.error('Erro ao salvar leads'); }
+                                  }
+                                  span.style.display = '';
+                                  input.remove();
+                                };
+                                input.onblur = save;
+                                input.onkeydown = (ev) => { if (ev.key === 'Enter') input.blur(); if (ev.key === 'Escape') { span.style.display = ''; input.remove(); } };
+                                span.style.display = 'none';
+                                span.parentElement!.appendChild(input);
+                                input.focus();
+                                input.select();
+                              }}
+                              title="Clique para editar"
+                            >
+                              {turma.leads_capturados || 0}
+                            </span>
+                          </div>
+                          
+                          {(turma.leads_capturados || 0) > 0 && investAnunciosRealizado > 0 && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-400">CPL (Custo/Lead):</span>
+                              <span className="text-cyan-400 font-semibold">
+                                {formatCurrency(investAnunciosRealizado / turma.leads_capturados)}
+                              </span>
                             </div>
                           )}
                         </div>

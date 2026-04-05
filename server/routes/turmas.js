@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     
     const turmasResult = await pool.query(
       `SELECT t.id, t.name, t.curso_id, t.sala_id, t.cadeiras, t.potencial_faturamento,
-              t.period, t.start_date, t.end_date, t.imposto, t.investimento_anuncios, t.investimento_anuncios_realizado, t.days_of_week, t.created_at,
+              t.period, t.start_date, t.end_date, t.imposto, t.investimento_anuncios, t.investimento_anuncios_realizado, t.leads_capturados, t.days_of_week, t.created_at,
               c.id as c_id, c.nome as c_nome, c.preco as c_preco, c.carga_horaria as c_carga_horaria,
               s.id as s_id, s.nome as s_nome, s.cadeiras as s_cadeiras, s.unidade_id as s_unidade_id,
               un.nome as unidade_nome
@@ -72,6 +72,7 @@ router.get('/', async (req, res) => {
       imposto: parseFloat(t.imposto),
       investimento_anuncios: parseFloat(t.investimento_anuncios),
       investimento_anuncios_realizado: parseFloat(t.investimento_anuncios_realizado || 0),
+      leads_capturados: parseInt(t.leads_capturados) || 0,
       days_of_week: parsePgArray(t.days_of_week),
       created_at: t.created_at,
       curso: t.c_id ? { id: t.c_id, nome: t.c_nome, preco: parseFloat(t.c_preco), carga_horaria: t.c_carga_horaria } : null,
@@ -241,7 +242,7 @@ router.put('/:id', async (req, res) => {
 router.patch('/:id/investimento', async (req, res) => {
   try {
     const { id } = req.params;
-    const { investimento_anuncios, investimento_anuncios_realizado } = req.body;
+    const { investimento_anuncios, investimento_anuncios_realizado, leads_capturados } = req.body;
     const sets = [];
     const params = [];
     if (investimento_anuncios !== undefined) {
@@ -252,10 +253,14 @@ router.patch('/:id/investimento', async (req, res) => {
       params.push(parseFloat(investimento_anuncios_realizado) || 0);
       sets.push(`investimento_anuncios_realizado = $${params.length}`);
     }
+    if (leads_capturados !== undefined) {
+      params.push(parseInt(leads_capturados) || 0);
+      sets.push(`leads_capturados = $${params.length}`);
+    }
     if (sets.length === 0) return res.status(400).json({ error: 'Nenhum campo para atualizar' });
     params.push(id);
     const result = await pool.query(
-      `UPDATE turmas SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING id, investimento_anuncios, investimento_anuncios_realizado`,
+      `UPDATE turmas SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING id, investimento_anuncios, investimento_anuncios_realizado, leads_capturados`,
       params
     );
     if (result.rows.length === 0) {
