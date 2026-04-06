@@ -1235,47 +1235,59 @@ export function Pipeline() {
                       {importModal.step === 'preview' && importModal.cursoId === conn.id ? (
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">
-                            <h4 className="text-white font-medium text-sm">{conn.nome} — Preview</h4>
+                            <h4 className="text-white font-medium text-sm">{conn.nome}</h4>
                             <button onClick={() => setImportModal(prev => ({ ...prev, step: 'form', leads: [], cursoId: '', unidadeId: '' }))} className="text-gray-400 hover:text-white text-xs">✕ Fechar</button>
                           </div>
-                          <div className="flex gap-2">
-                            <div className="flex-1 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-center"><div className="text-lg font-bold text-emerald-400">{importModal.newCount}</div><div className="text-[10px] text-emerald-400/70">Novos</div></div>
-                            <div className="flex-1 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-center"><div className="text-lg font-bold text-amber-400">{importModal.dupCount}</div><div className="text-[10px] text-amber-400/70">Duplicados</div></div>
-                            <div className="flex-1 p-2 rounded-lg bg-sky-500/10 border border-sky-500/30 text-center"><div className="text-lg font-bold text-sky-400">{importModal.leads.length}</div><div className="text-[10px] text-sky-400/70">Total</div></div>
-                          </div>
-                          <div className="max-h-48 overflow-y-auto rounded-lg border border-dark-lighter">
-                            <table className="w-full text-xs">
-                              <thead className="bg-dark-card sticky top-0"><tr><th className="text-left px-2 py-1.5 text-gray-400 font-medium">Nome</th><th className="text-left px-2 py-1.5 text-gray-400 font-medium">WhatsApp</th><th className="text-left px-2 py-1.5 text-gray-400 font-medium">Campanha</th><th className="text-center px-2 py-1.5 text-gray-400 font-medium">Status</th></tr></thead>
-                              <tbody className="divide-y divide-gray-800">
-                                {importModal.leads.map((lead: any, i: number) => (
-                                  <tr key={i} className={lead.is_duplicate ? 'opacity-40' : ''}>
-                                    <td className="px-2 py-1.5 text-white">{lead.nome}</td>
-                                    <td className="px-2 py-1.5 text-gray-300">{formatPhone(lead.whatsapp)}</td>
-                                    <td className="px-2 py-1.5"><span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">{lead.campaign_name || '—'}</span></td>
-                                    <td className="px-2 py-1.5 text-center">{lead.is_duplicate ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">Dup</span> : <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Novo</span>}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                          <div className="flex gap-2">
-                            <button onClick={() => setImportModal(prev => ({ ...prev, step: 'form', leads: [], cursoId: '', unidadeId: '' }))} className="flex-1 px-3 py-2 border border-gray-600 text-gray-300 rounded-lg text-sm hover:bg-dark-card transition-colors">Cancelar</button>
-                            <button
-                              onClick={async () => {
-                                setImportModal(prev => ({ ...prev, loading: true }));
-                                try {
-                                  const data = await api.post('/api/import-leads/execute', { leads: importModal.leads, curso_id: conn.curso_id, unidade_id: conn.unidade_id });
-                                  toast.success(`${data.imported} lead${data.imported !== 1 ? 's' : ''} importado${data.imported !== 1 ? 's' : ''}!`);
-                                  setImportModal(prev => ({ ...prev, step: 'form', leads: [], cursoId: '', unidadeId: '', loading: false }));
-                                  loadFbConnections(); loadData();
-                                } catch (error: any) { toast.error(error.message || 'Erro ao importar'); setImportModal(prev => ({ ...prev, loading: false })); }
-                              }}
-                              disabled={importModal.loading || importModal.newCount === 0}
-                              className="flex-1 px-3 py-2 bg-emerald-500 text-white font-medium rounded-lg text-sm hover:bg-emerald-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
-                            >
-                              {importModal.loading ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Importando...</> : `✓ Importar ${importModal.newCount} lead${importModal.newCount !== 1 ? 's' : ''}`}
-                            </button>
-                          </div>
+
+                          {importModal.newCount === 0 ? (
+                            <div className="text-center py-6">
+                              <div className="text-3xl mb-2">✅</div>
+                              <p className="text-white font-medium text-sm">Tudo sincronizado!</p>
+                              <p className="text-gray-500 text-xs mt-1">Nenhum lead novo na planilha. {importModal.dupCount} já importado{importModal.dupCount !== 1 ? 's' : ''}.</p>
+                              <button onClick={() => setImportModal(prev => ({ ...prev, step: 'form', leads: [], cursoId: '', unidadeId: '' }))} className="mt-3 px-4 py-2 border border-gray-600 text-gray-300 rounded-lg text-sm hover:bg-dark-card transition-colors">
+                                OK
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-center">
+                                <div className="text-lg font-bold text-emerald-400">{importModal.newCount}</div>
+                                <div className="text-[10px] text-emerald-400/70">novo{importModal.newCount !== 1 ? 's' : ''} lead{importModal.newCount !== 1 ? 's' : ''}</div>
+                              </div>
+                              <div className="max-h-48 overflow-y-auto rounded-lg border border-dark-lighter">
+                                <table className="w-full text-xs">
+                                  <thead className="bg-dark-card sticky top-0"><tr><th className="text-left px-2 py-1.5 text-gray-400 font-medium">Nome</th><th className="text-left px-2 py-1.5 text-gray-400 font-medium">WhatsApp</th><th className="text-left px-2 py-1.5 text-gray-400 font-medium">Campanha</th></tr></thead>
+                                  <tbody className="divide-y divide-gray-800">
+                                    {importModal.leads.filter((l: any) => !l.is_duplicate).map((lead: any, i: number) => (
+                                      <tr key={i}>
+                                        <td className="px-2 py-1.5 text-white">{lead.nome}</td>
+                                        <td className="px-2 py-1.5 text-gray-300">{formatPhone(lead.whatsapp)}</td>
+                                        <td className="px-2 py-1.5"><span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">{lead.campaign_name || '—'}</span></td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                              <div className="flex gap-2">
+                                <button onClick={() => setImportModal(prev => ({ ...prev, step: 'form', leads: [], cursoId: '', unidadeId: '' }))} className="flex-1 px-3 py-2 border border-gray-600 text-gray-300 rounded-lg text-sm hover:bg-dark-card transition-colors">Cancelar</button>
+                                <button
+                                  onClick={async () => {
+                                    setImportModal(prev => ({ ...prev, loading: true }));
+                                    try {
+                                      const data = await api.post('/api/import-leads/execute', { leads: importModal.leads, curso_id: conn.curso_id, unidade_id: conn.unidade_id });
+                                      toast.success(`${data.imported} lead${data.imported !== 1 ? 's' : ''} importado${data.imported !== 1 ? 's' : ''}!`);
+                                      setImportModal(prev => ({ ...prev, step: 'form', leads: [], cursoId: '', unidadeId: '', loading: false }));
+                                      loadFbConnections(); loadData();
+                                    } catch (error: any) { toast.error(error.message || 'Erro ao importar'); setImportModal(prev => ({ ...prev, loading: false })); }
+                                  }}
+                                  disabled={importModal.loading}
+                                  className="flex-1 px-3 py-2 bg-emerald-500 text-white font-medium rounded-lg text-sm hover:bg-emerald-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+                                >
+                                  {importModal.loading ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Importando...</> : `✓ Importar ${importModal.newCount} lead${importModal.newCount !== 1 ? 's' : ''}`}
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       ) : (
                         <>
