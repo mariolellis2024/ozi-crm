@@ -32,6 +32,8 @@ import professorPagamentosRoutes from './routes/professor-pagamentos.js';
 import contratosRoutes from './routes/contratos.js';
 import zapsignWebhookRoutes from './routes/zapsign-webhook.js';
 import importLeadsRoutes from './routes/import-leads.js';
+import fbConnectionsRoutes from './routes/fb-connections.js';
+import { startAutoSync } from './services/auto-sync.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -73,6 +75,7 @@ app.use('/api/landing-pages', authenticateToken, landingPagesRoutes);
 app.use('/api/professor-pagamentos', authenticateToken, professorPagamentosRoutes);
 app.use('/api/contratos', authenticateToken, contratosRoutes);
 app.use('/api/import-leads', authenticateToken, importLeadsRoutes);
+app.use('/api/fb-connections', authenticateToken, fbConnectionsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -92,6 +95,7 @@ import { runMigrations } from './migrate.js';
 runMigrations().then(() => {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 OZI CRM Server running on port ${PORT}`);
+    startAutoSync();
   });
 }).catch(err => {
   console.error('Failed to run migrations:', err);

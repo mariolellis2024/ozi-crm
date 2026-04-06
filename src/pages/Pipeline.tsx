@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
-import { Filter, X, MessageCircle, ClipboardList, AlertTriangle, Upload, Loader2 } from 'lucide-react';
+import { Filter, X, MessageCircle, ClipboardList, AlertTriangle, Upload, Loader2, RefreshCw, Plus, Trash2, Power, Link2, Zap } from 'lucide-react';
 import { formatPhone, formatCurrency } from '../utils/format';
 import toast from 'react-hot-toast';
 import { useUnidade } from '../contexts/UnidadeContext';
@@ -174,16 +174,46 @@ export function Pipeline() {
     dupCount: number;
     importedCount: number;
     skippedCount: number;
+    activeTab: 'connections' | 'manual';
   }>({
     isOpen: false, url: '', cursoId: '', unidadeId: '',
     step: 'form', loading: false, leads: [], newCount: 0, dupCount: 0,
-    importedCount: 0, skippedCount: 0
+    importedCount: 0, skippedCount: 0, activeTab: 'connections'
   });
+
+  // Facebook connections state
+  const [fbConnections, setFbConnections] = useState<any[]>([]);
+  const [fbForm, setFbForm] = useState({ nome: '', spreadsheet_url: '', curso_id: '', unidade_id: '', isOpen: false, editing: '' });
+  const [fbSyncing, setFbSyncing] = useState<string | null>(null);
+  const [fbLoading, setFbLoading] = useState(false);
 
   useEffect(() => {
     loadData();
     setSelectedUnidade(selectedUnidadeId || '');
   }, [selectedUnidadeId]);
+
+  // New leads notification on page load
+  useEffect(() => {
+    if (interests.length === 0) return;
+    const interestedCount = interests.filter(i => i.status === 'interested').length;
+    const lastSeen = parseInt(localStorage.getItem('ozi_pipeline_last_interested_count') || '0', 10);
+    const lastTime = localStorage.getItem('ozi_pipeline_last_visit');
+
+    if (lastTime && interestedCount > lastSeen) {
+      const newCount = interestedCount - lastSeen;
+      toast.success(`🆕 ${newCount} novo${newCount !== 1 ? 's' : ''} lead${newCount !== 1 ? 's' : ''} desde sua última visita!`, { duration: 5000 });
+    }
+
+    localStorage.setItem('ozi_pipeline_last_interested_count', String(interestedCount));
+    localStorage.setItem('ozi_pipeline_last_visit', new Date().toISOString());
+  }, [interests]);
+
+  // Update localStorage when interests change (user working)
+  useEffect(() => {
+    if (interests.length === 0) return;
+    const interestedCount = interests.filter(i => i.status === 'interested').length;
+    localStorage.setItem('ozi_pipeline_last_interested_count', String(interestedCount));
+  }, [interests.length]);
 
   async function loadData() {
     try {
@@ -263,8 +293,87 @@ export function Pipeline() {
     setImportModal({
       isOpen: false, url: '', cursoId: '', unidadeId: '',
       step: 'form', loading: false, leads: [], newCount: 0, dupCount: 0,
-      importedCount: 0, skippedCount: 0
+      importedCount: 0, skippedCount: 0, activeTab: 'connections'
     });
+  }
+
+  async function loadFbConnections() {
+    setFbLoading(true);
+    try {
+      const data = await api.get('/api/fb-connections');
+      setFbConnections(data);
+    } catch {
+      toast.error('Erro ao carregar conexões');
+    } finally {
+      setFbLoading(false);
+    }
+  }
+
+  async function saveFbConnection() {
+    const { nome, spreadsheet_url, curso_id, unidade_id, editing } = fbForm;
+    if (!nome || !spreadsheet_url || !curso_id || !unidade_id) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+    try {
+      if (editing) {
+        await api.put(`/api/fb-connections/${editing}`, { nome, spreadsheet_url, curso_id, unidade_id });
+        toast.success('Conexão atualizada');
+      } else {
+        await api.post('/api/fb-connections', { nome, spreadsheet_url, curso_id, unidade_id });
+        toast.success('Conexão cadastrada');
+      }
+      setFbForm({ nome: '', spreadsheet_url: '', curso_id: '', unidade_id: '', isOpen: false, editing: '' });
+      loadFbConnections();
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao salvar conexão');
+    }
+  }
+
+  async function deleteFbConnection(id: string) {
+    if (!confirm('Tem certeza que deseja excluir esta conexão?')) return;
+    try {
+      await api.delete(`/api/fb-connections/${id}`);
+      toast.success('Conexão excluída');
+      loadFbConnections();
+    } catch {
+      toast.error('Erro ao excluir');
+    }
+  }
+
+  async function toggleFbConnection(id: string, ativo: boolean) {
+    try {
+      await api.put(`/api/fb-connections/${id}`, { ativo: !ativo });
+      toast.success(ativo ? 'Auto-sync desativado' : 'Auto-sync ativado');
+      loadFbConnections();
+    } catch {
+      toast.error('Erro ao atualizar');
+    }
+  }
+
+
+
+  function editFbConnection(conn: any) {
+    setFbForm({
+      nome: conn.nome,
+      spreadsheet_url: conn.spreadsheet_url,
+      curso_id: conn.curso_id,
+      unidade_id: conn.unidade_id,
+      isOpen: true,
+      editing: conn.id,
+    });
+  }
+
+  function formatTimeAgo(dateStr: string) {
+    if (!dateStr) return 'Nunca';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Agora';
+    if (mins < 60) return `${mins}min atrás`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h atrás`;
+    const days = Math.floor(hours / 24);
+    return `${days}d atrás`;
   }
 
   async function openEnrollModal(interest: Interest) {
@@ -567,7 +676,7 @@ export function Pipeline() {
             <p className="text-gray-400 mt-2">Arraste os alunos entre as colunas para alterar o status</p>
           </div>
           <button
-            onClick={() => setImportModal(prev => ({ ...prev, isOpen: true }))}
+            onClick={() => { setImportModal(prev => ({ ...prev, isOpen: true })); loadFbConnections(); }}
             className="flex items-center gap-2 px-4 py-2.5 bg-sky-500 text-white rounded-xl hover:bg-sky-600 transition-colors font-medium text-sm"
           >
             <Upload className="h-4 w-4" />
@@ -1045,15 +1154,183 @@ export function Pipeline() {
           <div className="bg-dark-card rounded-2xl p-6 w-full max-w-2xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
-                <Upload className="h-5 w-5 text-sky-400" />
-                <h2 className="text-lg font-semibold text-white">Importar Leads do Facebook</h2>
+                <Zap className="h-5 w-5 text-sky-400" />
+                <h2 className="text-lg font-semibold text-white">Facebook Leads</h2>
               </div>
               <button onClick={closeImportModal} className="text-gray-400 hover:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            {importModal.step === 'form' && (
+            {/* Tabs */}
+            <div className="flex gap-1 mb-4 bg-dark-lighter rounded-xl p-1">
+              <button
+                onClick={() => setImportModal(prev => ({ ...prev, activeTab: 'connections' }))}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  importModal.activeTab === 'connections'
+                    ? 'bg-sky-500 text-white shadow-lg'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Link2 className="h-3.5 w-3.5 inline mr-1.5" />
+                Conexões
+              </button>
+              <button
+                onClick={() => setImportModal(prev => ({ ...prev, activeTab: 'manual' }))}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  importModal.activeTab === 'manual'
+                    ? 'bg-sky-500 text-white shadow-lg'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Upload className="h-3.5 w-3.5 inline mr-1.5" />
+                Import Manual
+              </button>
+            </div>
+
+            {/* ========== CONNECTIONS TAB ========== */}
+            {importModal.activeTab === 'connections' && (
+              <div className="flex-1 overflow-y-auto space-y-3">
+                {/* New Connection Form */}
+                {fbForm.isOpen ? (
+                  <div className="p-4 rounded-xl border-2 border-sky-500/30 bg-sky-500/5 space-y-3">
+                    <h3 className="text-sm font-semibold text-sky-400">{fbForm.editing ? 'Editar Conexão' : 'Nova Conexão'}</h3>
+                    <input type="text" value={fbForm.nome} onChange={e => setFbForm(prev => ({ ...prev, nome: e.target.value }))} placeholder="Nome da conexão (ex: After Effects - Brasília)" className="w-full bg-dark-lighter border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-500/50 focus:outline-none" />
+                    <input type="url" value={fbForm.spreadsheet_url} onChange={e => setFbForm(prev => ({ ...prev, spreadsheet_url: e.target.value }))} placeholder="https://docs.google.com/spreadsheets/d/..." className="w-full bg-dark-lighter border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-500/50 focus:outline-none" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <select value={fbForm.curso_id} onChange={e => setFbForm(prev => ({ ...prev, curso_id: e.target.value }))} className="w-full bg-dark-lighter border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-500/50 focus:outline-none">
+                        <option value="">Curso *</option>
+                        {cursos.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                      </select>
+                      <select value={fbForm.unidade_id} onChange={e => setFbForm(prev => ({ ...prev, unidade_id: e.target.value }))} className="w-full bg-dark-lighter border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-500/50 focus:outline-none">
+                        <option value="">Unidade *</option>
+                        {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => setFbForm({ nome: '', spreadsheet_url: '', curso_id: '', unidade_id: '', isOpen: false, editing: '' })} className="flex-1 px-3 py-2 border border-gray-600 text-gray-300 rounded-lg text-sm hover:bg-dark-lighter transition-colors">Cancelar</button>
+                      <button onClick={saveFbConnection} className="flex-1 px-3 py-2 bg-sky-500 text-white font-medium rounded-lg text-sm hover:bg-sky-600 transition-colors">{fbForm.editing ? 'Salvar' : 'Cadastrar'}</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setFbForm({ nome: '', spreadsheet_url: '', curso_id: '', unidade_id: '', isOpen: true, editing: '' })} className="w-full px-4 py-3 border-2 border-dashed border-gray-600 rounded-xl text-gray-400 hover:text-sky-400 hover:border-sky-500/50 transition-all text-sm flex items-center justify-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Nova Conexão
+                  </button>
+                )}
+
+                {/* Connections List */}
+                {fbLoading ? (
+                  <div className="text-center py-6"><Loader2 className="h-5 w-5 animate-spin text-sky-400 mx-auto" /><p className="text-gray-500 text-sm mt-2">Carregando...</p></div>
+                ) : fbConnections.length === 0 && !fbForm.isOpen ? (
+                  <div className="text-center py-8">
+                    <Link2 className="h-8 w-8 text-gray-600 mx-auto mb-2" />
+                    <p className="text-gray-500 text-sm">Nenhuma conexão cadastrada</p>
+                    <p className="text-gray-600 text-xs mt-1">Cadastre uma planilha do Google Sheets para sincronizar leads automaticamente</p>
+                  </div>
+                ) : (
+                  fbConnections.map((conn: any) => (
+                    <div key={conn.id} className={`p-4 rounded-xl border transition-all ${conn.ativo ? 'border-gray-700 bg-dark-lighter' : 'border-gray-800 bg-dark-lighter/50 opacity-60'}`}>
+                      {/* Preview mode for this connection */}
+                      {importModal.step === 'preview' && importModal.cursoId === conn.id ? (
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <h4 className="text-white font-medium text-sm">{conn.nome} — Preview</h4>
+                            <button onClick={() => setImportModal(prev => ({ ...prev, step: 'form', leads: [], cursoId: '', unidadeId: '' }))} className="text-gray-400 hover:text-white text-xs">✕ Fechar</button>
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="flex-1 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-center"><div className="text-lg font-bold text-emerald-400">{importModal.newCount}</div><div className="text-[10px] text-emerald-400/70">Novos</div></div>
+                            <div className="flex-1 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-center"><div className="text-lg font-bold text-amber-400">{importModal.dupCount}</div><div className="text-[10px] text-amber-400/70">Duplicados</div></div>
+                            <div className="flex-1 p-2 rounded-lg bg-sky-500/10 border border-sky-500/30 text-center"><div className="text-lg font-bold text-sky-400">{importModal.leads.length}</div><div className="text-[10px] text-sky-400/70">Total</div></div>
+                          </div>
+                          <div className="max-h-48 overflow-y-auto rounded-lg border border-dark-lighter">
+                            <table className="w-full text-xs">
+                              <thead className="bg-dark-card sticky top-0"><tr><th className="text-left px-2 py-1.5 text-gray-400 font-medium">Nome</th><th className="text-left px-2 py-1.5 text-gray-400 font-medium">WhatsApp</th><th className="text-left px-2 py-1.5 text-gray-400 font-medium">Campanha</th><th className="text-center px-2 py-1.5 text-gray-400 font-medium">Status</th></tr></thead>
+                              <tbody className="divide-y divide-gray-800">
+                                {importModal.leads.map((lead: any, i: number) => (
+                                  <tr key={i} className={lead.is_duplicate ? 'opacity-40' : ''}>
+                                    <td className="px-2 py-1.5 text-white">{lead.nome}</td>
+                                    <td className="px-2 py-1.5 text-gray-300">{formatPhone(lead.whatsapp)}</td>
+                                    <td className="px-2 py-1.5"><span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">{lead.campaign_name || '—'}</span></td>
+                                    <td className="px-2 py-1.5 text-center">{lead.is_duplicate ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">Dup</span> : <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Novo</span>}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => setImportModal(prev => ({ ...prev, step: 'form', leads: [], cursoId: '', unidadeId: '' }))} className="flex-1 px-3 py-2 border border-gray-600 text-gray-300 rounded-lg text-sm hover:bg-dark-card transition-colors">Cancelar</button>
+                            <button
+                              onClick={async () => {
+                                setImportModal(prev => ({ ...prev, loading: true }));
+                                try {
+                                  const data = await api.post('/api/import-leads/execute', { leads: importModal.leads, curso_id: conn.curso_id, unidade_id: conn.unidade_id });
+                                  toast.success(`${data.imported} lead${data.imported !== 1 ? 's' : ''} importado${data.imported !== 1 ? 's' : ''}!`);
+                                  setImportModal(prev => ({ ...prev, step: 'form', leads: [], cursoId: '', unidadeId: '', loading: false }));
+                                  loadFbConnections(); loadData();
+                                } catch (error: any) { toast.error(error.message || 'Erro ao importar'); setImportModal(prev => ({ ...prev, loading: false })); }
+                              }}
+                              disabled={importModal.loading || importModal.newCount === 0}
+                              className="flex-1 px-3 py-2 bg-emerald-500 text-white font-medium rounded-lg text-sm hover:bg-emerald-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+                            >
+                              {importModal.loading ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Importando...</> : `✓ Importar ${importModal.newCount} lead${importModal.newCount !== 1 ? 's' : ''}`}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h4 className="text-white font-medium text-sm flex items-center gap-1.5">
+                                {conn.ativo ? <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse inline-block" /> : <span className="h-2 w-2 rounded-full bg-gray-600 inline-block" />}
+                                {conn.nome}
+                              </h4>
+                              <p className="text-gray-500 text-xs mt-0.5">📚 {conn.curso_nome} • 📍 {conn.unidade_nome}</p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={async () => {
+                                  setFbSyncing(conn.id);
+                                  try {
+                                    const data = await api.post('/api/import-leads/preview', { url: conn.spreadsheet_url });
+                                    setImportModal(prev => ({ ...prev, step: 'preview', leads: data.leads, newCount: data.new_count, dupCount: data.duplicate_count, cursoId: conn.id, unidadeId: conn.unidade_id }));
+                                  } catch (error: any) { toast.error(error.message || 'Erro ao buscar planilha'); }
+                                  finally { setFbSyncing(null); }
+                                }}
+                                disabled={fbSyncing === conn.id}
+                                className="p-1.5 rounded-lg text-sky-400 hover:bg-sky-500/10 transition-colors disabled:opacity-50" title="Importar Agora"
+                              >
+                                {fbSyncing === conn.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                              </button>
+                              <button onClick={() => toggleFbConnection(conn.id, conn.ativo)} className={`p-1.5 rounded-lg transition-colors ${conn.ativo ? 'text-emerald-400 hover:bg-emerald-500/10' : 'text-gray-500 hover:bg-gray-600/10'}`} title={conn.ativo ? 'Desativar auto-sync' : 'Ativar auto-sync'}>
+                                <Power className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => editFbConnection(conn)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-600/10 transition-colors" title="Editar">
+                                <ClipboardList className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => deleteFbConnection(conn.id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors" title="Excluir">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 text-[10px]">
+                            <span className="text-gray-500">🔄 Última sync: {formatTimeAgo(conn.last_sync_at)}</span>
+                            {conn.last_sync_count > 0 && <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">+{conn.last_sync_count} leads</span>}
+                            {conn.last_sync_error && <span className="px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20" title={conn.last_sync_error}>⚠ Erro</span>}
+                            {conn.ativo && <span className="px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">⚡ Auto-sync 30min</span>}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* ========== MANUAL IMPORT TAB ========== */}
+            {importModal.activeTab === 'manual' && (
+              <>
+              {importModal.step === 'form' && (
               <div className="space-y-4">
                 <p className="text-gray-400 text-sm">
                   Cole o link público da planilha Google Sheets com os leads exportados do Facebook Instant Forms.
@@ -1100,7 +1377,7 @@ export function Pipeline() {
                   {importModal.loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Buscando dados...</> : 'Buscar Dados da Planilha'}
                 </button>
               </div>
-            )}
+              )}
 
             {importModal.step === 'preview' && (
               <div className="flex flex-col flex-1 min-h-0">
@@ -1204,6 +1481,8 @@ export function Pipeline() {
                   Fechar
                 </button>
               </div>
+            )}
+            </>
             )}
           </div>
         </div>,

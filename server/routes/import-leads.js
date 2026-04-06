@@ -3,6 +3,9 @@ import pool from '../db.js';
 
 const router = Router();
 
+// Export utility functions for reuse by auto-sync service
+export { toCSVUrl, parseCSV, cleanPhone, platformToSource };
+
 /**
  * Convert a Google Sheets URL to its CSV export URL.
  * Supports:

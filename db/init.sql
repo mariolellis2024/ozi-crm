@@ -560,3 +560,21 @@ DO $$ BEGIN
   ALTER TYPE period_type ADD VALUE IF NOT EXISTS 'dia_inteiro';
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
+
+-- =====================================================
+-- Facebook Import Connections — saved spreadsheet links for auto-sync
+-- =====================================================
+CREATE TABLE IF NOT EXISTS fb_import_connections (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome text NOT NULL,
+  spreadsheet_url text NOT NULL,
+  curso_id uuid NOT NULL REFERENCES cursos(id) ON DELETE CASCADE,
+  unidade_id uuid NOT NULL REFERENCES unidades(id) ON DELETE CASCADE,
+  ativo boolean DEFAULT true,
+  last_sync_at timestamptz,
+  last_sync_count integer DEFAULT 0,
+  last_sync_error text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_fb_import_connections_ativo ON fb_import_connections(ativo) WHERE ativo = true;
