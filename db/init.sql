@@ -578,3 +578,12 @@ CREATE TABLE IF NOT EXISTS fb_import_connections (
 );
 
 CREATE INDEX IF NOT EXISTS idx_fb_import_connections_ativo ON fb_import_connections(ativo) WHERE ativo = true;
+
+-- =====================================================
+-- Add 'in_service' status to interest_status enum (Em atendimento)
+-- =====================================================
+DO $$ BEGIN
+  ALTER TYPE interest_status ADD VALUE IF NOT EXISTS 'in_service';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
