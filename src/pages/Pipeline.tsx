@@ -65,12 +65,13 @@ function formatDateShort(dateStr: string) {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
   interested: { label: 'Interessados', color: 'text-amber-400', bgColor: 'bg-amber-500/10 border-amber-500/30' },
+  in_service: { label: 'Em atendimento', color: 'text-cyan-400', bgColor: 'bg-cyan-500/10 border-cyan-500/30' },
   enrolled: { label: 'Matriculados', color: 'text-blue-400', bgColor: 'bg-blue-500/10 border-blue-500/30' },
   completed: { label: 'Concluídos', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10 border-emerald-500/30' },
   lost: { label: 'Perdidos', color: 'text-red-400', bgColor: 'bg-red-500/10 border-red-500/30' },
 };
 
-const COLUMNS = ['interested', 'enrolled', 'completed', 'lost'];
+const COLUMNS = ['interested', 'in_service', 'enrolled', 'completed', 'lost'];
 
 export function Pipeline() {
   const { selectedUnidadeId } = useUnidade();
@@ -501,8 +502,8 @@ export function Pipeline() {
       return;
     }
 
-    // If student is enrolled and moving to interested or lost, confirm unenrollment
-    if (interest.status === 'enrolled' && (newStatus === 'interested' || newStatus === 'lost')) {
+    // If student is enrolled and moving to interested, in_service, or lost, confirm unenrollment
+    if (interest.status === 'enrolled' && (newStatus === 'interested' || newStatus === 'in_service' || newStatus === 'lost')) {
       setUnenrollModal({ isOpen: true, interest, targetStatus: newStatus, loading: false });
       return;
     }
@@ -712,7 +713,7 @@ export function Pipeline() {
         </div>
 
         {/* Kanban Board */}
-        <div className="grid grid-cols-4 gap-4 min-h-[60vh]">
+        <div className="grid grid-cols-5 gap-4 min-h-[60vh]">
           {COLUMNS.map(status => {
             const items = getColumnItems(status);
             const cfg = STATUS_CONFIG[status];

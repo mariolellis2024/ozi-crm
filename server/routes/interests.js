@@ -364,9 +364,9 @@ router.put('/:id/status', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     
-    // When moving away from enrolled (to interested or lost), clear turma_id
+    // When moving away from enrolled (to interested, in_service, or lost), clear turma_id
     let result;
-    if (status === 'interested' || status === 'lost') {
+    if (status === 'interested' || status === 'in_service' || status === 'lost') {
       result = await pool.query(
         'UPDATE aluno_curso_interests SET status = $1, turma_id = NULL WHERE id = $2 RETURNING *',
         [status, id]
