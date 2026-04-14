@@ -9,6 +9,7 @@ import { ModalTurma } from '../components/ModalTurma';
 import { useUnidade } from '../contexts/UnidadeContext';
 import { ModalAlunosInteressados } from '../components/ModalAlunosInteressados';
 import { ModalAlunosMatriculados } from '../components/ModalAlunosMatriculados';
+import { ModalPreMatriculados } from '../components/ModalPreMatriculados';
 import { ModalComissoesTurma } from '../components/ModalComissoesTurma';
 import { CalendarOcupacaoSalas } from '../components/CalendarOcupacaoSalas';
 
@@ -126,6 +127,13 @@ export function Turmas() {
     cursoNome: '',
     cursoPreco: 0,
     cadeiras: 0
+  });
+  const [preMatriculadosModal, setPreMatriculadosModal] = useState({
+    isOpen: false,
+    turmaId: '',
+    cursoId: '',
+    cursoNome: '',
+    cursoPreco: 0
   });
   const [formData, setFormData] = useState({
     name: '',
@@ -669,6 +677,17 @@ export function Turmas() {
     loadData(); // Reload data to update enrolled count
   }
 
+  function handleOpenPreMatriculados(turma: Turma) {
+    if (!turma.curso) return;
+    setPreMatriculadosModal({
+      isOpen: true,
+      turmaId: turma.id,
+      cursoId: turma.curso_id,
+      cursoNome: turma.curso.nome,
+      cursoPreco: turma.curso.preco
+    });
+  }
+
   function handlePaymentRequested(alunoId: string, alunoNome: string, cursoId: string, cursoPreco: number, turmaId: string) {
     setPaymentModal({
       isOpen: true,
@@ -941,6 +960,17 @@ export function Turmas() {
                     {ocupacao.toFixed(0)}% ocupado • {vagasDisponiveis} vagas disponíveis
                   </div>
                 </div>
+
+                {/* Botão para ver PRÉ-MATRICULADOS (destaque) */}
+                {(turma.pre_enrolled_count || 0) > 0 && (
+                  <button
+                    onClick={() => handleOpenPreMatriculados(turma)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-amber-500/20 text-amber-400 rounded-lg hover:bg-amber-500/30 transition-colors border border-amber-500/30 font-medium"
+                  >
+                    <span className="text-lg">🎯</span>
+                    <span>Ver Pré-Matriculados ({turma.pre_enrolled_count})</span>
+                  </button>
+                )}
 
                 {/* Botão para ver alunos interessados */}
                 <button
@@ -1349,6 +1379,16 @@ export function Turmas() {
           cursoNome={comissoesTurmaModal.cursoNome}
           cursoPreco={comissoesTurmaModal.cursoPreco}
           cadeiras={comissoesTurmaModal.cadeiras}
+        />
+
+        <ModalPreMatriculados
+          isOpen={preMatriculadosModal.isOpen}
+          onClose={() => setPreMatriculadosModal({ ...preMatriculadosModal, isOpen: false })}
+          turmaId={preMatriculadosModal.turmaId}
+          cursoId={preMatriculadosModal.cursoId}
+          cursoNome={preMatriculadosModal.cursoNome}
+          cursoPreco={preMatriculadosModal.cursoPreco}
+          onDataChanged={loadData}
         />
 
         {/* Payment Generation Modal */}

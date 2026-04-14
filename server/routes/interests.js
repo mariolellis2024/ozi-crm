@@ -147,6 +147,25 @@ router.get('/turma/:turmaId/enrolled', async (req, res) => {
   }
 });
 
+// GET /api/interests/turma/:turmaId/pre-enrolled — pre-enrolled students list
+router.get('/turma/:turmaId/pre-enrolled', async (req, res) => {
+  try {
+    const { turmaId } = req.params;
+    const result = await pool.query(
+      `SELECT a.id, a.nome, a.email, a.whatsapp, a.empresa, aci.id as interest_id, aci.curso_id, aci.created_at as reserved_at
+       FROM aluno_curso_interests aci
+       INNER JOIN alunos a ON a.id = aci.aluno_id
+       WHERE aci.turma_id = $1 AND aci.status::text = 'pre_enrolled'
+       ORDER BY aci.created_at DESC`,
+      [turmaId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error loading pre-enrolled students:', error);
+    res.status(500).json({ error: 'Erro ao carregar pré-matriculados' });
+  }
+});
+
 // POST /api/interests — add interest
 router.post('/', async (req, res) => {
   try {
