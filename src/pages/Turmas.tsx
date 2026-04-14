@@ -973,20 +973,31 @@ export function Turmas() {
                   </button>
                 )}
 
-                {/* Botão copiar link público */}
+                {/* Botões link público */}
                 {turma.public_slug && (
-                  <button
-                    onClick={() => {
-                      const url = `${window.location.origin}/t/${turma.public_slug}`;
-                      navigator.clipboard.writeText(url)
-                        .then(() => toast.success('Link copiado! 📋'))
-                        .catch(() => toast.error('Erro ao copiar link'));
-                    }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-amber-500/20 text-amber-400 rounded-lg hover:bg-amber-500/30 transition-colors"
-                  >
-                    <span>📋</span>
-                    <span>Copiar Link de Reserva</span>
-                  </button>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => {
+                        const url = `${window.location.origin}/t/${turma.public_slug}`;
+                        navigator.clipboard.writeText(url)
+                          .then(() => toast.success('Link copiado! 📋'))
+                          .catch(() => toast.error('Erro ao copiar link'));
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-amber-500/20 text-amber-400 rounded-lg hover:bg-amber-500/30 transition-colors"
+                    >
+                      <span>📋</span>
+                      <span>Copiar Link</span>
+                    </button>
+                    <a
+                      href={`/t/${turma.public_slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-teal-500/20 text-teal-400 rounded-lg hover:bg-teal-500/30 transition-colors"
+                    >
+                      <span>🔗</span>
+                      <span>Abrir Página</span>
+                    </a>
+                  </div>
                 )}
 
                 {/* Resumo Financeiro Completo */}
