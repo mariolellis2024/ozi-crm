@@ -62,6 +62,8 @@ interface Turma {
     id: string;
     nome: string;
   }>;
+  pre_enrolled_count?: number;
+  public_slug?: string;
 }
 
 interface Curso {
@@ -916,12 +918,22 @@ export function Turmas() {
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-400 text-sm">Ocupação</span>
                     <span className="text-white font-semibold">
-                      {turma.alunos_enrolled?.length || 0}/{turma.cadeiras}
+                      {turma.alunos_enrolled?.length || 0}
+                      {(turma.pre_enrolled_count || 0) > 0 && (
+                        <span className="text-amber-400"> +{turma.pre_enrolled_count} pré</span>
+                      )}
+                      /{turma.cadeiras}
                     </span>
                   </div>
                   <div className="w-full bg-dark-lighter rounded-full h-2">
+                    {(turma.pre_enrolled_count || 0) > 0 && (
+                      <div
+                        className="bg-amber-400/60 h-2 rounded-full transition-all duration-300 absolute"
+                        style={{ width: `${((turma.alunos_enrolled?.length || 0) + (turma.pre_enrolled_count || 0)) / turma.cadeiras * 100}%` }}
+                      />
+                    )}
                     <div
-                      className="bg-teal-accent h-2 rounded-full transition-all duration-300"
+                      className="bg-teal-accent h-2 rounded-full transition-all duration-300 relative"
                       style={{ width: `${ocupacao}%` }}
                     />
                   </div>
@@ -958,6 +970,22 @@ export function Turmas() {
                   >
                     <DollarSign className="h-4 w-4" />
                     <span>Ver Comissões da Turma</span>
+                  </button>
+                )}
+
+                {/* Botão copiar link público */}
+                {turma.public_slug && (
+                  <button
+                    onClick={() => {
+                      const url = `${window.location.origin}/t/${turma.public_slug}`;
+                      navigator.clipboard.writeText(url)
+                        .then(() => toast.success('Link copiado! 📋'))
+                        .catch(() => toast.error('Erro ao copiar link'));
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-amber-500/20 text-amber-400 rounded-lg hover:bg-amber-500/30 transition-colors"
+                  >
+                    <span>📋</span>
+                    <span>Copiar Link de Reserva</span>
                   </button>
                 )}
 

@@ -40,6 +40,7 @@ const SocialProofPage = lazyRetry(() => import('./pages/SocialProof').then(m => 
 const Contratos = lazyRetry(() => import('./pages/Contratos').then(m => ({ default: m.Contratos })), 'Contratos');
 const FormularioPublico = lazyRetry(() => import('./pages/FormularioPublico').then(m => ({ default: m.FormularioPublico })), 'FormularioPublico');
 const LandingPagePublica = lazyRetry(() => import('./pages/LandingPagePublica').then(m => ({ default: m.LandingPagePublica })), 'LandingPagePublica');
+const ReservaVaga = lazyRetry(() => import('./pages/ReservaVaga').then(m => ({ default: m.ReservaVaga })), 'ReservaVaga');
 
 interface User {
   id: string;
@@ -114,6 +115,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/f/:slug" element={<FormularioPublico />} />
           <Route path="/lp/:slug" element={<LandingPagePublica />} />
+          <Route path="/t/:slug" element={<ReservaVaga />} />
           <Route path="*" element={
             <UnidadeProvider>
               <Suspense fallback={<PageLoader />}>

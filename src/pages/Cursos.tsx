@@ -34,7 +34,8 @@ export function Cursos() {
     preco: '',
     categoria_id: '',
     imagem_url: '',
-    descricao: ''
+    descricao: '',
+    trailer_youtube_url: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({
@@ -97,7 +98,7 @@ export function Cursos() {
       }
 
       setIsModalOpen(false);
-      setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '', descricao: '' });
+      setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '', descricao: '', trailer_youtube_url: '' });
       setEditingId(null);
       loadCursos();
     } catch (error) {
@@ -139,7 +140,8 @@ export function Cursos() {
       preco: formatCurrencyInput((curso.preco * 100).toString()),
       categoria_id: curso.categoria_id || '',
       imagem_url: curso.imagem_url || '',
-      descricao: (curso as any).descricao || ''
+      descricao: (curso as any).descricao || '',
+      trailer_youtube_url: (curso as any).trailer_youtube_url || ''
     });
     setEditingId(curso.id);
     setIsModalOpen(true);
@@ -274,7 +276,7 @@ export function Cursos() {
           onSubmit={handleSubmit}
           onClose={() => {
             setIsModalOpen(false);
-            setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '', descricao: '' });
+            setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '', descricao: '', trailer_youtube_url: '' });
             setEditingId(null);
           }}
         />

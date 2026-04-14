@@ -22,6 +22,7 @@ interface ModalCursoProps {
     categoria_id: string;
     imagem_url: string;
     descricao: string;
+    trailer_youtube_url: string;
   };
   setFormData: React.Dispatch<React.SetStateAction<{
     nome: string;
@@ -30,6 +31,7 @@ interface ModalCursoProps {
     categoria_id: string;
     imagem_url: string;
     descricao: string;
+    trailer_youtube_url: string;
   }>>;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
@@ -249,6 +251,34 @@ export function ModalCurso({
               onChange={handleImageUpload}
               className="hidden"
             />
+          </div>
+
+          {/* YouTube Trailer */}
+          <div>
+            <label htmlFor="trailer_youtube_url" className="block text-sm font-medium text-gray-400 mb-1">
+              Trailer do Curso (YouTube)
+            </label>
+            <input
+              type="url"
+              id="trailer_youtube_url"
+              value={formData.trailer_youtube_url}
+              onChange={(e) => setFormData({ ...formData, trailer_youtube_url: e.target.value })}
+              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+              placeholder="https://www.youtube.com/watch?v=..."
+            />
+            {formData.trailer_youtube_url && (() => {
+              const match = formData.trailer_youtube_url.match(/(?:youtu.be\/|v=)([^#&?]*)/);
+              if (match && match[1]) {
+                return (
+                  <img
+                    src={`https://img.youtube.com/vi/${match[1]}/mqdefault.jpg`}
+                    alt="Thumbnail"
+                    className="mt-2 rounded-lg w-full h-32 object-cover opacity-80"
+                  />
+                );
+              }
+              return null;
+            })()}
           </div>
 
           <InputField

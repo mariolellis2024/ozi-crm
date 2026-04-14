@@ -1,8 +1,20 @@
 import { Router } from 'express';
 import pool, { parsePgArray } from '../db.js';
 import { logActivity } from '../activityLog.js';
+import crypto from 'crypto';
 
 const router = Router();
+
+// Helper: generate a URL-friendly slug
+function generateSlug(text) {
+  const base = text
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const hash = crypto.randomBytes(3).toString('hex');
+  return `${base}-${hash}`;
+}
 
 // GET /api/turmas
 router.get('/', async (req, res) => {
@@ -13,7 +25,7 @@ router.get('/', async (req, res) => {
     
     const turmasResult = await pool.query(
       `SELECT t.id, t.name, t.curso_id, t.sala_id, t.cadeiras, t.potencial_faturamento,
-              t.period, t.start_date, t.end_date, t.imposto, t.investimento_anuncios, t.investimento_anuncios_realizado, t.leads_capturados, t.days_of_week, t.created_at,
+              t.period, t.start_date, t.end_date, t.imposto, t.investimento_anuncios, t.investimento_anuncios_realizado, t.leads_capturados, t.days_of_week, t.public_slug, t.created_at,
               c.id as c_id, c.nome as c_nome, c.preco as c_preco, c.carga_horaria as c_carga_horaria,
               s.id as s_id, s.nome as s_nome, s.cadeiras as s_cadeiras, s.unidade_id as s_unidade_id,
               un.nome as unidade_nome
@@ -59,6 +71,19 @@ router.get('/', async (req, res) => {
       enrolledByTurma[row.turma_id].push({ id: row.id, nome: row.nome });
     });
 
+    // Load pre-enrolled students for all turmas
+    const preEnrolledResult = await pool.query(
+      `SELECT aci.turma_id, COUNT(*) as count
+       FROM aluno_curso_interests aci
+       WHERE aci.status = 'pre_enrolled' AND aci.turma_id IS NOT NULL
+       GROUP BY aci.turma_id`
+    );
+
+    const preEnrolledByTurma = {};
+    preEnrolledResult.rows.forEach(row => {
+      preEnrolledByTurma[row.turma_id] = parseInt(row.count);
+    });
+
     const turmas = turmasResult.rows.map(t => ({
       id: t.id,
       name: t.name,
@@ -74,11 +99,13 @@ router.get('/', async (req, res) => {
       investimento_anuncios_realizado: parseFloat(t.investimento_anuncios_realizado || 0),
       leads_capturados: parseInt(t.leads_capturados) || 0,
       days_of_week: parsePgArray(t.days_of_week),
+      public_slug: t.public_slug,
       created_at: t.created_at,
       curso: t.c_id ? { id: t.c_id, nome: t.c_nome, preco: parseFloat(t.c_preco), carga_horaria: t.c_carga_horaria } : null,
       sala: t.s_id ? { id: t.s_id, nome: t.s_nome, cadeiras: t.s_cadeiras, unidade_id: t.s_unidade_id, unidade_nome: t.unidade_nome } : null,
       professores: profByTurma[t.id] || [],
-      alunos_enrolled: enrolledByTurma[t.id] || []
+      alunos_enrolled: enrolledByTurma[t.id] || [],
+      pre_enrolled_count: preEnrolledByTurma[t.id] || 0
     }));
 
     res.json(turmas);
@@ -127,11 +154,12 @@ router.post('/', async (req, res) => {
     const { investimento_anuncios, investimento_anuncios_realizado, horario_inicio, horario_fim, local_aula, endereco_aula, carga_horaria_total, acompanhamento_inicio, acompanhamento_fim, sessoes_online } = req.body;
     const result = await pool.query(
       `INSERT INTO turmas (name, curso_id, sala_id, cadeiras, period, start_date, end_date, potencial_faturamento, imposto, investimento_anuncios, investimento_anuncios_realizado, days_of_week,
-       horario_inicio, horario_fim, local_aula, endereco_aula, carga_horaria_total, acompanhamento_inicio, acompanhamento_fim, sessoes_online)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING *`,
+       horario_inicio, horario_fim, local_aula, endereco_aula, carga_horaria_total, acompanhamento_inicio, acompanhamento_fim, sessoes_online, public_slug)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) RETURNING *`,
       [name, curso_id, sala_id || null, parseInt(cadeiras), period, start_date, end_date,
        parseFloat(potencial_faturamento) || 0, parseFloat(imposto) || 0, parseFloat(investimento_anuncios) || 0, parseFloat(investimento_anuncios_realizado) || 0, days_of_week || null,
-       horario_inicio || null, horario_fim || null, local_aula || null, endereco_aula || null, carga_horaria_total ? parseInt(carga_horaria_total) : null, acompanhamento_inicio || null, acompanhamento_fim || null, sessoes_online || null]
+       horario_inicio || null, horario_fim || null, local_aula || null, endereco_aula || null, carga_horaria_total ? parseInt(carga_horaria_total) : null, acompanhamento_inicio || null, acompanhamento_fim || null, sessoes_online || null,
+       generateSlug(name)]
     );
 
     const turmaId = result.rows[0].id;

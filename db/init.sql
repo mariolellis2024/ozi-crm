@@ -587,3 +587,19 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
+-- =====================================================
+-- Seat Reservation System — Public Turma Pages
+-- =====================================================
+
+-- Trailer do YouTube no curso
+ALTER TABLE cursos ADD COLUMN IF NOT EXISTS trailer_youtube_url text;
+
+-- Slug público auto-gerado para cada turma
+ALTER TABLE turmas ADD COLUMN IF NOT EXISTS public_slug text UNIQUE;
+CREATE INDEX IF NOT EXISTS idx_turmas_public_slug ON turmas(public_slug) WHERE public_slug IS NOT NULL;
+
+-- Novo status: pré-matriculado (reservou vaga pela página pública)
+DO $$ BEGIN
+  ALTER TYPE interest_status ADD VALUE IF NOT EXISTS 'pre_enrolled';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;

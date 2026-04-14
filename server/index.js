@@ -33,6 +33,7 @@ import contratosRoutes from './routes/contratos.js';
 import zapsignWebhookRoutes from './routes/zapsign-webhook.js';
 import importLeadsRoutes from './routes/import-leads.js';
 import fbConnectionsRoutes from './routes/fb-connections.js';
+import turmasPublicRoutes from './routes/turmas-public.js';
 import { startAutoSync } from './services/auto-sync.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -50,6 +51,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/public/forms', formsPublicRoutes);
 app.use('/api/public/landing', landingPagesPublicRoutes);
+app.use('/api/public/turmas', turmasPublicRoutes);
 app.use('/api/zapsign', zapsignWebhookRoutes);
 
 // Protected routes

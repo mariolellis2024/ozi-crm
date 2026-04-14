@@ -7,7 +7,7 @@ const router = Router();
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT c.id, c.nome, c.carga_horaria, c.preco, c.categoria_id, c.imagem_url, c.created_at,
+      `SELECT c.id, c.nome, c.carga_horaria, c.preco, c.categoria_id, c.imagem_url, c.trailer_youtube_url, c.created_at,
               cat.nome as categoria_nome
        FROM cursos c
        LEFT JOIN categorias cat ON cat.id = c.categoria_id
@@ -33,6 +33,7 @@ router.get('/', async (req, res) => {
       preco: parseFloat(c.preco),
       categoria_id: c.categoria_id,
       imagem_url: c.imagem_url,
+      trailer_youtube_url: c.trailer_youtube_url,
       descricao: c.descricao,
       modulos: c.modulos,
       created_at: c.created_at,
@@ -63,11 +64,11 @@ router.get('/simple', async (req, res) => {
 // POST /api/cursos
 router.post('/', async (req, res) => {
   try {
-    const { nome, carga_horaria, preco, categoria_id, imagem_url, descricao, modulos } = req.body;
+    const { nome, carga_horaria, preco, categoria_id, imagem_url, descricao, modulos, trailer_youtube_url } = req.body;
     const result = await pool.query(
-      `INSERT INTO cursos (nome, carga_horaria, preco, categoria_id, imagem_url, descricao, modulos)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [nome, parseInt(carga_horaria), parseFloat(preco), categoria_id || null, imagem_url || null, descricao || null, modulos || null]
+      `INSERT INTO cursos (nome, carga_horaria, preco, categoria_id, imagem_url, descricao, modulos, trailer_youtube_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [nome, parseInt(carga_horaria), parseFloat(preco), categoria_id || null, imagem_url || null, descricao || null, modulos || null, trailer_youtube_url || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -80,11 +81,11 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, carga_horaria, preco, categoria_id, imagem_url, descricao, modulos } = req.body;
+    const { nome, carga_horaria, preco, categoria_id, imagem_url, descricao, modulos, trailer_youtube_url } = req.body;
     const result = await pool.query(
-      `UPDATE cursos SET nome = $1, carga_horaria = $2, preco = $3, categoria_id = $4, imagem_url = $5, descricao = $6, modulos = $7
-       WHERE id = $8 RETURNING *`,
-      [nome, parseInt(carga_horaria), parseFloat(preco), categoria_id || null, imagem_url || null, descricao || null, modulos || null, id]
+      `UPDATE cursos SET nome = $1, carga_horaria = $2, preco = $3, categoria_id = $4, imagem_url = $5, descricao = $6, modulos = $7, trailer_youtube_url = $8
+       WHERE id = $9 RETURNING *`,
+      [nome, parseInt(carga_horaria), parseFloat(preco), categoria_id || null, imagem_url || null, descricao || null, modulos || null, trailer_youtube_url || null, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Curso não encontrado' });
