@@ -56,7 +56,7 @@ router.post('/login', async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Credenciais inválidas' });
+      return res.status(401).json({ error: 'Usuário inexistente' });
     }
 
     const user = result.rows[0];
@@ -68,7 +68,7 @@ router.post('/login', async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!validPassword) {
-      return res.status(401).json({ error: 'Credenciais inválidas' });
+      return res.status(401).json({ error: 'Senha incorreta' });
     }
 
     const { password_hash, ...userWithoutPassword } = user;
