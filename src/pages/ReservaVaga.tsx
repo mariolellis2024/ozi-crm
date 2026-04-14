@@ -169,11 +169,19 @@ export function ReservaVaga() {
     const statuses: SeatStatus[] = [];
 
     // Deterministic "random" distribution with seed from slug
-    const seed = (slug || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const seed = (slug || '').split('').reduce((acc, char, idx) => acc + char.charCodeAt(0) * (idx + 1), 7);
     const shuffled: number[] = Array.from({ length: total }, (_, i) => i);
-    // Fisher-Yates shuffle with seed
+    // Mulberry32 seeded PRNG for uniform distribution
+    let s = seed | 0;
+    function nextRand() {
+      s |= 0; s = s + 0x6D2B79F5 | 0;
+      let t = Math.imul(s ^ s >>> 15, 1 | s);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+    // Fisher-Yates shuffle with proper PRNG
     for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = ((seed * (i + 1) * 2654435761) >>> 0) % (i + 1);
+      const j = Math.floor(nextRand() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
@@ -278,8 +286,36 @@ export function ReservaVaga() {
           <div className="text-7xl mb-6">🎉</div>
           <h1 className="text-3xl font-bold text-white mb-3">Vaga Reservada!</h1>
           <div className="bg-[#1a1d25] rounded-2xl p-6 mb-6 border border-teal-400/30">
-            <p className="text-teal-400 font-semibold text-lg mb-1">{curso.nome}</p>
-            <p className="text-gray-400 text-sm mb-4">{turma.name}</p>
+            <p className="text-teal-400 font-semibold text-xl mb-4">{curso.nome}</p>
+            
+            {/* Detalhes da turma */}
+            <div className="space-y-2 text-sm mb-4">
+              <div className="flex items-center justify-center gap-2 text-gray-300">
+                <span>📅</span>
+                <span>{formatDateBR(turma.start_date)}
+                {turma.start_date !== turma.end_date && ` — ${formatDateBR(turma.end_date)}`}</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-gray-300">
+                <span>🕐</span>
+                <span>{getPeriodLabel(turma.period)}
+                {turma.horario_inicio && ` • ${turma.horario_inicio}`}
+                {turma.horario_fim && ` - ${turma.horario_fim}`}</span>
+              </div>
+              {(turma.local_aula || turma.unidade_nome) && (
+                <div className="flex items-center justify-center gap-2 text-gray-300">
+                  <span>📍</span>
+                  <span>{turma.local_aula || turma.unidade_nome}
+                  {turma.unidade_cidade && ` • ${turma.unidade_cidade}`}</span>
+                </div>
+              )}
+              {turma.days_of_week && turma.days_of_week.length > 0 && (
+                <div className="flex items-center justify-center gap-2 text-gray-300">
+                  <span>📆</span>
+                  <span>{getDayNames(turma.days_of_week)}</span>
+                </div>
+              )}
+            </div>
+
             {selectedSeat !== null && (
               <div className="inline-flex items-center gap-2 bg-teal-400/10 px-4 py-2 rounded-full">
                 <span className="text-2xl">💺</span>
@@ -289,8 +325,14 @@ export function ReservaVaga() {
               </div>
             )}
           </div>
-          <p className="text-gray-300 mb-2">Sua vaga está reservada em seu nome!</p>
-          <p className="text-gray-400 text-sm">Em breve nossa equipe entrará em contato para finalizar sua matrícula.</p>
+
+          {/* Destaque: contato */}
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-5 mb-4">
+            <p className="text-amber-400 font-bold text-lg mb-1">📞 Aguarde nosso contato!</p>
+            <p className="text-gray-300 text-sm">Em breve nossa equipe entrará em contato para finalizar sua matrícula.</p>
+          </div>
+
+          <p className="text-gray-500 text-xs">Sua vaga está reservada em seu nome.</p>
         </div>
       </div>
     );
