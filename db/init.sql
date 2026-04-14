@@ -598,6 +598,18 @@ ALTER TABLE cursos ADD COLUMN IF NOT EXISTS trailer_youtube_url text;
 ALTER TABLE turmas ADD COLUMN IF NOT EXISTS public_slug text UNIQUE;
 CREATE INDEX IF NOT EXISTS idx_turmas_public_slug ON turmas(public_slug) WHERE public_slug IS NOT NULL;
 
+-- Backfill: gerar slug para turmas existentes que não têm
+UPDATE turmas SET public_slug =
+  LOWER(
+    TRIM(BOTH '-' FROM
+      REGEXP_REPLACE(
+        TRANSLATE(name, 'áàâãéèêíìîóòôõúùûçÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇ', 'aaaaeeeiiioooouuucAAAAEEEIIIOOOOUUUC'),
+        '[^a-zA-Z0-9]+', '-', 'g'
+      )
+    )
+  ) || '-' || SUBSTRING(gen_random_uuid()::text, 1, 6)
+WHERE public_slug IS NULL;
+
 -- Novo status: pré-matriculado (reservou vaga pela página pública)
 DO $$ BEGIN
   ALTER TYPE interest_status ADD VALUE IF NOT EXISTS 'pre_enrolled';
