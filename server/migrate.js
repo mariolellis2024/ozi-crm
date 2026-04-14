@@ -15,6 +15,7 @@ function sleep(ms) {
 const ENUM_ADDITIONS = [
   `DO $$ BEGIN ALTER TYPE interest_status ADD VALUE IF NOT EXISTS 'lost'; EXCEPTION WHEN others THEN NULL; END $$`,
   `DO $$ BEGIN ALTER TYPE interest_status ADD VALUE IF NOT EXISTS 'in_service'; EXCEPTION WHEN others THEN NULL; END $$`,
+  `DO $$ BEGIN ALTER TYPE interest_status ADD VALUE IF NOT EXISTS 'pre_enrolled'; EXCEPTION WHEN others THEN NULL; END $$`,
   `DO $$ BEGIN ALTER TYPE period_type ADD VALUE IF NOT EXISTS 'dia_inteiro'; EXCEPTION WHEN others THEN NULL; END $$`,
 ];
 

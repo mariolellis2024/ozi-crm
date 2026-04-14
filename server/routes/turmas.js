@@ -72,12 +72,15 @@ router.get('/', async (req, res) => {
     });
 
     // Load pre-enrolled students for all turmas
-    const preEnrolledResult = await pool.query(
-      `SELECT aci.turma_id, COUNT(*) as count
-       FROM aluno_curso_interests aci
-       WHERE aci.status = 'pre_enrolled' AND aci.turma_id IS NOT NULL
-       GROUP BY aci.turma_id`
-    );
+    let preEnrolledResult = { rows: [] };
+    try {
+      preEnrolledResult = await pool.query(
+        `SELECT aci.turma_id, COUNT(*) as count
+         FROM aluno_curso_interests aci
+         WHERE aci.status::text = 'pre_enrolled' AND aci.turma_id IS NOT NULL
+         GROUP BY aci.turma_id`
+      );
+    } catch { /* enum value may not exist yet */ }
 
     const preEnrolledByTurma = {};
     preEnrolledResult.rows.forEach(row => {
