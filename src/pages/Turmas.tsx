@@ -961,74 +961,77 @@ export function Turmas() {
                   </div>
                 </div>
 
-                {/* Botão para ver PRÉ-MATRICULADOS (destaque) */}
-                {(turma.pre_enrolled_count || 0) > 0 && (
-                  <button
-                    onClick={() => handleOpenPreMatriculados(turma)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-amber-500/20 text-amber-400 rounded-lg hover:bg-amber-500/30 transition-colors border border-amber-500/30 font-medium"
-                  >
-                    <span className="text-lg">🎯</span>
-                    <span>Ver Pré-Matriculados ({turma.pre_enrolled_count})</span>
-                  </button>
-                )}
-
-                {/* Botão para ver alunos interessados */}
-                <button
-                  onClick={() => handleOpenAlunosInteressados(turma)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors"
-                >
-                  <Users className="h-4 w-4" />
-                  <span>Ver Alunos Interessados</span>
-                </button>
-
-                {/* Botão para ver alunos matriculados */}
-                {(turma.alunos_enrolled?.length || 0) > 0 && (
-                  <button
-                    onClick={() => handleOpenAlunosMatriculados(turma)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors"
-                  >
-                    <UserCheck className="h-4 w-4" />
-                    <span>Ver Alunos Matriculados ({turma.alunos_enrolled?.length || 0})</span>
-                  </button>
-                )}
-
-                {/* Botão para ver comissões */}
-                {(turma.alunos_enrolled?.length || 0) > 0 && (
-                  <button
-                    onClick={() => handleOpenComissoes(turma)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors"
-                  >
-                    <DollarSign className="h-4 w-4" />
-                    <span>Ver Comissões da Turma</span>
-                  </button>
-                )}
-
-                {/* Botões link público */}
-                {turma.public_slug && (
-                  <div className="flex gap-2 mt-2">
+                {/* Botões de ação */}
+                <div className="space-y-2">
+                  {/* Pré-Matriculados (destaque) */}
+                  {(turma.pre_enrolled_count || 0) > 0 && (
                     <button
-                      onClick={() => {
-                        const url = `${window.location.origin}/t/${turma.public_slug}`;
-                        navigator.clipboard.writeText(url)
-                          .then(() => toast.success('Link copiado! 📋'))
-                          .catch(() => toast.error('Erro ao copiar link'));
-                      }}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-amber-500/20 text-amber-400 rounded-lg hover:bg-amber-500/30 transition-colors"
+                      onClick={() => handleOpenPreMatriculados(turma)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500/20 text-amber-400 rounded-lg hover:bg-amber-500/30 transition-colors border border-amber-500/30 font-medium"
                     >
-                      <span>📋</span>
-                      <span>Copiar Link</span>
+                      <span>🎯</span>
+                      <span>Ver Pré-Matriculados ({turma.pre_enrolled_count})</span>
                     </button>
-                    <a
-                      href={`/t/${turma.public_slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-teal-500/20 text-teal-400 rounded-lg hover:bg-teal-500/30 transition-colors"
+                  )}
+
+                  {/* Alunos Interessados */}
+                  <button
+                    onClick={() => handleOpenAlunosInteressados(turma)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Ver Alunos Interessados</span>
+                  </button>
+
+                  {/* Alunos Matriculados */}
+                  {(turma.alunos_enrolled?.length || 0) > 0 && (
+                    <button
+                      onClick={() => handleOpenAlunosMatriculados(turma)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors"
                     >
-                      <span>🔗</span>
-                      <span>Abrir Página</span>
-                    </a>
-                  </div>
-                )}
+                      <UserCheck className="h-4 w-4" />
+                      <span>Ver Alunos Matriculados ({turma.alunos_enrolled?.length || 0})</span>
+                    </button>
+                  )}
+
+                  {/* Comissões */}
+                  {(turma.alunos_enrolled?.length || 0) > 0 && (
+                    <button
+                      onClick={() => handleOpenComissoes(turma)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors"
+                    >
+                      <DollarSign className="h-4 w-4" />
+                      <span>Ver Comissões da Turma</span>
+                    </button>
+                  )}
+
+                  {/* Links público */}
+                  {turma.public_slug && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const url = `${window.location.origin}/t/${turma.public_slug}`;
+                          navigator.clipboard.writeText(url)
+                            .then(() => toast.success('Link copiado! 📋'))
+                            .catch(() => toast.error('Erro ao copiar link'));
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-700/30 text-gray-300 rounded-lg hover:bg-gray-700/50 transition-colors text-sm"
+                      >
+                        <span>📋</span>
+                        <span>Copiar Link</span>
+                      </button>
+                      <a
+                        href={`/t/${turma.public_slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-700/30 text-gray-300 rounded-lg hover:bg-gray-700/50 transition-colors text-sm"
+                      >
+                        <span>🔗</span>
+                        <span>Abrir Página</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
 
                 {/* Resumo Financeiro Completo */}
                 <div className="mt-4 pt-4 border-t border-gray-700 space-y-3">
