@@ -25,6 +25,7 @@ function getYouTubeId(url: string): string | null {
  * Custom Video Player para trailers de curso.
  * Usa Plyr.js para esconder branding do YouTube e oferecer controles customizados.
  * 
+ * O player é pré-carregado por baixo da thumbnail para eliminar delay no play.
  * Versão simplificada (sem analytics, sem progress tracking).
  */
 export function YouTubeCustomPlayer({ videoUrl, thumbnailUrl }: YouTubeCustomPlayerProps) {
@@ -34,6 +35,7 @@ export function YouTubeCustomPlayer({ videoUrl, thumbnailUrl }: YouTubeCustomPla
   const [thumbSrc, setThumbSrc] = useState('');
   const [thumbLoaded, setThumbLoaded] = useState(false);
   const [thumbQualityIdx, setThumbQualityIdx] = useState(0);
+  const [plyrReady, setPlyrReady] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const plyrRef = useRef<Plyr | null>(null);
@@ -45,11 +47,9 @@ export function YouTubeCustomPlayer({ videoUrl, thumbnailUrl }: YouTubeCustomPla
     setThumbQualityIdx(0);
 
     if (thumbnailUrl) {
-      // Tentar thumbnail customizada primeiro
       const img = new Image();
       img.onload = () => { setThumbSrc(thumbnailUrl); setThumbLoaded(true); };
       img.onerror = () => {
-        // Fallback para YouTube thumbnails
         setThumbSrc(`https://img.youtube.com/vi/${videoId}/${YT_THUMB_QUALITIES[0]}.jpg`);
         setThumbLoaded(true);
       };
@@ -70,15 +70,9 @@ export function YouTubeCustomPlayer({ videoUrl, thumbnailUrl }: YouTubeCustomPla
     }
   }, [videoId, thumbQualityIdx]);
 
-  // === Plyr initialization ===
+  // === Plyr initialization — preload on mount ===
   useEffect(() => {
-    if (phase !== 'playing' || !containerRef.current || !videoId) return;
-
-    // Limpar instância anterior
-    if (plyrRef.current) {
-      try { plyrRef.current.destroy(); } catch { /* ignore */ }
-      plyrRef.current = null;
-    }
+    if (!containerRef.current || !videoId) return;
 
     // Criar div de embed
     const wrapper = containerRef.current;
@@ -88,7 +82,7 @@ export function YouTubeCustomPlayer({ videoUrl, thumbnailUrl }: YouTubeCustomPla
     embedDiv.setAttribute('data-plyr-embed-id', videoId);
     wrapper.appendChild(embedDiv);
 
-    // Inicializar Plyr
+    // Inicializar Plyr (preloaded, sem autoplay)
     const plyr = new Plyr(embedDiv, {
       controls: [
         'play-large',
@@ -100,8 +94,8 @@ export function YouTubeCustomPlayer({ videoUrl, thumbnailUrl }: YouTubeCustomPla
         'volume',
         'fullscreen',
       ],
-      speed: { selected: 1, options: [1] }, // Trailer sempre 1x
-      autoplay: true,
+      speed: { selected: 1, options: [1] },
+      autoplay: false, // Sem autoplay — o player fica pronto por baixo
       storage: { enabled: false },
       youtube: {
         noCookie: false,
@@ -109,16 +103,16 @@ export function YouTubeCustomPlayer({ videoUrl, thumbnailUrl }: YouTubeCustomPla
         showinfo: 0,
         iv_load_policy: 3,
         modestbranding: 1,
-        customControls: true, // CHAVE: ativa o mecanismo CSS de zoom
+        customControls: true,
       },
       tooltips: { controls: true, seek: true },
       keyboard: { focused: true, global: true },
       invertTime: false,
     });
 
-    // Forçar velocidade 1x
     plyr.on('ready', () => {
       try { plyr.speed = 1; } catch { /* ignore */ }
+      setPlyrReady(true);
     });
 
     // Quando o vídeo termina: destruir player e mostrar overlay de replay
@@ -126,6 +120,7 @@ export function YouTubeCustomPlayer({ videoUrl, thumbnailUrl }: YouTubeCustomPla
       try { plyr.destroy(); } catch { /* ignore */ }
       plyrRef.current = null;
       if (containerRef.current) containerRef.current.innerHTML = '';
+      setPlyrReady(false);
       setPhase('ended');
     });
 
@@ -134,23 +129,80 @@ export function YouTubeCustomPlayer({ videoUrl, thumbnailUrl }: YouTubeCustomPla
     return () => {
       try { plyr.destroy(); } catch { /* ignore */ }
       plyrRef.current = null;
+      setPlyrReady(false);
     };
-  }, [phase, videoId]);
+  }, [videoId]);
 
   // === Handlers ===
   function handlePlay() {
     setPhase('playing');
+    // Player já está pronto — só dar play
+    if (plyrRef.current) {
+      try { plyrRef.current.play(); } catch { /* ignore */ }
+    }
   }
 
   function handleReplay() {
-    setPhase('playing');
+    // Reinicializar o player para replay
+    setPhase('thumbnail');
+    // Vai re-montar o Plyr via useEffect quando containerRef estiver disponível novamente
+    // Usar um pequeno delay para garantir que o DOM atualize
+    setTimeout(() => {
+      if (!containerRef.current || !videoId) return;
+
+      const wrapper = containerRef.current;
+      wrapper.innerHTML = '';
+      const embedDiv = document.createElement('div');
+      embedDiv.setAttribute('data-plyr-provider', 'youtube');
+      embedDiv.setAttribute('data-plyr-embed-id', videoId);
+      wrapper.appendChild(embedDiv);
+
+      const plyr = new Plyr(embedDiv, {
+        controls: [
+          'play-large', 'play', 'progress', 'current-time',
+          'duration', 'mute', 'volume', 'fullscreen',
+        ],
+        speed: { selected: 1, options: [1] },
+        autoplay: false,
+        storage: { enabled: false },
+        youtube: {
+          noCookie: false, rel: 0, showinfo: 0,
+          iv_load_policy: 3, modestbranding: 1, customControls: true,
+        },
+        tooltips: { controls: true, seek: true },
+        keyboard: { focused: true, global: true },
+        invertTime: false,
+      });
+
+      plyr.on('ready', () => {
+        try { plyr.speed = 1; } catch { /* ignore */ }
+        setPlyrReady(true);
+      });
+
+      plyr.on('ended', () => {
+        try { plyr.destroy(); } catch { /* ignore */ }
+        plyrRef.current = null;
+        if (containerRef.current) containerRef.current.innerHTML = '';
+        setPlyrReady(false);
+        setPhase('ended');
+      });
+
+      plyrRef.current = plyr;
+    }, 50);
   }
 
   if (!videoId) return null;
 
   return (
     <div className="yt-player-container">
-      {/* === Thumbnail State === */}
+      {/* Plyr always mounted behind the overlay — preloads YouTube iframe */}
+      <div
+        ref={containerRef}
+        className="plyr-yt-wrap"
+        style={{ opacity: phase === 'playing' ? 1 : 0, pointerEvents: phase === 'playing' ? 'auto' : 'none' }}
+      />
+
+      {/* === Thumbnail Overlay === */}
       {phase === 'thumbnail' && (
         <div className="yt-player-thumb" onClick={handlePlay}>
           {thumbLoaded && thumbSrc && (
@@ -171,12 +223,7 @@ export function YouTubeCustomPlayer({ videoUrl, thumbnailUrl }: YouTubeCustomPla
         </div>
       )}
 
-      {/* === Playing State === */}
-      {phase === 'playing' && (
-        <div ref={containerRef} className="plyr-yt-wrap" />
-      )}
-
-      {/* === Ended State === */}
+      {/* === Ended Overlay === */}
       {phase === 'ended' && (
         <div className="yt-player-ended" onClick={handleReplay}>
           {thumbSrc && (
