@@ -35,7 +35,9 @@ export function Cursos() {
     categoria_id: '',
     imagem_url: '',
     descricao: '',
-    trailer_youtube_url: ''
+    trailer_youtube_url: '',
+    vturb_embed_code: '',
+    vturb_speed_code: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({
@@ -98,7 +100,7 @@ export function Cursos() {
       }
 
       setIsModalOpen(false);
-      setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '', descricao: '', trailer_youtube_url: '' });
+      setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '', descricao: '', trailer_youtube_url: '', vturb_embed_code: '', vturb_speed_code: '' });
       setEditingId(null);
       loadCursos();
     } catch (error) {
@@ -141,7 +143,9 @@ export function Cursos() {
       categoria_id: curso.categoria_id || '',
       imagem_url: curso.imagem_url || '',
       descricao: (curso as any).descricao || '',
-      trailer_youtube_url: (curso as any).trailer_youtube_url || ''
+      trailer_youtube_url: (curso as any).trailer_youtube_url || '',
+      vturb_embed_code: (curso as any).vturb_embed_code || '',
+      vturb_speed_code: (curso as any).vturb_speed_code || ''
     });
     setEditingId(curso.id);
     setIsModalOpen(true);
@@ -276,7 +280,7 @@ export function Cursos() {
           onSubmit={handleSubmit}
           onClose={() => {
             setIsModalOpen(false);
-            setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '', descricao: '', trailer_youtube_url: '' });
+            setFormData({ nome: '', carga_horaria: '', preco: '', categoria_id: '', imagem_url: '', descricao: '', trailer_youtube_url: '', vturb_embed_code: '', vturb_speed_code: '' });
             setEditingId(null);
           }}
         />

@@ -594,6 +594,10 @@ END $$;
 -- Trailer do YouTube no curso
 ALTER TABLE cursos ADD COLUMN IF NOT EXISTS trailer_youtube_url text;
 
+-- VTURB video player codes
+ALTER TABLE cursos ADD COLUMN IF NOT EXISTS vturb_embed_code text;
+ALTER TABLE cursos ADD COLUMN IF NOT EXISTS vturb_speed_code text;
+
 -- Slug público auto-gerado para cada turma
 ALTER TABLE turmas ADD COLUMN IF NOT EXISTS public_slug text UNIQUE;
 CREATE INDEX IF NOT EXISTS idx_turmas_public_slug ON turmas(public_slug) WHERE public_slug IS NOT NULL;

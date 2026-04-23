@@ -12,7 +12,7 @@ router.get('/:slug', async (req, res) => {
       `SELECT t.id, t.name, t.cadeiras, t.period, t.start_date, t.end_date, t.public_slug,
               t.horario_inicio, t.horario_fim, t.local_aula, t.endereco_aula, t.carga_horaria_total, t.days_of_week,
               c.id as curso_id, c.nome as curso_nome, c.preco as curso_preco, c.carga_horaria,
-              c.imagem_url as curso_imagem, c.descricao as curso_descricao, c.trailer_youtube_url,
+              c.imagem_url as curso_imagem, c.descricao as curso_descricao, c.trailer_youtube_url, c.vturb_embed_code, c.vturb_speed_code,
               s.nome as sala_nome,
               un.nome as unidade_nome, un.cidade as unidade_cidade
        FROM turmas t
@@ -104,7 +104,9 @@ router.get('/:slug', async (req, res) => {
         carga_horaria: row.carga_horaria,
         imagem_url: row.curso_imagem,
         descricao: row.curso_descricao,
-        trailer_youtube_url: row.trailer_youtube_url
+        trailer_youtube_url: row.trailer_youtube_url,
+        vturb_embed_code: row.vturb_embed_code,
+        vturb_speed_code: row.vturb_speed_code
       },
       seats: {
         total: totalSeats,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { YouTubeCustomPlayer } from '../components/YouTubeCustomPlayer';
+import { VturbPlayer } from '../components/VturbPlayer';
 import { useParams } from 'react-router-dom';
 
 // =====================================================
@@ -30,6 +30,8 @@ interface TurmaPublicData {
     imagem_url?: string;
     descricao?: string;
     trailer_youtube_url?: string;
+    vturb_embed_code?: string;
+    vturb_speed_code?: string;
   };
   seats: {
     total: number;
@@ -255,7 +257,7 @@ export function ReservaVaga() {
   }
 
   const { turma, curso, seats, modulos } = data;
-  const hasTrailer = !!curso.trailer_youtube_url;
+  const hasVideo = !!curso.vturb_embed_code;
   const seatsPerRow = getSeatsPerRow(seats.total);
   const rows: number[][] = [];
   for (let i = 0; i < seats.total; i += seatsPerRow) {
@@ -374,11 +376,11 @@ export function ReservaVaga() {
         </section>
 
         {/* ===== Trailer / Hero Image ===== */}
-        {hasTrailer ? (
+        {hasVideo ? (
           <section className="rv-video-section">
-            <YouTubeCustomPlayer
-              videoUrl={curso.trailer_youtube_url!}
-              thumbnailUrl={curso.imagem_url || undefined}
+            <VturbPlayer
+              embedCode={curso.vturb_embed_code!}
+              speedCode={curso.vturb_speed_code}
             />
           </section>
         ) : curso.imagem_url ? (

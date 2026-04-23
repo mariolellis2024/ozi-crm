@@ -23,6 +23,8 @@ interface ModalCursoProps {
     imagem_url: string;
     descricao: string;
     trailer_youtube_url: string;
+    vturb_embed_code: string;
+    vturb_speed_code: string;
   };
   setFormData: React.Dispatch<React.SetStateAction<{
     nome: string;
@@ -32,6 +34,8 @@ interface ModalCursoProps {
     imagem_url: string;
     descricao: string;
     trailer_youtube_url: string;
+    vturb_embed_code: string;
+    vturb_speed_code: string;
   }>>;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
@@ -253,32 +257,33 @@ export function ModalCurso({
             />
           </div>
 
-          {/* YouTube Trailer */}
+          {/* VTURB Player Codes */}
           <div>
-            <label htmlFor="trailer_youtube_url" className="block text-sm font-medium text-gray-400 mb-1">
-              Trailer do Curso (YouTube)
+            <label htmlFor="vturb_embed_code" className="block text-sm font-medium text-gray-400 mb-1">
+              VTURB — Código de Incorporação
             </label>
-            <input
-              type="url"
-              id="trailer_youtube_url"
-              value={formData.trailer_youtube_url}
-              onChange={(e) => setFormData({ ...formData, trailer_youtube_url: e.target.value })}
-              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
-              placeholder="https://www.youtube.com/watch?v=..."
+            <textarea
+              id="vturb_embed_code"
+              value={formData.vturb_embed_code}
+              onChange={(e) => setFormData({ ...formData, vturb_embed_code: e.target.value })}
+              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-accent"
+              placeholder='<vturb-smartplayer id="vid-..." ...></vturb-smartplayer> <script ...>'
+              rows={3}
             />
-            {formData.trailer_youtube_url && (() => {
-              const match = formData.trailer_youtube_url.match(/(?:youtu.be\/|v=)([^#&?]*)/);
-              if (match && match[1]) {
-                return (
-                  <img
-                    src={`https://img.youtube.com/vi/${match[1]}/mqdefault.jpg`}
-                    alt="Thumbnail"
-                    className="mt-2 rounded-lg w-full h-32 object-cover opacity-80"
-                  />
-                );
-              }
-              return null;
-            })()}
+          </div>
+
+          <div>
+            <label htmlFor="vturb_speed_code" className="block text-sm font-medium text-gray-400 mb-1">
+              VTURB — Código de Velocidade
+            </label>
+            <textarea
+              id="vturb_speed_code"
+              value={formData.vturb_speed_code}
+              onChange={(e) => setFormData({ ...formData, vturb_speed_code: e.target.value })}
+              className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-accent"
+              placeholder='<script>!function(i,n){...}</script> <link rel="preload" ...>'
+              rows={3}
+            />
           </div>
 
           <InputField
