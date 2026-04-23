@@ -457,12 +457,12 @@ body.light-mode .organic-particle {
   transform: scale(1.1);
 }
 
-.yt-player-play-btn svg path:first-child {
+.yt-player-play-btn svg circle:first-child {
   transition: fill 0.2s ease;
 }
 
-.yt-player-play-btn:hover svg path:first-child {
-  fill: rgba(255, 0, 0, 0.85);
+.yt-player-play-btn:hover svg circle:first-child {
+  fill: rgba(44, 211, 199, 0.75);
 }
 
 /* Replay button */
@@ -488,6 +488,53 @@ body.light-mode .organic-particle {
 .yt-player-replay-btn:hover {
   background: rgba(0, 0, 0, 0.8);
   transform: scale(1.05);
+}
+
+/* =====================================================
+   Plyr Overrides — unify play button across all states
+   ===================================================== */
+
+/* Big center play button — match our circular teal style */
+.yt-player-container .plyr__control--overlaid {
+  background: rgba(0, 0, 0, 0.55) !important;
+  border: 2px solid rgba(255, 255, 255, 0.25) !important;
+  width: 80px;
+  height: 80px;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease !important;
+}
+
+.yt-player-container .plyr__control--overlaid:hover {
+  background: rgba(44, 211, 199, 0.75) !important;
+  border-color: rgba(44, 211, 199, 0.9) !important;
+}
+
+.yt-player-container .plyr__control--overlaid svg {
+  width: 28px;
+  height: 28px;
+  margin-left: 4px;
+}
+
+/* Bottom bar accent color — teal */
+.yt-player-container .plyr--video .plyr__control:hover,
+.yt-player-container .plyr--video .plyr__control[aria-expanded="true"] {
+  background: rgba(44, 211, 199, 0.25) !important;
+}
+
+.yt-player-container .plyr__progress__buffer,
+.yt-player-container .plyr--full-ui input[type="range"] {
+  color: #2cd3c7 !important;
+}
+
+.yt-player-container .plyr--video .plyr__progress input[type="range"]::-webkit-slider-thumb {
+  background: #2cd3c7 !important;
+}
+
+.yt-player-container .plyr--video .plyr__progress input[type="range"]::-moz-range-thumb {
+  background: #2cd3c7 !important;
 }
 
 /* Cinema section */
