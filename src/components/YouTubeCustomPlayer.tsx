@@ -1,0 +1,202 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+// @ts-ignore — plyr usa `export =` que TS não aceita como default import
+import Plyr from 'plyr';
+import 'plyr/dist/plyr.css';
+
+interface YouTubeCustomPlayerProps {
+  videoUrl: string;
+  thumbnailUrl?: string;
+}
+
+// Qualidades de thumbnail do YouTube (tentadas em ordem)
+const YT_THUMB_QUALITIES = ['maxresdefault', 'sddefault', 'hqdefault'] as const;
+
+/**
+ * Extrair YouTube ID de qualquer formato de URL
+ */
+function getYouTubeId(url: string): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2].length === 11 ? match[2] : null;
+}
+
+/**
+ * Custom Video Player para trailers de curso.
+ * Usa Plyr.js para esconder branding do YouTube e oferecer controles customizados.
+ * 
+ * Versão simplificada (sem analytics, sem progress tracking).
+ */
+export function YouTubeCustomPlayer({ videoUrl, thumbnailUrl }: YouTubeCustomPlayerProps) {
+  const videoId = getYouTubeId(videoUrl);
+
+  const [phase, setPhase] = useState<'thumbnail' | 'playing' | 'ended'>('thumbnail');
+  const [thumbSrc, setThumbSrc] = useState('');
+  const [thumbLoaded, setThumbLoaded] = useState(false);
+  const [thumbQualityIdx, setThumbQualityIdx] = useState(0);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const plyrRef = useRef<Plyr | null>(null);
+
+  // === Thumbnail logic ===
+  useEffect(() => {
+    if (!videoId) return;
+    setThumbLoaded(false);
+    setThumbQualityIdx(0);
+
+    if (thumbnailUrl) {
+      // Tentar thumbnail customizada primeiro
+      const img = new Image();
+      img.onload = () => { setThumbSrc(thumbnailUrl); setThumbLoaded(true); };
+      img.onerror = () => {
+        // Fallback para YouTube thumbnails
+        setThumbSrc(`https://img.youtube.com/vi/${videoId}/${YT_THUMB_QUALITIES[0]}.jpg`);
+        setThumbLoaded(true);
+      };
+      img.src = thumbnailUrl;
+    } else {
+      setThumbSrc(`https://img.youtube.com/vi/${videoId}/${YT_THUMB_QUALITIES[0]}.jpg`);
+      setThumbLoaded(true);
+    }
+  }, [videoId, thumbnailUrl]);
+
+  // Quando uma thumbnail do YouTube falha, tenta a próxima qualidade
+  const handleThumbError = useCallback(() => {
+    if (!videoId) return;
+    const nextIdx = thumbQualityIdx + 1;
+    if (nextIdx < YT_THUMB_QUALITIES.length) {
+      setThumbQualityIdx(nextIdx);
+      setThumbSrc(`https://img.youtube.com/vi/${videoId}/${YT_THUMB_QUALITIES[nextIdx]}.jpg`);
+    }
+  }, [videoId, thumbQualityIdx]);
+
+  // === Plyr initialization ===
+  useEffect(() => {
+    if (phase !== 'playing' || !containerRef.current || !videoId) return;
+
+    // Limpar instância anterior
+    if (plyrRef.current) {
+      try { plyrRef.current.destroy(); } catch { /* ignore */ }
+      plyrRef.current = null;
+    }
+
+    // Criar div de embed
+    const wrapper = containerRef.current;
+    wrapper.innerHTML = '';
+    const embedDiv = document.createElement('div');
+    embedDiv.setAttribute('data-plyr-provider', 'youtube');
+    embedDiv.setAttribute('data-plyr-embed-id', videoId);
+    wrapper.appendChild(embedDiv);
+
+    // Inicializar Plyr
+    const plyr = new Plyr(embedDiv, {
+      controls: [
+        'play-large',
+        'play',
+        'progress',
+        'current-time',
+        'duration',
+        'mute',
+        'volume',
+        'fullscreen',
+      ],
+      speed: { selected: 1, options: [1] }, // Trailer sempre 1x
+      autoplay: true,
+      storage: { enabled: false },
+      youtube: {
+        noCookie: false,
+        rel: 0,
+        showinfo: 0,
+        iv_load_policy: 3,
+        modestbranding: 1,
+        customControls: true, // CHAVE: ativa o mecanismo CSS de zoom
+      },
+      tooltips: { controls: true, seek: true },
+      keyboard: { focused: true, global: true },
+      invertTime: false,
+    });
+
+    // Forçar velocidade 1x
+    plyr.on('ready', () => {
+      try { plyr.speed = 1; } catch { /* ignore */ }
+    });
+
+    // Quando o vídeo termina: destruir player e mostrar overlay de replay
+    plyr.on('ended', () => {
+      try { plyr.destroy(); } catch { /* ignore */ }
+      plyrRef.current = null;
+      if (containerRef.current) containerRef.current.innerHTML = '';
+      setPhase('ended');
+    });
+
+    plyrRef.current = plyr;
+
+    return () => {
+      try { plyr.destroy(); } catch { /* ignore */ }
+      plyrRef.current = null;
+    };
+  }, [phase, videoId]);
+
+  // === Handlers ===
+  function handlePlay() {
+    setPhase('playing');
+  }
+
+  function handleReplay() {
+    setPhase('playing');
+  }
+
+  if (!videoId) return null;
+
+  return (
+    <div className="yt-player-container">
+      {/* === Thumbnail State === */}
+      {phase === 'thumbnail' && (
+        <div className="yt-player-thumb" onClick={handlePlay}>
+          {thumbLoaded && thumbSrc && (
+            <img
+              src={thumbSrc}
+              alt="Trailer"
+              className="yt-player-thumb-img"
+              onError={handleThumbError}
+            />
+          )}
+          <button className="yt-player-play-btn" aria-label="Assistir trailer">
+            <svg viewBox="0 0 68 48" width="68" height="48">
+              <path
+                d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55C3.97 2.33 2.27 4.81 1.48 7.74.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"
+                fill="rgba(0,0,0,.75)"
+              />
+              <path d="M45 24 27 14v20" fill="#fff" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* === Playing State === */}
+      {phase === 'playing' && (
+        <div ref={containerRef} className="plyr-yt-wrap" />
+      )}
+
+      {/* === Ended State === */}
+      {phase === 'ended' && (
+        <div className="yt-player-ended" onClick={handleReplay}>
+          {thumbSrc && (
+            <img
+              src={thumbSrc}
+              alt="Trailer"
+              className="yt-player-thumb-img yt-player-thumb-dim"
+            />
+          )}
+          <button className="yt-player-replay-btn" aria-label="Assistir novamente">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
+            <span>Assistir novamente</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

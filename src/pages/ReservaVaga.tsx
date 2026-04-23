@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { YouTubeCustomPlayer } from '../components/YouTubeCustomPlayer';
 import { useParams } from 'react-router-dom';
 
 // =====================================================
@@ -52,15 +53,7 @@ type SeatStatus = 'available' | 'occupied' | 'selected' | 'flicker';
 // =====================================================
 // Helpers
 // =====================================================
-function getYouTubeEmbedUrl(url: string): string | null {
-  if (!url) return null;
-  const regExp = /^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  if (match && match[1].length === 11) {
-    return `https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
-  }
-  return null;
-}
+
 
 function formatDateBR(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00');
@@ -262,7 +255,7 @@ export function ReservaVaga() {
   }
 
   const { turma, curso, seats, modulos } = data;
-  const embedUrl = curso.trailer_youtube_url ? getYouTubeEmbedUrl(curso.trailer_youtube_url) : null;
+  const hasTrailer = !!curso.trailer_youtube_url;
   const seatsPerRow = getSeatsPerRow(seats.total);
   const rows: number[][] = [];
   for (let i = 0; i < seats.total; i += seatsPerRow) {
@@ -381,14 +374,11 @@ export function ReservaVaga() {
         </section>
 
         {/* ===== Trailer / Hero Image ===== */}
-        {embedUrl ? (
-          <section className="rv-video-container">
-            <iframe
-              src={embedUrl}
-              title="Trailer do Curso"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="rv-video-iframe"
+        {hasTrailer ? (
+          <section className="rv-video-section">
+            <YouTubeCustomPlayer
+              videoUrl={curso.trailer_youtube_url!}
+              thumbnailUrl={curso.imagem_url || undefined}
             />
           </section>
         ) : curso.imagem_url ? (
