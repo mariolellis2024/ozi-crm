@@ -411,10 +411,25 @@ body.light-mode .organic-particle {
   border-radius: 0.75rem;
 }
 
-/* Plyr wrapper — fill the container */
+/* Plyr wrapper — absolutely fills the container so zoom CSS
+   can calculate proper dimensions even when hidden */
 .plyr-yt-wrap {
   width: 100%;
   height: 100%;
+}
+
+.plyr-yt-wrap--preload {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.plyr-yt-wrap--active {
+  visibility: visible;
+  pointer-events: auto;
+  z-index: 1;
 }
 
 /* Thumbnail state */

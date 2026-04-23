@@ -198,8 +198,7 @@ export function YouTubeCustomPlayer({ videoUrl, thumbnailUrl }: YouTubeCustomPla
       {/* Plyr always mounted behind the overlay — preloads YouTube iframe */}
       <div
         ref={containerRef}
-        className="plyr-yt-wrap"
-        style={{ opacity: phase === 'playing' ? 1 : 0, pointerEvents: phase === 'playing' ? 'auto' : 'none' }}
+        className={`plyr-yt-wrap plyr-yt-wrap--preload ${phase === 'playing' ? 'plyr-yt-wrap--active' : ''}`}
       />
 
       {/* === Thumbnail Overlay === */}
