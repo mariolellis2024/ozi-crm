@@ -338,7 +338,7 @@ export function ReservaVaga() {
       {/* ===== Header ===== */}
       <header className="bg-[#1a1d25] border-b border-gray-800">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <img src="/icon.webp" alt="Logo" className="h-8 rounded" />
+          <img src="/icon.webp" alt="Logo" className="h-8" />
           {!seats.is_sold_out && (
             <span className="rv-urgency-badge">
               🔥 Vagas Limitadas
