@@ -28,6 +28,7 @@ interface ModalTurmaProps {
     investimento_anuncios_realizado: string;
     professores: ProfessorAssignment[];
     days_of_week: number[];
+    horas_por_aula: string;
     horario_inicio: string;
     horario_fim: string;
     local_aula: string;
@@ -50,6 +51,7 @@ interface ModalTurmaProps {
     investimento_anuncios_realizado: string;
     professores: ProfessorAssignment[];
     days_of_week: number[];
+    horas_por_aula: string;
     horario_inicio: string;
     horario_fim: string;
     local_aula: string;
@@ -105,7 +107,7 @@ export function ModalTurma({
   function calculateEndDate(startDate: string, daysOfWeek: number[], totalHours: number): string {
     if (!startDate || !daysOfWeek.length || !totalHours) return '';
     
-    const hoursPerClass = formData.period === 'dia_inteiro' ? 6 : 3;
+    const hoursPerClass = Number(formData.horas_por_aula) || (formData.period === 'dia_inteiro' ? 6 : 3);
     const totalClasses = Math.ceil(totalHours / hoursPerClass);
     
     const start = new Date(startDate + 'T00:00:00');
@@ -145,7 +147,7 @@ export function ModalTurma({
         setFormData(prev => ({ ...prev, end_date: calculatedEndDate }));
       }
     }
-  }, [formData.start_date, formData.days_of_week, cargaHorariaCurso, formData.period]);
+  }, [formData.start_date, formData.days_of_week, cargaHorariaCurso, formData.period, formData.horas_por_aula]);
   
   function toggleDayOfWeek(dayValue: number) {
     const currentDays = formData.days_of_week || [];
@@ -298,7 +300,11 @@ export function ModalTurma({
                 <select
                   id="period"
                   value={formData.period}
-                  onChange={(e) => setFormData({ ...formData, period: e.target.value as Period })}
+                  onChange={(e) => {
+                    const newPeriod = e.target.value as Period;
+                    const defaultHoras = newPeriod === 'dia_inteiro' ? '6' : '3';
+                    setFormData({ ...formData, period: newPeriod, horas_por_aula: defaultHoras });
+                  }}
                   className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
                   required
                 >
@@ -308,6 +314,28 @@ export function ModalTurma({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label htmlFor="horas_por_aula" className="block text-sm font-medium text-gray-400 mb-1">
+                  Horas por Aula
+                </label>
+                <input
+                  type="number"
+                  id="horas_por_aula"
+                  value={formData.horas_por_aula}
+                  onChange={(e) => setFormData({ ...formData, horas_por_aula: e.target.value })}
+                  className="w-full bg-dark-lighter border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-accent"
+                  min="1"
+                  max="12"
+                  step="1"
+                  required
+                />
+                {cargaHorariaCurso > 0 && Number(formData.horas_por_aula) > 0 && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    {Math.ceil(cargaHorariaCurso / Number(formData.horas_por_aula))} aulas de {formData.horas_por_aula}h = {cargaHorariaCurso}h total
+                  </p>
+                )}
               </div>
 
               <div>
@@ -400,7 +428,7 @@ export function ModalTurma({
                 />
                 {formData.start_date && formData.days_of_week.length > 0 && cargaHorariaCurso > 0 && (
                   <p className="text-xs text-gray-400 mt-1">
-                    Baseado em {Math.ceil(cargaHorariaCurso / (formData.period === 'dia_inteiro' ? 6 : 3))} {formData.period === 'dia_inteiro' ? 'dias de 6h (manhã + tarde)' : 'aulas de 3h'} nos dias selecionados
+                    Baseado em {Math.ceil(cargaHorariaCurso / (Number(formData.horas_por_aula) || (formData.period === 'dia_inteiro' ? 6 : 3)))} aulas de {formData.horas_por_aula || (formData.period === 'dia_inteiro' ? '6' : '3')}h nos dias selecionados
                   </p>
                 )}
               </div>
@@ -411,6 +439,7 @@ export function ModalTurma({
               selectedDays={formData.days_of_week || []}
               onToggleDay={toggleDayOfWeek}
               cargaHorariaCurso={cargaHorariaCurso}
+              horasPorAula={Number(formData.horas_por_aula) || 3}
             />
 
             {/* Sub-componente: Professores */}

@@ -5,6 +5,7 @@ interface DaySelectorProps {
   selectedDays: number[];
   onToggleDay: (dayValue: number) => void;
   cargaHorariaCurso: number;
+  horasPorAula: number;
 }
 
 const DAYS_OF_WEEK = [
@@ -19,13 +20,13 @@ const DAYS_OF_WEEK = [
 
 export { DAYS_OF_WEEK };
 
-export function DaySelector({ selectedDays, onToggleDay, cargaHorariaCurso }: DaySelectorProps) {
+export function DaySelector({ selectedDays, onToggleDay, cargaHorariaCurso, horasPorAula }: DaySelectorProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Calendar className="h-5 w-5 text-teal-accent" />
         <h3 className="text-lg font-medium text-white">Dias da Semana</h3>
-        <span className="text-sm text-gray-400">(3 horas por aula)</span>
+        <span className="text-sm text-gray-400">({horasPorAula} horas por aula)</span>
       </div>
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -59,7 +60,7 @@ export function DaySelector({ selectedDays, onToggleDay, cargaHorariaCurso }: Da
             {cargaHorariaCurso > 0 && (
               <div className="text-xs">
                 <span className="text-teal-accent">
-                  {Math.ceil(cargaHorariaCurso / 3)} aulas necessárias
+                  {Math.ceil(cargaHorariaCurso / horasPorAula)} aulas necessárias
                 </span>
                 {selectedDays.length > 0 && (
                   <span className="ml-2">
