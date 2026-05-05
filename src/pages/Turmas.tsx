@@ -34,6 +34,7 @@ interface Turma {
   investimento_anuncios: number;
   investimento_anuncios_realizado: number;
   leads_capturados: number;
+  valor_aluguel: number;
   days_of_week?: number[];
   created_at: string;
   curso?: {
@@ -1062,7 +1063,8 @@ export function Turmas() {
                     // Resultado final
                     const investAnunciosPrevisto = turma.investimento_anuncios || 0;
                     const investAnunciosRealizado = turma.investimento_anuncios_realizado || 0;
-                    const resultadoFinal = faturamentoRealizado - custoProfessores - impostos - comissaoVendedor - investAnunciosRealizado;
+                    const valorAluguel = turma.valor_aluguel || 0;
+                    const resultadoFinal = faturamentoRealizado - custoProfessores - impostos - comissaoVendedor - investAnunciosRealizado - valorAluguel;
                     const margemLucro = faturamentoRealizado > 0 ? (resultadoFinal / faturamentoRealizado) * 100 : 0;
                     
                     return (
@@ -1105,6 +1107,44 @@ export function Turmas() {
                             </span>
                           </div>
                           
+                          {/* Aluguel do Espaço */}
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-gray-400">Aluguel:</span>
+                            <span
+                              className={`font-medium cursor-pointer hover:underline ${valorAluguel > 0 ? 'text-red-400' : 'text-gray-500'}`}
+                              onClick={(e) => {
+                                const span = e.currentTarget;
+                                const currentVal = turma.valor_aluguel || 0;
+                                const input = document.createElement('input');
+                                input.type = 'number';
+                                input.value = String(currentVal);
+                                input.min = '0';
+                                input.step = '100';
+                                input.className = 'w-20 bg-dark-lighter border border-teal-accent rounded px-1.5 py-0.5 text-red-400 text-xs text-right focus:ring-1 focus:ring-teal-accent outline-none font-medium';
+                                const save = async () => {
+                                  const val = parseFloat(input.value) || 0;
+                                  if (val !== currentVal) {
+                                    try {
+                                      await api.patch(`/api/turmas/${turma.id}/investimento`, { valor_aluguel: val });
+                                      loadData();
+                                    } catch { toast.error('Erro ao salvar aluguel'); }
+                                  }
+                                  span.style.display = '';
+                                  input.remove();
+                                };
+                                input.onblur = save;
+                                input.onkeydown = (ev) => { if (ev.key === 'Enter') input.blur(); if (ev.key === 'Escape') { span.style.display = ''; input.remove(); } };
+                                span.style.display = 'none';
+                                span.parentElement!.appendChild(input);
+                                input.focus();
+                                input.select();
+                              }}
+                              title="Clique para editar"
+                            >
+                              {valorAluguel > 0 ? `-${formatCurrency(valorAluguel)}` : formatCurrency(0)}
+                            </span>
+                          </div>
+
                           {/* Ads — previsto vs realizado */}
                           <div className="flex justify-between items-center mt-1">
                             <div>
@@ -1261,7 +1301,7 @@ export function Turmas() {
                           // Revenue per student after variable costs (taxes + commission at base 2%)
                           const totalVariableRate = turma.imposto + 2; // imposto% + vendedor base 2%
                           const netRevenuePerStudent = precoUnitario * (1 - totalVariableRate / 100);
-                          const fixedCosts = custoProfessores + investAnunciosRealizado;
+                          const fixedCosts = custoProfessores + investAnunciosRealizado + valorAluguel;
                           const pontoEquilibrio = netRevenuePerStudent > 0 
                             ? Math.ceil(fixedCosts / netRevenuePerStudent) 
                             : 0;

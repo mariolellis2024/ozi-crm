@@ -619,3 +619,8 @@ DO $$ BEGIN
   ALTER TYPE interest_status ADD VALUE IF NOT EXISTS 'pre_enrolled';
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
+
+-- =====================================================
+-- Valor do aluguel do espaço por turma
+-- =====================================================
+ALTER TABLE turmas ADD COLUMN IF NOT EXISTS valor_aluguel NUMERIC(10,2) NOT NULL DEFAULT 0;
